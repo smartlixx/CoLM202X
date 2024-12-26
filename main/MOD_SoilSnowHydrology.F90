@@ -141,9 +141,13 @@ CONTAINS
 #endif
    real(r8), intent(inout) :: &
         wice_soisno(lb:nl_soil) ,&! ice lens (kg/m2)
-        wliq_soisno(lb:nl_soil) ,&! liquid water (kg/m2)
+        wliq_soisno(lb:nl_soil)   ! liquid water (kg/m2)
+
+   real(r8), intent(out) :: &
         smp(1:nl_soil)          ,&! soil matrix potential [mm]
-        hk (1:nl_soil)          ,&! hydraulic conductivity [mm h2o/m]
+        hk (1:nl_soil)            ! hydraulic conductivity [mm h2o/m]
+   
+   real(r8), intent(inout) :: &
         zwt                     ,&! the depth from ground (soil) surface to water table [m]
         wa                        ! water storage in aquifer [mm]
 
@@ -597,9 +601,13 @@ ENDIF
 
    real(r8), intent(inout) :: &
         wice_soisno(lb:nl_soil) , &! ice lens (kg/m2)
-        wliq_soisno(lb:nl_soil) , &! liquid water (kg/m2)
+        wliq_soisno(lb:nl_soil)    ! liquid water (kg/m2)
+
+   real(r8), intent(out) :: &
         smp(1:nl_soil)   , &! soil matrix potential [mm]
-        hk (1:nl_soil)   , &! hydraulic conductivity [mm h2o/m]
+        hk (1:nl_soil)      ! hydraulic conductivity [mm h2o/m]
+
+   real(r8), intent(inout) :: &
         zwt              , &! the depth from ground (soil) surface to water table [m]
         wdsrf            , &! depth of surface water [mm]
         wa               , &! water storage in aquifer [mm]
@@ -675,6 +683,7 @@ ENDIF
    type(cell_data_struct) :: cell
    real(r8) :: wliq_soisno_tmp(1:nl_soil)
 
+   real(r8), parameter :: e_ice=6.0      !soil ice impedance factor
 
 !=======================================================================
 ! [1] update the liquid water within snow layer and the water onto soil
@@ -1012,6 +1021,16 @@ ENDIF
       ENDIF
 #endif
 
+      DO j = 1, nl_soil
+         IF(t_soisno(j) <= tfrz) THEN
+            ! consider impedance factor
+            vol_ice(j) = max(min(porsl(j), wice_soisno(j)/(dz_soisno(j)*denice)), 0.)
+            icefrac(j) = vol_ice(j)/porsl(j)
+            imped = 10.**(-e_ice*icefrac(j))
+            hk(j) = imped * hk(j)
+         ENDIF
+      ENDDO
+
 #ifndef CatchLateralFlow
       err_solver = (sum(wliq_soisno(1:))+sum(wice_soisno(1:))+wa+wdsrf) - w_sum &
          - (gwat-etr-rsur-rsubst)*deltim
@@ -1036,7 +1055,8 @@ ENDIF
 
 #if(defined CoLMDEBUG)
       IF(abs(err_solver) > 1.e-3)THEN
-         write(6,'(A,E20.5,I0)') 'Warning (WATER_VSF): water balance violation', err_solver,landpatch%eindex(ipatch)
+         write(6,'(A,E20.5,A,I0)') 'Warning (WATER_VSF): water balance violation', err_solver, & 
+            ' in element ', landpatch%eindex(ipatch)
       ENDIF
       IF (any(wliq_soisno < -1.e-3)) THEN
          write(6,'(A,10E20.5)') 'Warning (WATER_VSF): negative soil water', wliq_soisno(1:nl_soil)
@@ -1763,8 +1783,8 @@ ENDIF
 
    real(r8), intent(out) :: dwat(1:nl_soil)   ! change of soil water [m3/m3]
    real(r8), intent(out) :: qcharge           ! aquifer recharge rate (positive to aquifer) (mm/s)
-   real(r8), intent(inout) :: smp(1:nl_soil)  ! soil matrix potential [mm]
-   real(r8), intent(inout) :: hk (1:nl_soil)  ! hydraulic conductivity [mm h2o/s]
+   real(r8), intent(out) :: smp(1:nl_soil)    ! soil matrix potential [mm]
+   real(r8), intent(out) :: hk (1:nl_soil)    ! hydraulic conductivity [mm h2o/s]
 
 !
 ! local arguments

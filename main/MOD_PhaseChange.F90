@@ -11,6 +11,7 @@ MODULE MOD_PhaseChange
    PUBLIC :: meltf
    PUBLIC :: meltf_snicar
    PUBLIC :: meltf_urban
+   PUBLIC :: meltf_road
 
 !-----------------------------------------------------------------------
 
@@ -808,4 +809,193 @@ CONTAINS
 
    END SUBROUTINE meltf_urban
 
+
+   SUBROUTINE meltf_road (lbroad,nl_soil,deltim, &
+      fact,brr,hs,dhsdT, &
+      t_roadsno_bef,t_roadsno,wliq_roadsno,wice_roadsno,imelt, &
+      scv,snowdp,sm,xmf)
+
+!-----------------------------------------------------------------------
+! Original author : Yongjiu Dai, /09/1999/, /03/2014/
+!
+! calculation of the phase change within snow and soil layers:
+!
+! (1) check the conditions which the phase change may take place,
+!     i.e., the layer temperature is great than the freezing point
+!     and the ice mass is not equal to zero (i.e., melting),
+!     or layer temperature is less than the freezing point
+!     and the liquid water mass is not equal to zero (i.e., freezing);
+! (2) assess the rate of phase change from the energy excess (or deficit)
+!     after setting the layer temperature to freezing point;
+! (3) re-adjust the ice and liquid mass, and the layer temperature
+!
+!-----------------------------------------------------------------------
+
+     USE MOD_Precision
+     USE MOD_SPMD_Task
+     USE MOD_Const_Physical, only : tfrz, hfus
+     IMPLICIT NONE
+
+!-----------------------------------------------------------------------
+
+     integer, intent(in) :: nl_soil              ! upper bound of array (i.e., soil layers)
+     integer, intent(in) :: lbroad                   ! lower bound of array (i.e., snl +1)
+     real(r8), intent(in) :: deltim              ! time step [second]
+     real(r8), intent(in) :: t_roadsno_bef(lbroad:nl_soil)  ! temperature at previous time step [K]
+     real(r8), intent(in) :: brr (lbroad:nl_soil)    !
+     real(r8), intent(in) :: fact(lbroad:nl_soil)    ! temporary variables
+     real(r8), intent(in) :: hs                  ! net ground heat flux into the surface
+     real(r8), intent(in) :: dhsdT               ! temperature derivative of "hs"
+
+     real(r8), intent(inout) :: t_roadsno (lbroad:nl_soil)   ! temperature at current time step [K]
+     real(r8), intent(inout) :: wice_roadsno(lbroad:nl_soil) ! ice lens [kg/m2]
+     real(r8), intent(inout) :: wliq_roadsno(lbroad:nl_soil) ! liquid water [kg/m2]
+     real(r8), intent(inout) :: scv              ! snow mass [kg/m2]
+     real(r8), intent(inout) :: snowdp           ! snow depth [m]
+
+     real(r8), intent(out) :: sm                 ! rate of snowmelt [mm/s, kg/(m2 s)]
+     real(r8), intent(out) :: xmf                ! total latent heat of phase change
+     integer, intent(out) :: imelt(lbroad:nl_soil)   ! flag for melting or freezing [-]
+
+     ! Local
+     real(r8) :: hm(lbroad:nl_soil)                  ! energy residual [W/m2]
+     real(r8) :: xm(lbroad:nl_soil)                  ! metling or freezing within a time step [kg/m2]
+     real(r8) :: heatr                           ! energy residual or loss after melting or freezing
+     real(r8) :: temp1                           ! temporary variables [kg/m2]
+     real(r8) :: temp2                           ! temporary variables [kg/m2]
+
+     real(r8), dimension(lbroad:nl_soil) :: wmass0, wice0, wliq0
+     real(r8) :: propor, tinc, we, scvold
+     integer j
+
+!-----------------------------------------------------------------------
+
+     sm = 0.
+     xmf = 0.
+
+     DO j = lb, nl_soil
+        imelt(j) = 0
+        hm(j) = 0.
+        xm(j) = 0.
+        wice0(j) = wice_roadsno(j)
+        wliq0(j) = wliq_roadsno(j)
+        wmass0(j) = wice_roadsno(j) + wliq_roadsno(j)
+     ENDDO
+
+     scvold=scv
+     we=0.
+     IF(lbroad<=0) &
+        we = sum(wice_roadsno(lbroad:0)+wliq_roadsno(lbroad:0))
+
+     DO j = lb, nl_soil
+! Melting identification
+! IF ice exists above melt point, melt some to liquid.
+         IF(wice_roadsno(j) > 0. .and. t_roadsno(j) > tfrz) THEN
+            imelt(j) = 1
+            t_roadsno(j) = tfrz
+         ENDIF
+
+! Freezing identification
+! IF liquid exists below melt point, freeze some to ice.
+         IF(wliq_roadsno(j) > 0. .and. t_roadsno(j) < tfrz) THEN
+            imelt(j) = 2
+            t_roadsno(j) = tfrz
+         ENDIF
+     ENDDO
+
+! If snow exists, but its thickness less than the critical value (0.01 m)
+     IF(lbroad == 1 .and. scv > 0.) THEN
+         IF(t_roadsno(1) > tfrz) THEN
+            imelt(1) = 1
+            t_roadsno(1) = tfrz
+         ENDIF
+     ENDIF
+
+! Calculate the energy surplus and loss for melting and freezing
+     DO j = lbroad, nl_soil
+         IF(imelt(j) > 0) THEN
+            tinc = t_roadsno(j)-t_roadsno_bef(j)
+            IF(j > lbroad) THEN
+               hm(j) = brr(j) - tinc/fact(j)
+            ELSE
+               hm(j) = hs + dhsdT*tinc + brr(j) - tinc/fact(j)
+            ENDIF
+         ENDIF
+     ENDDO
+
+     DO j = lbroad, nl_soil
+         IF(imelt(j) == 1 .and. hm(j) < 0.) THEN
+            hm(j) = 0.
+            imelt(j) = 0
+         ENDIF
+! this error was checked carefully, it results from the the computed error
+! of "Tridiagonal-Matrix" in SUBROUTINE "thermal".
+         IF(imelt(j) == 2 .and. hm(j) > 0.) THEN
+            hm(j) = 0.
+            imelt(j) = 0
+         ENDIF
+     ENDDO
+
+! The rate of melting and freezing
+     DO j = lbroad, nl_soil
+         IF(imelt(j) > 0 .and. abs(hm(j)) > .0) THEN
+            xm(j) = hm(j)*deltim/hfus                    ! kg/m2
+
+! IF snow exists, but its thickness less than the critical value (1 cm)
+! Note: more work is need on how to tune the snow depth at this case
+            IF(j == 1 .and. lb == 1 .and. scv > 0. .and. xm(j) > 0.) THEN
+               temp1 = scv                               ! kg/m2
+               scv = max(0.,temp1-xm(j))
+               propor = scv/temp1
+               snowdp = propor * snowdp
+               heatr = hm(j) - hfus*(temp1-scv)/deltim   ! W/m2
+               IF(heatr > 0.) THEN
+                  xm(j) = heatr*deltim/hfus              ! kg/m2
+                  hm(j) = heatr                          ! W/m2
+               ELSE
+                  xm(j) = 0.
+                  hm(j) = 0.
+               ENDIF
+               sm = max(0.,(temp1-scv))/deltim           ! kg/(m2 s)
+               xmf = hfus*sm
+            ENDIF
+
+            heatr = 0.
+            IF(xm(j) > 0.) THEN
+               wice_roadsno(j) = max(0., wice0(j)-xm(j))
+               heatr = hm(j) - hfus*(wice0(j)-wice_roadsno(j))/deltim
+            ELSE
+               wice_roadsno(j) = min(wmass0(j), wice0(j)-xm(j))
+               heatr = hm(j) - hfus*(wice0(j)-wice_roadsno(j))/deltim
+            ENDIF
+
+            wliq_roadsno(j) = max(0.,wmass0(j)-wice_roadsno(j))
+
+            IF(abs(heatr) > 0.) THEN
+               IF(j > lbroad) THEN
+                  t_roadsno(j) = t_roadsno(j) + fact(j)*heatr
+               ELSE
+                  t_roadsno(j) = t_roadsno(j) + fact(j)*heatr/(1.-fact(j)*dhsdT)
+               ENDIF
+               
+               IF(wliq_roadsno(j)*wice_roadsno(j) > 0.) t_roadsno(j) = tfrz
+            ENDIF
+
+            xmf = xmf + hfus * (wice0(j)-wice_roadsno(j))/deltim
+
+            IF(imelt(j) == 1 .and. j < 1) &
+               sm = sm + max(0.,(wice0(j)-wice_roadsno(j)))/deltim
+         ENDIF
+     ENDDO
+
+     !scvold=scv
+     IF(lbroad<=0) THEN
+         we = sum(wice_roadsno(lbroad:0)+wliq_roadsno(lbroad:0))-we
+         IF(abs(we)>1.e-6) THEN
+            print*, 'meltf_road err : ', we
+            CALL CoLM_stop()
+         ENDIF
+     ENDIF
+
+   END SUBROUTINE meltf_road
 END MODULE MOD_PhaseChange

@@ -191,6 +191,11 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
          ENDIF
 #endif
 
+#ifdef ROAD_MODEL
+         IF (DEF_ROAD_RUN .and. m.eq.URBAN) THEN
+           CALL RoadCoLMMAIN ()
+         ENDIF
+#endif
 
 #ifdef URBAN_MODEL
          ! For urban model and urban patches

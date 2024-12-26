@@ -4,8 +4,9 @@ MODULE MOD_LeafTemperature
 
 !-----------------------------------------------------------------------
    USE MOD_Precision
-   USE MOD_Namelist, only: DEF_Interception_scheme, DEF_USE_PLANTHYDRAULICS, &
-                           DEF_USE_OZONESTRESS, DEF_RSS_SCHEME, DEF_SPLIT_SOILSNOW
+   USE MOD_Namelist, only: DEF_USE_CBL_HEIGHT, DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, &
+                           DEF_RSS_SCHEME, DEF_Interception_scheme, DEF_SPLIT_SOILSNOW, &
+                           DEF_VEG_SNOW
    USE MOD_SPMD_Task
 
    IMPLICIT NONE
@@ -24,79 +25,87 @@ CONTAINS
 !-----------------------------------------------------------------------
 
    SUBROUTINE LeafTemperature ( &
-              ipatch    ,ivt       ,deltim    ,csoilc    ,dewmx     ,htvp      ,&
-              lai       ,sai       ,htop      ,hbot      ,sqrtdi    ,effcon    ,&
-              vmax25    ,slti      ,hlti      ,shti      ,hhti      ,trda      ,&
-              trdm      ,trop      ,g1        ,g0        ,gradm     ,binter    ,&
-              extkn     ,extkb     ,extkd     ,hu        ,ht        ,hq        ,&
-              us        ,vs        ,thm       ,th        ,thv       ,qm        ,&
-              psrf      ,rhoair    ,parsun    ,parsha    ,sabv      ,frl       ,&
-              fsun      ,thermk    ,rstfacsun ,rstfacsha ,gssun     ,gssha     ,&
-              po2m      ,pco2m     ,z0h_g     ,obug      ,ustarg    ,zlnd      ,&
-              zsno      ,fsno      ,sigf      ,etrc      ,tg        ,qg,rss    ,&
-              t_soil    ,t_snow    ,q_soil    ,q_snow    ,dqgdT     ,emg       ,&
-              tl        ,ldew      ,ldew_rain ,ldew_snow ,taux      ,tauy      ,&
-              fseng     ,fseng_soil,fseng_snow,fevpg     ,fevpg_soil,fevpg_snow,&
-              cgrnd     ,cgrndl    ,cgrnds    ,tref      ,qref      ,rst       ,&
-              assim     ,respc     ,fsenl     ,fevpl     ,etr       ,dlrad     ,&
-              ulrad     ,z0m       ,zol       ,rib       ,ustar     ,qstar     ,&
-              tstar     ,fm        ,fh        ,fq        ,rootfr    ,&
+              ipatch     ,ivt        ,deltim     ,csoilc     ,dewmx      ,htvp       ,&
+              lai        ,sai        ,htop       ,hbot       ,sqrtdi     ,effcon     ,&
+              vmax25     ,slti       ,hlti       ,shti       ,hhti       ,trda       ,&
+              trdm       ,trop       ,g1         ,g0         ,gradm      ,binter     ,&
+              extkn      ,extkb      ,extkd      ,hu         ,ht         ,hq         ,&
+              us         ,vs         ,thm        ,th         ,thv        ,qm         ,&
+              psrf       ,rhoair     ,parsun     ,parsha     ,sabv       ,frl        ,&
+              fsun       ,thermk     ,rstfacsun  ,rstfacsha  ,gssun      ,gssha      ,&
+              po2m       ,pco2m      ,z0h_g      ,obug       ,ustarg     ,zlnd       ,&
+              zsno       ,fsno       ,sigf       ,etrc       ,tg         ,qg         ,&
+              rss        ,t_soil     ,t_snow     ,q_soil     ,q_snow     ,dqgdT      ,&
+              emg        ,tl         ,ldew       ,ldew_rain  ,ldew_snow  ,fwet_snow  ,&
+              taux       ,tauy       ,fseng      ,fseng_soil ,fseng_snow ,fevpg      ,&
+              fevpg_soil ,fevpg_snow ,cgrnd      ,cgrndl     ,cgrnds     ,tref       ,&
+              qref       ,rst        ,assim      ,respc      ,fsenl      ,fevpl      ,&
+              etr        ,dlrad      ,ulrad      ,z0m        ,zol        ,rib        ,&
+              ustar      ,qstar      ,tstar      ,fm         ,fh         ,fq         ,&
+              rootfr     ,&
 !Plant Hydraulic variables
-              kmax_sun  ,kmax_sha  ,kmax_xyl  ,kmax_root ,psi50_sun ,psi50_sha ,&
-              psi50_xyl ,psi50_root,ck        ,vegwp     ,gs0sun    ,gs0sha    ,&
-              assimsun  ,etrsun    ,assimsha  ,etrsha    ,&
+              kmax_sun   ,kmax_sha   ,kmax_xyl   ,kmax_root  ,psi50_sun  ,psi50_sha  ,&
+              psi50_xyl  ,psi50_root ,ck         ,vegwp      ,gs0sun     ,gs0sha     ,&
+              assimsun   ,etrsun     ,assimsha   ,etrsha     ,&
 !Ozone stress variables
-              o3coefv_sun      ,o3coefv_sha      ,o3coefg_sun     ,o3coefg_sha ,&
-              lai_old          ,o3uptakesun      ,o3uptakesha     ,forc_ozone  ,&
+              o3coefv_sun,o3coefv_sha,o3coefg_sun,o3coefg_sha,&
+              lai_old    ,o3uptakesun,o3uptakesha,forc_ozone ,&
 !End ozone stress variables
-              hpbl      ,&
-              qintr_rain,qintr_snow,t_precip  ,hprl      ,smp       ,hk        ,&
-              hksati    ,rootflux                                               )
+!WUE stomata model parameter
+              lambda                                                           ,&
+!End WUE stomata model parmaeter
+              hpbl       ,&
+              qintr_rain ,qintr_snow ,t_precip   ,hprl       ,dheatl     ,smp        ,&
+              hk         ,hksati     ,rootflux                                        )
 
 !=======================================================================
 ! !DESCRIPTION:
-! Foliage energy conservation is given by foliage energy budget equation
-!                      Rnet - Hf - LEf = 0
-! The equation is solved by Newton-Raphson iteration, in which this iteration
-! includes the calculation of the photosynthesis and stomatal resistance, and the
-! integration of turbulent flux profiles. The sensible and latent heat
-! transfer between foliage and atmosphere and ground is linked by the equations:
-!                      Ha = Hf + Hg and Ea = Ef + Eg
+!  Foliage energy conservation is given by foliage energy budget equation
+!                       Rnet - Hf - LEf = 0
+!  The equation is solved by Newton-Raphson iteration, in which this iteration
+!  includes the calculation of the photosynthesis and stomatal resistance, and the
+!  integration of turbulent flux profiles. The sensible and latent heat
+!  transfer between foliage and atmosphere and ground is linked by the equations:
+!                       Ha = Hf + Hg and Ea = Ef + Eg
 !
-! Original author : Yongjiu Dai, August 15, 2001
+!  Original author : Yongjiu Dai, August 15, 2001
 !
-! REVISIONS:
-! Hua Yuan, 09/2014: imbalanced energy due to T/q adjustment is
-!                    allocated to sensible heat flux.
+! !REVISIONS:
 !
-! Hua Yuan, 10/2017: added options for z0, displa, rb and rd calculation
-!                    (Dai, Y., Yuan, H., Xin, Q., Wang, D., Shangguan, W.,
-!                    Zhang, S., et al. (2019). Different representations of
-!                    canopy structure—A large source of uncertainty in global
-!                    land surface modeling. Agricultural and Forest Meteorology,
-!                    269–270, 119–135. https://doi.org/10.1016/j.agrformet.2019.02.006
+!  09/2014, Hua Yuan: imbalanced energy due to T/q adjustment is allocated
+!           to sensible heat flux.
 !
-! Hua Yuan, 10/2019: change only the leaf tempertature from two-leaf to one-leaf
-!                    (due to large differences may exist btween sunlit/shaded
-!                    leaf temperature.
+!  10/2017, Hua Yuan: added options for z0, displa, rb and rd calculation
+!           (Dai, Y., Yuan, H., Xin, Q., Wang, D., Shangguan, W.,
+!           Zhang, S., et al. (2019). Different representations of
+!           canopy structure—A large source of uncertainty in global
+!           land surface modeling. Agricultural and Forest Meteorology,
+!           269–270, 119–135. https://doi.org/10.1016/j.agrformet.2019.02.006
 !
-! Xingjie Lu and Nan Wei, 01/2021: added plant hydraulic process interface
+!  10/2019, Hua Yuan: change only the leaf tempertature from two-leaf
+!           to one-leaf (due to large differences may exist btween sunlit/shaded
+!           leaf temperature.
 !
-! Nan Wei,  01/2021: added interaction btw prec and canopy
+!  01/2021, Xingjie Lu and Nan Wei: added plant hydraulic process interface.
 !
-! Shaofeng Liu, 05/2023: add option to call moninobuk_leddy, the LargeEddy
-!                        surface turbulence scheme (LZD2022);
-!                        make a proper update of um.
+!  01/2021, Nan Wei: added interaction btw prec and canopy.
+!
+!  05/2023, Shaofeng Liu: add option to call moninobuk_leddy, the LargeEddy
+!           surface turbulence scheme (LZD2022); make a proper update of um.
+!
+!  04/2024, Hua Yuan: add option to account for vegetation snow process.
+!
 !=======================================================================
 
    USE MOD_Precision
    USE MOD_Vars_Global
-   USE MOD_Const_Physical, only: vonkar, grav, hvap, cpair, stefnc, cpliq, cpice, tfrz
+   USE MOD_Const_Physical, only: vonkar, grav, hvap, hsub, cpair, stefnc, cpliq, cpice, &
+                                 hfus, tfrz, denice, denh2o
    USE MOD_FrictionVelocity
    USE MOD_CanopyLayerProfile
-   USE mod_namelist, only: DEF_USE_CBL_HEIGHT
    USE MOD_TurbulenceLEddy
    USE MOD_AssimStomataConductance
+   USE MOD_UserSpecifiedForcing, only: HEIGHT_mode
    USE MOD_Vars_TimeInvariants, only: patchclass
    USE MOD_Const_LC, only: z0mr, displar
    USE MOD_PlantHydraulic, only :PlantHydraulicStress_twoleaf, getvegwp_twoleaf
@@ -136,6 +145,9 @@ CONTAINS
         g0,         &! conductance-photosynthesis intercept for medlyn model
         gradm,      &! conductance-photosynthesis slope parameter
         binter,     &! conductance-photosynthesis intercept
+!Ozone WUE stomata model parameter
+        lambda,     &! Marginal water cost of carbon gain ((mol h2o) (mol co2)-1)
+!End WUE stomata model parameter
         extkn        ! coefficient of leaf nitrogen allocation
    real(r8), intent(in) :: & ! for plant hydraulic scheme
         kmax_sun,   &! Plant Hydraulics Paramters
@@ -203,7 +215,7 @@ CONTAINS
         t_precip,   &! snowfall/rainfall temperature [kelvin]
         qintr_rain, &! rainfall interception (mm h2o/s)
         qintr_snow, &! snowfall interception (mm h2o/s)
-        smp     (1:nl_soil), &! precipitation sensible heat from canopy
+        smp     (1:nl_soil), &! soil matrix potential
         rootfr  (1:nl_soil), &! root fraction
         hksati  (1:nl_soil), &! hydraulic conductivity at saturation [mm h2o/s]
         hk      (1:nl_soil)   ! soil hydraulic conducatance
@@ -214,14 +226,20 @@ CONTAINS
         tl,         &! leaf temperature [K]
         ldew,       &! depth of water on foliage [mm]
         ldew_rain,  &! depth of rain on foliage [mm]
-        ldew_snow,  &! depth of snow on foliage [mm]
+        ldew_snow    ! depth of snow on foliage [mm]
 
+   real(r8), intent(out) :: &
+        fwet_snow    ! vegetation snow fractional cover [-]
+
+   real(r8), intent(inout) :: &
 !Ozone stress variables
         lai_old    ,&! lai in last time step
         o3uptakesun,&! Ozone does, sunlit leaf (mmol O3/m^2)
         o3uptakesha,&! Ozone does, shaded leaf (mmol O3/m^2)
-        forc_ozone ,&
+        forc_ozone
 !End ozone stress variables
+
+   real(r8), intent(out) :: &
         taux,       &! wind stress: E-W [kg/m/s**2]
         tauy,       &! wind stress: N-S [kg/m/s**2]
         fseng,      &! sensible heat flux from ground [W/m2]
@@ -257,6 +275,7 @@ CONTAINS
         dlrad,      &! downward longwave radiation blow the canopy [W/m2]
         ulrad,      &! upward longwave radiation above the canopy [W/m2]
         hprl,       &! precipitation sensible heat from canopy
+        dheatl,     &! vegetation heat change [W/m2]
 !Ozone stress variables
         o3coefv_sun,&! Ozone stress factor for photosynthesis on sunlit leaf
         o3coefv_sha,&! Ozone stress factor for photosynthesis on sunlit leaf
@@ -286,6 +305,9 @@ CONTAINS
 
    real(r8) :: &
         displa,     &! displacement height [m]
+        hu_,        &! adjusted observational height of wind [m]
+        ht_,        &! adjusted observational height of temperature [m]
+        hq_,        &! adjusted observational height of humidity [m]
         zldis,      &! reference height "minus" zero displacement heght [m]
         zii,        &! convective boundary layer height [m]
         z0mv,       &! roughness length, momentum [m]
@@ -373,7 +395,8 @@ CONTAINS
    real(r8) evplwet, evplwet_dtl, etr_dtl, elwmax, elwdif, etr0, sumrootr
    real(r8) irab, dirab_dtl, fsenl_dtl, fevpl_dtl
    real(r8) w, csoilcn, z0mg, cintsun(3), cintsha(3)
-   real(r8) fevpl_bef, fevpl_noadj, dtl_noadj, errt, erre
+   real(r8) fevpl_bef, fevpl_noadj, dtl_noadj, htvpl, erre
+   real(r8) qevpl, qdewl, qsubl, qfrol, qmelt, qfrz
 
    real(r8) lt, egvf
 
@@ -429,6 +452,11 @@ CONTAINS
 
       !clai = 4.2 * 1000. * 0.2
       clai = 0.0
+
+      ! 0.2mm*LSAI, account for leaf (plus dew) heat capacity
+      IF ( DEF_VEG_SNOW ) THEN
+         clai = 0.2*(lai+sai)*cpliq + ldew_rain*cpliq + ldew_snow*cpice
+      ENDIF
 
       CALL dewfraction (sigf,lai,sai,dewmx,ldew,ldew_rain,ldew_snow,fwet,fdry)
 
@@ -494,7 +522,23 @@ CONTAINS
       dth = thm - taf
       dqh = qm  - qaf
       dthv  = dth*(1.+0.61*qm) + 0.61*th*dqh
-      zldis = hu - displa
+
+      hu_ = hu; ht_ = ht; hq_ = hq;
+
+      IF (trim(HEIGHT_mode) == 'absolute') THEN
+#ifndef SingPoint
+         ! to ensure the obs height >= htop+10.
+         hu_ = max(htop+10., hu)
+         ht_ = max(htop+10., ht)
+         hq_ = max(htop+10., hq)
+#endif
+      ELSE ! relative height
+         hu_ = htop + hu
+         ht_ = htop + ht
+         hq_ = htop + hq
+      ENDIF
+
+      zldis = hu_ - displa
 
       IF(zldis <= 0.0) THEN
          write(6,*) 'the obs height of u less than the zero displacement heght'
@@ -514,17 +558,23 @@ CONTAINS
          del2  = del
          dele2 = dele
 
+         IF (tl > tfrz) THEN
+            htvpl = hvap
+         ELSE
+            htvpl = hsub
+         ENDIF
+
 !-----------------------------------------------------------------------
 ! Aerodynamical resistances
 !-----------------------------------------------------------------------
 ! Evaluate stability-dependent variables using moz from prior iteration
          IF (rd_opt == 3) THEN
             IF (DEF_USE_CBL_HEIGHT) THEN
-              CALL moninobukm_leddy(hu,ht,hq,displa,z0mv,z0hv,z0qv,obu,um, &
+              CALL moninobukm_leddy(hu_,ht_,hq_,displa,z0mv,z0hv,z0qv,obu,um, &
                                     displasink,z0mv,hpbl,ustar,fh2m,fq2m, &
                                     htop,fmtop,fm,fh,fq,fht,fqt,phih)
             ELSE
-              CALL moninobukm(hu,ht,hq,displa,z0mv,z0hv,z0qv,obu,um, &
+              CALL moninobukm(hu_,ht_,hq_,displa,z0mv,z0hv,z0qv,obu,um, &
                               displasink,z0mv,ustar,fh2m,fq2m, &
                               htop,fmtop,fm,fh,fq,fht,fqt,phih)
             ENDIF
@@ -534,10 +584,10 @@ CONTAINS
             raw = 1./(vonkar/(fq-fqt)*ustar)
          ELSE
             IF (DEF_USE_CBL_HEIGHT) THEN
-               CALL moninobuk_leddy(hu,ht,hq,displa,z0mv,z0hv,z0qv,obu,um,hpbl, &
+               CALL moninobuk_leddy(hu_,ht_,hq_,displa,z0mv,z0hv,z0qv,obu,um,hpbl, &
                                     ustar,fh2m,fq2m,fm10m,fm,fh,fq)
             ELSE
-               CALL moninobuk(hu,ht,hq,displa,z0mv,z0hv,z0qv,obu,um,&
+               CALL moninobuk(hu_,ht_,hq_,displa,z0mv,z0hv,z0qv,obu,um,&
                               ustar,fh2m,fq2m,fm10m,fm,fh,fq)
             ENDIF
             ! Aerodynamic resistance
@@ -610,6 +660,9 @@ CONTAINS
             !Ozone stress variables
                  o3coefv_sun   ,o3coefg_sun   ,&
             !End ozone stress variables
+            !Ozone WUE stomata model parameter
+                 lambda   ,&
+            !End WUE stomata model parameter
                  rbsun    ,raw      ,rstfacsun,cintsun  ,&
                  assimsun ,respcsun ,rssun    )
 
@@ -622,6 +675,9 @@ CONTAINS
             ! Ozone stress variables
                  o3coefv_sha    ,o3coefg_sha  ,&
             ! End ozone stress variables
+            ! Ozone WUE stomata model parameter
+                 lambda   ,&
+            ! End WUE stomata model parameter
                  rbsha    ,raw      ,rstfacsha,cintsha  ,&
                  assimsha ,respcsha ,rssha    )
 
@@ -799,11 +855,12 @@ ENDIF
 
 !-----------------------------------------------------------------------
 ! difference of temperatures by quasi-newton-raphson method for the non-linear system equations
+! MARK#dtl
 !-----------------------------------------------------------------------
 
          dtl(it) = (sabv + irab - fsenl - hvap*fevpl &
                  + cpliq*qintr_rain*(t_precip-tl) + cpice*qintr_snow*(t_precip-tl)) &
-                 / ((lai+sai)*clai/deltim - dirab_dtl + fsenl_dtl + hvap*fevpl_dtl  &
+                 / (clai/deltim - dirab_dtl + fsenl_dtl + hvap*fevpl_dtl  &
                  + cpliq*qintr_rain + cpice*qintr_snow)
 
          dtl_noadj = dtl(it)
@@ -833,7 +890,7 @@ ENDIF
 !-----------------------------------------------------------------------
 
          del  = sqrt( dtl(it)*dtl(it) )
-         dele = dtl(it) * dtl(it) * ( dirab_dtl**2 + fsenl_dtl**2 + hvap*fevpl_dtl**2 )
+         dele = dtl(it) * dtl(it) * ( dirab_dtl**2 + fsenl_dtl**2 + (hvap*fevpl_dtl)**2 )
          dele = sqrt(dele)
 
 !-----------------------------------------------------------------------
@@ -881,7 +938,7 @@ ENDIF
            um = max(ur,.1)
          ELSE
            IF (DEF_USE_CBL_HEIGHT) THEN !//TODO: Shaofeng, 2023.05.18
-             zii = max(5.*hu,hpbl)
+             zii = max(5.*hu_,hpbl)
            ENDIF !//TODO: Shaofeng, 2023.05.18
            wc = (-grav*ustar*thvstar*zii/thv)**(1./3.)
           wc2 = beta*beta*(wc*wc)
@@ -945,7 +1002,7 @@ ENDIF
 ! canopy fluxes and total assimilation amd respiration
       fsenl = fsenl + fsenl_dtl*dtl(it-1) &
             ! yuan: add the imbalanced energy below due to T adjustment to sensibel heat
-            + (dtl_noadj-dtl(it-1)) * ((lai+sai)*clai/deltim - dirab_dtl + fsenl_dtl + hvap*fevpl_dtl &
+            + (dtl_noadj-dtl(it-1)) * (clai/deltim - dirab_dtl + fsenl_dtl + hvap*fevpl_dtl &
             + cpliq * qintr_rain + cpice * qintr_snow) &
             ! yuan: add the imbalanced energy below due to q adjustment to sensibel heat
             + hvap*erre
@@ -1024,7 +1081,11 @@ ELSE
             + (1-emg)*thermk*fac*stefnc*tlbef**4 &
             + 4.*(1-emg)*thermk*fac*stefnc*tlbef**3*dtl(it-1)
 ENDIF
-      hprl = cpliq * qintr_rain*(t_precip-tl) + cpice * qintr_snow*(t_precip-tl)
+      ! precipitation sensible heat from canopy
+      hprl   = cpliq * qintr_rain*(t_precip-tl) + cpice * qintr_snow*(t_precip-tl)
+
+      ! vegetation heat change
+      dheatl = clai/deltim*dtl(it-1)
 
 !-----------------------------------------------------------------------
 ! Derivative of soil energy flux with respect to soil temperature (cgrnd)
@@ -1036,14 +1097,16 @@ ENDIF
 
 !-----------------------------------------------------------------------
 ! balance check
-! (the computational error was created by the assumed 'dtl' in line 406-408)
+! (the computational error was created by the assumed 'dtl' in MARK#dtl)
 !-----------------------------------------------------------------------
 
-      err = sabv + irab + dirab_dtl*dtl(it-1) - fsenl - hvap*fevpl + hprl
+      err = sabv + irab + dirab_dtl*dtl(it-1) - fsenl - hvap*fevpl + hprl &
+          ! account for vegetation heat change
+          - dheatl
 
 #if(defined CoLMDEBUG)
       IF(abs(err) .gt. .2) &
-      write(6,*) 'energy imbalance in LeafTemperature.F90',it-1,err,sabv,irab,fsenl,hvap*fevpl,hprl
+      write(6,*) 'energy imbalance in LeafTemperature.F90',it-1,err,sabv,irab,fsenl,hvap*fevpl,hprl,dheatl
 #endif
 
 !-----------------------------------------------------------------------
@@ -1051,6 +1114,36 @@ ENDIF
 !-----------------------------------------------------------------------
       IF (DEF_Interception_scheme .eq. 1) THEN
          ldew = max(0., ldew-evplwet*deltim)
+
+         ! account for vegetation snow and update ldew_rain, ldew_snow, ldew
+         IF ( DEF_VEG_SNOW ) THEN
+            IF (tl > tfrz) THEN
+               qevpl = max (evplwet, 0.)
+               qdewl = abs (min (evplwet, 0.) )
+               qsubl = 0.
+               qfrol = 0.
+
+               IF (qevpl > ldew_rain/deltim) THEN
+                  qsubl = qevpl - ldew_rain/deltim
+                  qevpl = ldew_rain/deltim
+               ENDIF
+            ELSE
+               qevpl = 0.
+               qdewl = 0.
+               qsubl = max (evplwet, 0.)
+               qfrol = abs (min (evplwet, 0.) )
+
+               IF (qsubl > ldew_snow/deltim) THEN
+                  qevpl = qsubl - ldew_snow/deltim
+                  qsubl = ldew_snow/deltim
+               ENDIF
+            ENDIF
+
+            ldew_rain = ldew_rain + (qdewl-qevpl)*deltim
+            ldew_snow = ldew_snow + (qfrol-qsubl)*deltim
+
+            ldew = ldew_rain + ldew_snow
+         ENDIF
 
       ELSEIF (DEF_Interception_scheme .eq. 2) THEN!CLM4.5
          ldew = max(0., ldew-evplwet*deltim)
@@ -1122,6 +1215,40 @@ ENDIF
          CALL abort
       ENDIF
 
+      IF ( DEF_VEG_SNOW ) THEN
+         ! update fwet_snow
+         fwet_snow = 0
+         IF(ldew_snow > 0.) THEN
+            fwet_snow = ((10./(48.*(lai+sai)))*ldew_snow)**.666666666666
+            ! Check for maximum limit of fwet_snow
+            fwet_snow = min(fwet_snow,1.0)
+         ENDIF
+
+         ! phase change
+
+         qmelt = 0.
+         qfrz  = 0.
+
+         !TODO: double check below
+         IF (ldew_snow.gt.1.e-6 .and. tl.gt.tfrz) THEN
+            qmelt = min(ldew_snow/deltim,(tl-tfrz)*cpice*ldew_snow/(deltim*hfus))
+            ldew_snow = max(0.,ldew_snow - qmelt*deltim)
+            ldew_rain = max(0.,ldew_rain + qmelt*deltim)
+            !NOTE: There may be some problem, energy imbalance
+            !      However, detailed treatment could be somewhat trivial
+            tl = fwet_snow*tfrz + (1.-fwet_snow)*tl  !Niu et al., 2004
+         ENDIF
+
+         IF (ldew_rain.gt.1.e-6 .and. tl.lt.tfrz) THEN
+            qfrz  = min(ldew_rain/deltim,(tfrz-tl)*cpliq*ldew_rain/(deltim*hfus))
+            ldew_rain = max(0.,ldew_rain - qfrz*deltim)
+            ldew_snow = max(0.,ldew_snow + qfrz*deltim)
+            !NOTE: There may be some problem, energy imbalance
+            !      However, detailed treatment could be somewhat trivial
+            tl = fwet_snow*tfrz + (1.-fwet_snow)*tl  !Niu et al., 2004
+         ENDIF
+      ENDIF
+
 !-----------------------------------------------------------------------
 ! 2 m height air temperature
 !-----------------------------------------------------------------------
@@ -1152,7 +1279,9 @@ ENDIF
 
    !REVISION HISTORY
    !----------------
+      !---2024.04.16  Hua Yuan: add option to account for vegetation snow process
       !---2021.12.08  Zhongwang Wei @ SYSU
+      !---2018.06     Hua Yuan: remove sigf, to compatible with PFT
       !---1999.09.15  Yongjiu Dai
    !=======================================================================
 
@@ -1160,21 +1289,23 @@ ENDIF
 
    IMPLICIT NONE
 
-   real(r8), intent(in)  :: sigf        ! fraction of veg cover, excluding snow-covered veg [-]
-   real(r8), intent(in)  :: lai         ! leaf area index  [-]
-   real(r8), intent(in)  :: sai         ! stem area index  [-]
-   real(r8), intent(in)  :: dewmx       ! maximum allowed dew [0.1 mm]
-   real(r8), intent(in)  :: ldew        ! depth of water on foliage [kg/m2/s]
-   real(r8), intent(in)  :: ldew_rain   ! depth of rain on foliage [kg/m2/s]
-   real(r8), intent(in)  :: ldew_snow   ! depth of snow on foliage [kg/m2/s]
-   real(r8), intent(out) :: fwet        ! fraction of foliage covered by water [-]
-   real(r8), intent(out) :: fdry        ! fraction of foliage that is green and dry [-]
+   real(r8), intent(in)  :: sigf      !fraction of veg cover, excluding snow-covered veg [-]
+   real(r8), intent(in)  :: lai       !leaf area index  [-]
+   real(r8), intent(in)  :: sai       !stem area index  [-]
+   real(r8), intent(in)  :: dewmx     !maximum allowed dew [0.1 mm]
+   real(r8), intent(in)  :: ldew      !depth of water on foliage [kg/m2/s]
+   real(r8), intent(in)  :: ldew_rain !depth of rain on foliage [kg/m2/s]
+   real(r8), intent(in)  :: ldew_snow !depth of snow on foliage [kg/m2/s]
+   real(r8), intent(out) :: fwet      !fraction of foliage covered by water&snow [-]
+   real(r8), intent(out) :: fdry      !fraction of foliage that is green and dry [-]
 
-   real(r8) :: lsai                     ! lai + sai
-   real(r8) :: dewmxi                   ! inverse of maximum allowed dew [1/mm]
-   real(r8) :: vegt                     ! sigf*lsai, NOTE: remove sigf
-   real(r8) :: satcap_rain              ! saturation capacity of foliage for rain [kg/m2]
-   real(r8) :: satcap_snow              ! saturation capacity of foliage for snow [kg/m2]
+   real(r8) :: lsai                   !lai + sai
+   real(r8) :: dewmxi                 !inverse of maximum allowed dew [1/mm]
+   real(r8) :: vegt                   !sigf*lsai, NOTE: remove sigf
+   real(r8) :: satcap_rain            !saturation capacity of foliage for rain [kg/m2]
+   real(r8) :: satcap_snow            !saturation capacity of foliage for snow [kg/m2]
+   real(r8) :: fwet_rain              !fraction of foliage covered by water [-]
+   real(r8) :: fwet_snow              !fraction of foliage covered by snow [-]
 
       !-----------------------------------------------------------------------
       ! Fwet is the fraction of all vegetation surfaces which are wet
@@ -1183,13 +1314,35 @@ ENDIF
       dewmxi = 1.0/dewmx
       ! 06/2018, yuan: remove sigf, to compatible with PFT
       vegt   =  lsai
+
       fwet = 0
-      IF(ldew > 0.) THEN
+      IF (ldew > 0.) THEN
          fwet = ((dewmxi/vegt)*ldew)**.666666666666
          ! Check for maximum limit of fwet
          fwet = min(fwet,1.0)
       ENDIF
 
+      ! account for vegetation snow
+      ! calculate fwet_rain, fwet_snow, fwet
+      IF ( DEF_VEG_SNOW ) THEN
+
+         fwet_rain = 0
+         IF(ldew_rain > 0.) THEN
+            fwet_rain = ((dewmxi/vegt)*ldew_rain)**.666666666666
+            ! Check for maximum limit of fwet_rain
+            fwet_rain = min(fwet_rain,1.0)
+         ENDIF
+
+         fwet_snow = 0
+         IF(ldew_snow > 0.) THEN
+            fwet_snow = ((dewmxi/(48.*vegt))*ldew_snow)**.666666666666
+            ! Check for maximum limit of fwet_snow
+            fwet_snow = min(fwet_snow,1.0)
+         ENDIF
+
+         fwet = fwet_rain + fwet_snow - fwet_rain*fwet_snow
+         fwet = min(fwet,1.0)
+      ENDIF
 
       ! fdry is the fraction of lai which is dry because only leaves can
       ! transpire. Adjusted for stem area which does not transpire

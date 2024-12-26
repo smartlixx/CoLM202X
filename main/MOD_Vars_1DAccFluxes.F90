@@ -4,119 +4,119 @@ MODULE MOD_Vars_1DAccFluxes
 
    USE MOD_Precision
 
-   real(r8) :: nac              ! number of accumulation
-   real(r8), allocatable :: nac_ln   (:)
+   real(r8) :: nac ! number of accumulation
+   real(r8), allocatable :: nac_ln      (:)
 
-   real(r8), allocatable :: a_us     (:)
-   real(r8), allocatable :: a_vs     (:)
-   real(r8), allocatable :: a_t      (:)
-   real(r8), allocatable :: a_q      (:)
-   real(r8), allocatable :: a_prc    (:)
-   real(r8), allocatable :: a_prl    (:)
-   real(r8), allocatable :: a_pbot   (:)
-   real(r8), allocatable :: a_frl    (:)
-   real(r8), allocatable :: a_solarin(:)
-   real(r8), allocatable :: a_hpbl   (:)
+   real(r8), allocatable :: a_us        (:)
+   real(r8), allocatable :: a_vs        (:)
+   real(r8), allocatable :: a_t         (:)
+   real(r8), allocatable :: a_q         (:)
+   real(r8), allocatable :: a_prc       (:)
+   real(r8), allocatable :: a_prl       (:)
+   real(r8), allocatable :: a_pbot      (:)
+   real(r8), allocatable :: a_frl       (:)
+   real(r8), allocatable :: a_solarin   (:)
+   real(r8), allocatable :: a_hpbl      (:)
 
-   real(r8), allocatable :: a_taux   (:)
-   real(r8), allocatable :: a_tauy   (:)
-   real(r8), allocatable :: a_fsena  (:)
-   real(r8), allocatable :: a_lfevpa (:)
-   real(r8), allocatable :: a_fevpa  (:)
-   real(r8), allocatable :: a_fsenl  (:)
-   real(r8), allocatable :: a_fevpl  (:)
-   real(r8), allocatable :: a_etr    (:)
-   real(r8), allocatable :: a_fseng  (:)
-   real(r8), allocatable :: a_fevpg  (:)
-   real(r8), allocatable :: a_fgrnd  (:)
-   real(r8), allocatable :: a_sabvsun(:)
-   real(r8), allocatable :: a_sabvsha(:)
-   real(r8), allocatable :: a_sabg   (:)
-   real(r8), allocatable :: a_olrg   (:)
-   real(r8), allocatable :: a_rnet   (:)
-   real(r8), allocatable :: a_xerr   (:)
-   real(r8), allocatable :: a_zerr   (:)
-   real(r8), allocatable :: a_rsur   (:)
-   real(r8), allocatable :: a_rsur_se(:)
-   real(r8), allocatable :: a_rsur_ie(:)
-   real(r8), allocatable :: a_rsub   (:)
-   real(r8), allocatable :: a_rnof   (:)
+   real(r8), allocatable :: a_taux      (:)
+   real(r8), allocatable :: a_tauy      (:)
+   real(r8), allocatable :: a_fsena     (:)
+   real(r8), allocatable :: a_lfevpa    (:)
+   real(r8), allocatable :: a_fevpa     (:)
+   real(r8), allocatable :: a_fsenl     (:)
+   real(r8), allocatable :: a_fevpl     (:)
+   real(r8), allocatable :: a_etr       (:)
+   real(r8), allocatable :: a_fseng     (:)
+   real(r8), allocatable :: a_fevpg     (:)
+   real(r8), allocatable :: a_fgrnd     (:)
+   real(r8), allocatable :: a_sabvsun   (:)
+   real(r8), allocatable :: a_sabvsha   (:)
+   real(r8), allocatable :: a_sabg      (:)
+   real(r8), allocatable :: a_olrg      (:)
+   real(r8), allocatable :: a_rnet      (:)
+   real(r8), allocatable :: a_xerr      (:)
+   real(r8), allocatable :: a_zerr      (:)
+   real(r8), allocatable :: a_rsur      (:)
+   real(r8), allocatable :: a_rsur_se   (:)
+   real(r8), allocatable :: a_rsur_ie   (:)
+   real(r8), allocatable :: a_rsub      (:)
+   real(r8), allocatable :: a_rnof      (:)
 #ifdef CatchLateralFlow
-   real(r8), allocatable :: a_xwsur  (:)
-   real(r8), allocatable :: a_xwsub  (:)
+   real(r8), allocatable :: a_xwsur     (:)
+   real(r8), allocatable :: a_xwsub     (:)
 #endif
-   real(r8), allocatable :: a_qintr  (:)
-   real(r8), allocatable :: a_qinfl  (:)
-   real(r8), allocatable :: a_qdrip  (:)
+   real(r8), allocatable :: a_qintr     (:)
+   real(r8), allocatable :: a_qinfl     (:)
+   real(r8), allocatable :: a_qdrip     (:)
    real(r8), allocatable :: a_rstfacsun (:)
    real(r8), allocatable :: a_rstfacsha (:)
-   real(r8), allocatable :: a_gssun (:)
-   real(r8), allocatable :: a_gssha (:)
-   real(r8), allocatable :: a_rss   (:)
-   real(r8), allocatable :: a_wdsrf  (:)
-   real(r8), allocatable :: a_zwt    (:)
-   real(r8), allocatable :: a_wa     (:)
-   real(r8), allocatable :: a_wat    (:)
-   real(r8), allocatable :: a_wetwat (:)
-   real(r8), allocatable :: a_assim  (:)
-   real(r8), allocatable :: a_respc  (:)
-   real(r8), allocatable :: a_assimsun   (:) !1
-   real(r8), allocatable :: a_assimsha   (:) !1
-   real(r8), allocatable :: a_etrsun     (:) !1
-   real(r8), allocatable :: a_etrsha     (:) !1
+   real(r8), allocatable :: a_gssun     (:)
+   real(r8), allocatable :: a_gssha     (:)
+   real(r8), allocatable :: a_rss       (:)
+   real(r8), allocatable :: a_wdsrf     (:)
+   real(r8), allocatable :: a_zwt       (:)
+   real(r8), allocatable :: a_wa        (:)
+   real(r8), allocatable :: a_wat       (:)
+   real(r8), allocatable :: a_wetwat    (:)
+   real(r8), allocatable :: a_assim     (:)
+   real(r8), allocatable :: a_respc     (:)
+   real(r8), allocatable :: a_assimsun  (:)
+   real(r8), allocatable :: a_assimsha  (:)
+   real(r8), allocatable :: a_etrsun    (:)
+   real(r8), allocatable :: a_etrsha    (:)
 
-   real(r8), allocatable :: a_qcharge(:)
+   real(r8), allocatable :: a_qcharge   (:)
 
-   real(r8), allocatable :: a_t_grnd(:)
-   real(r8), allocatable :: a_tleaf (:)
-   real(r8), allocatable :: a_ldew  (:)
-   real(r8), allocatable :: a_ldew_rain  (:)
-   real(r8), allocatable :: a_ldew_snow  (:)
-   real(r8), allocatable :: a_scv   (:)
-   real(r8), allocatable :: a_snowdp(:)
-   real(r8), allocatable :: a_fsno  (:)
-   real(r8), allocatable :: a_sigf  (:)
-   real(r8), allocatable :: a_green (:)
-   real(r8), allocatable :: a_lai   (:)
-   real(r8), allocatable :: a_laisun(:)
-   real(r8), allocatable :: a_laisha(:)
-   real(r8), allocatable :: a_sai   (:)
+   real(r8), allocatable :: a_t_grnd    (:)
+   real(r8), allocatable :: a_tleaf     (:)
+   real(r8), allocatable :: a_ldew      (:)
+   real(r8), allocatable :: a_ldew_rain (:)
+   real(r8), allocatable :: a_ldew_snow (:)
+   real(r8), allocatable :: a_scv       (:)
+   real(r8), allocatable :: a_snowdp    (:)
+   real(r8), allocatable :: a_fsno      (:)
+   real(r8), allocatable :: a_sigf      (:)
+   real(r8), allocatable :: a_green     (:)
+   real(r8), allocatable :: a_lai       (:)
+   real(r8), allocatable :: a_laisun    (:)
+   real(r8), allocatable :: a_laisha    (:)
+   real(r8), allocatable :: a_sai       (:)
 
-   real(r8), allocatable :: a_alb(:,:,:)
+   real(r8), allocatable :: a_alb   (:,:,:)
 
-   real(r8), allocatable :: a_emis (:)
-   real(r8), allocatable :: a_z0m  (:)
-   real(r8), allocatable :: a_trad (:)
-   real(r8), allocatable :: a_tref (:)
-   real(r8), allocatable :: a_qref (:)
-   real(r8), allocatable :: a_rain (:)
-   real(r8), allocatable :: a_snow (:)
+   real(r8), allocatable :: a_emis      (:)
+   real(r8), allocatable :: a_z0m       (:)
+   real(r8), allocatable :: a_trad      (:)
+   real(r8), allocatable :: a_tref      (:)
+   real(r8), allocatable :: a_qref      (:)
+   real(r8), allocatable :: a_rain      (:)
+   real(r8), allocatable :: a_snow      (:)
 
 #ifdef URBAN_MODEL
-   real(r8), allocatable :: a_t_room (:)    !temperature of inner building [K]
-   real(r8), allocatable :: a_tafu   (:)    !temperature of outer building [K]
-   real(r8), allocatable :: a_fhac   (:)    !sensible flux from heat or cool AC [W/m2]
-   real(r8), allocatable :: a_fwst   (:)    !waste heat flux from heat or cool AC [W/m2]
-   real(r8), allocatable :: a_fach   (:)    !flux from inner and outter air exchange [W/m2]
-   real(r8), allocatable :: a_fahe   (:)    !flux from metabolic and vehicle [W/m2]
-   real(r8), allocatable :: a_fhah   (:)    !sensible flux from heating [W/m2]
-   real(r8), allocatable :: a_vehc   (:)    !flux from vehicle [W/m2]
-   real(r8), allocatable :: a_meta   (:)    !flux from metabolic [W/m2]
+   real(r8), allocatable :: a_t_room    (:) !temperature of inner building [K]
+   real(r8), allocatable :: a_tafu      (:) !temperature of outer building [K]
+   real(r8), allocatable :: a_fhac      (:) !sensible flux from heat or cool AC [W/m2]
+   real(r8), allocatable :: a_fwst      (:) !waste heat flux from heat or cool AC [W/m2]
+   real(r8), allocatable :: a_fach      (:) !flux from inner and outter air exchange [W/m2]
+   real(r8), allocatable :: a_fahe      (:) !flux from metabolic and vehicle [W/m2]
+   real(r8), allocatable :: a_fhah      (:) !sensible flux from heating [W/m2]
+   real(r8), allocatable :: a_vehc      (:) !flux from vehicle [W/m2]
+   real(r8), allocatable :: a_meta      (:) !flux from metabolic [W/m2]
 
-   real(r8), allocatable :: a_senroof(:)    !sensible heat flux from roof [W/m2]
-   real(r8), allocatable :: a_senwsun(:)    !sensible heat flux from sunlit wall [W/m2]
-   real(r8), allocatable :: a_senwsha(:)    !sensible heat flux from shaded wall [W/m2]
-   real(r8), allocatable :: a_sengimp(:)    !sensible heat flux from impervious road [W/m2]
-   real(r8), allocatable :: a_sengper(:)    !sensible heat flux from pervious road [W/m2]
-   real(r8), allocatable :: a_senurbl(:)    !sensible heat flux from urban vegetation [W/m2]
+   real(r8), allocatable :: a_senroof   (:) !sensible heat flux from roof [W/m2]
+   real(r8), allocatable :: a_senwsun   (:) !sensible heat flux from sunlit wall [W/m2]
+   real(r8), allocatable :: a_senwsha   (:) !sensible heat flux from shaded wall [W/m2]
+   real(r8), allocatable :: a_sengimp   (:) !sensible heat flux from impervious road [W/m2]
+   real(r8), allocatable :: a_sengper   (:) !sensible heat flux from pervious road [W/m2]
+   real(r8), allocatable :: a_senurbl   (:) !sensible heat flux from urban vegetation [W/m2]
 
-   real(r8), allocatable :: a_lfevproof(:)  !latent heat flux from roof [W/m2]
-   real(r8), allocatable :: a_lfevpgimp(:)  !latent heat flux from impervious road [W/m2]
-   real(r8), allocatable :: a_lfevpgper(:)  !latent heat flux from pervious road [W/m2]
-   real(r8), allocatable :: a_lfevpurbl(:)  !latent heat flux from urban vegetation [W/m2]
+   real(r8), allocatable :: a_lfevproof (:) !latent heat flux from roof [W/m2]
+   real(r8), allocatable :: a_lfevpgimp (:) !latent heat flux from impervious road [W/m2]
+   real(r8), allocatable :: a_lfevpgper (:) !latent heat flux from pervious road [W/m2]
+   real(r8), allocatable :: a_lfevpurbl (:) !latent heat flux from urban vegetation [W/m2]
 
-   real(r8), allocatable :: a_troof    (:)  !temperature of roof [K]
-   real(r8), allocatable :: a_twall    (:)  !temperature of wall [K]
+   real(r8), allocatable :: a_troof     (:) !temperature of roof [K]
+   real(r8), allocatable :: a_twall     (:) !temperature of wall [K]
 #endif
 
 
@@ -220,14 +220,15 @@ MODULE MOD_Vars_1DAccFluxes
    real(r8), allocatable :: a_fertnitro_rice1       (:)
    real(r8), allocatable :: a_fertnitro_rice2       (:)
    real(r8), allocatable :: a_fertnitro_sugarcane   (:)
-   real(r8), allocatable :: a_irrig_method_corn        (:)
-   real(r8), allocatable :: a_irrig_method_swheat      (:)
-   real(r8), allocatable :: a_irrig_method_wwheat      (:)
-   real(r8), allocatable :: a_irrig_method_soybean     (:)
-   real(r8), allocatable :: a_irrig_method_cotton      (:)
-   real(r8), allocatable :: a_irrig_method_rice1       (:)
-   real(r8), allocatable :: a_irrig_method_rice2       (:)
-   real(r8), allocatable :: a_irrig_method_sugarcane   (:)
+   real(r8), allocatable :: a_irrig_method_corn     (:)
+   real(r8), allocatable :: a_irrig_method_swheat   (:)
+   real(r8), allocatable :: a_irrig_method_wwheat   (:)
+   real(r8), allocatable :: a_irrig_method_soybean  (:)
+   real(r8), allocatable :: a_irrig_method_cotton   (:)
+   real(r8), allocatable :: a_irrig_method_rice1    (:)
+   real(r8), allocatable :: a_irrig_method_rice2    (:)
+   real(r8), allocatable :: a_irrig_method_sugarcane(:)
+
    real(r8), allocatable :: a_cphase             (:)
    real(r8), allocatable :: a_gddplant           (:)
    real(r8), allocatable :: a_gddmaturity        (:)
@@ -267,6 +268,7 @@ MODULE MOD_Vars_1DAccFluxes
 !Plant Hydraulic parameters
    real(r8), allocatable :: a_vegwp       (:,:)
 !END plant hydraulic parameters
+   real(r8), allocatable :: a_dz_lake     (:,:)
    real(r8), allocatable :: a_t_lake      (:,:)
    real(r8), allocatable :: a_lake_icefrac(:,:)
 
@@ -289,37 +291,39 @@ MODULE MOD_Vars_1DAccFluxes
    real(r8), allocatable :: decomp_vr_tmp (:,:)
 #endif
 
-   real(r8), allocatable :: a_ustar (:)
-   real(r8), allocatable :: a_ustar2(:)
-   real(r8), allocatable :: a_tstar (:)
-   real(r8), allocatable :: a_qstar (:)
-   real(r8), allocatable :: a_zol   (:)
-   real(r8), allocatable :: a_rib   (:)
-   real(r8), allocatable :: a_fm    (:)
-   real(r8), allocatable :: a_fh    (:)
-   real(r8), allocatable :: a_fq    (:)
+   real(r8), allocatable :: a_ustar   (:)
+   real(r8), allocatable :: a_ustar2  (:)
+   real(r8), allocatable :: a_tstar   (:)
+   real(r8), allocatable :: a_qstar   (:)
+   real(r8), allocatable :: a_zol     (:)
+   real(r8), allocatable :: a_rib     (:)
+   real(r8), allocatable :: a_fm      (:)
+   real(r8), allocatable :: a_fh      (:)
+   real(r8), allocatable :: a_fq      (:)
 
-   real(r8), allocatable :: a_us10m(:)
-   real(r8), allocatable :: a_vs10m(:)
-   real(r8), allocatable :: a_fm10m(:)
+   real(r8), allocatable :: a_us10m   (:)
+   real(r8), allocatable :: a_vs10m   (:)
+   real(r8), allocatable :: a_fm10m   (:)
 
-   real(r8), allocatable :: a_sr     (:)
-   real(r8), allocatable :: a_solvd  (:)
-   real(r8), allocatable :: a_solvi  (:)
-   real(r8), allocatable :: a_solnd  (:)
-   real(r8), allocatable :: a_solni  (:)
-   real(r8), allocatable :: a_srvd   (:)
-   real(r8), allocatable :: a_srvi   (:)
-   real(r8), allocatable :: a_srnd   (:)
-   real(r8), allocatable :: a_srni   (:)
-   real(r8), allocatable :: a_solvdln(:)
-   real(r8), allocatable :: a_solviln(:)
-   real(r8), allocatable :: a_solndln(:)
-   real(r8), allocatable :: a_solniln(:)
-   real(r8), allocatable :: a_srvdln (:)
-   real(r8), allocatable :: a_srviln (:)
-   real(r8), allocatable :: a_srndln (:)
-   real(r8), allocatable :: a_srniln (:)
+   real(r8), allocatable :: a_sr      (:)
+   real(r8), allocatable :: a_solvd   (:)
+   real(r8), allocatable :: a_solvi   (:)
+   real(r8), allocatable :: a_solnd   (:)
+   real(r8), allocatable :: a_solni   (:)
+   real(r8), allocatable :: a_srvd    (:)
+   real(r8), allocatable :: a_srvi    (:)
+   real(r8), allocatable :: a_srnd    (:)
+   real(r8), allocatable :: a_srni    (:)
+   real(r8), allocatable :: a_solvdln (:)
+   real(r8), allocatable :: a_solviln (:)
+   real(r8), allocatable :: a_solndln (:)
+   real(r8), allocatable :: a_solniln (:)
+   real(r8), allocatable :: a_srvdln  (:)
+   real(r8), allocatable :: a_srviln  (:)
+   real(r8), allocatable :: a_srndln  (:)
+   real(r8), allocatable :: a_srniln  (:)
+
+   real(r8), allocatable :: a_sensors (:,:)
 
    PUBLIC :: allocate_acc_fluxes
    PUBLIC :: deallocate_acc_fluxes
@@ -334,6 +338,7 @@ CONTAINS
    USE MOD_LandElm
    USE MOD_LandPatch
    USE MOD_LandUrban, only: numurban
+   USE MOD_Vars_1DFluxes, only: nsensor
 #ifdef CROP
    USE MOD_LandCrop
 #endif
@@ -343,16 +348,16 @@ CONTAINS
       IF (p_is_worker) THEN
          IF (numpatch > 0) THEN
 
-            allocate (a_us     (numpatch))
-            allocate (a_vs     (numpatch))
-            allocate (a_t      (numpatch))
-            allocate (a_q      (numpatch))
-            allocate (a_prc    (numpatch))
-            allocate (a_prl    (numpatch))
-            allocate (a_pbot   (numpatch))
-            allocate (a_frl    (numpatch))
-            allocate (a_solarin(numpatch))
-            allocate (a_hpbl   (numpatch))
+            allocate (a_us        (numpatch))
+            allocate (a_vs        (numpatch))
+            allocate (a_t         (numpatch))
+            allocate (a_q         (numpatch))
+            allocate (a_prc       (numpatch))
+            allocate (a_prl       (numpatch))
+            allocate (a_pbot      (numpatch))
+            allocate (a_frl       (numpatch))
+            allocate (a_solarin   (numpatch))
+            allocate (a_hpbl      (numpatch))
 
             allocate (a_taux      (numpatch))
             allocate (a_tauy      (numpatch))
@@ -398,10 +403,10 @@ CONTAINS
             allocate (a_assim     (numpatch))
             allocate (a_respc     (numpatch))
 
-            allocate (a_assimsun  (numpatch)) !1
-            allocate (a_assimsha  (numpatch)) !1
-            allocate (a_etrsun    (numpatch)) !1
-            allocate (a_etrsha    (numpatch)) !1
+            allocate (a_assimsun  (numpatch))
+            allocate (a_assimsha  (numpatch))
+            allocate (a_etrsun    (numpatch))
+            allocate (a_etrsha    (numpatch))
 
             allocate (a_qcharge   (numpatch))
 
@@ -607,8 +612,9 @@ CONTAINS
 !Plant Hydraulic parameters
             allocate (a_vegwp       (1:nvegwcs,       numpatch))
 !End Plant Hydraulic parameters
-            allocate (a_t_lake      (nl_lake,numpatch))
-            allocate (a_lake_icefrac(nl_lake,numpatch))
+            allocate (a_dz_lake     (nl_lake,         numpatch))
+            allocate (a_t_lake      (nl_lake,         numpatch))
+            allocate (a_lake_icefrac(nl_lake,         numpatch))
 
 #ifdef BGC
             allocate (a_litr1c_vr   (1:nl_soil,       numpatch))
@@ -660,6 +666,8 @@ CONTAINS
             allocate (a_srviln    (numpatch))
             allocate (a_srndln    (numpatch))
             allocate (a_srniln    (numpatch))
+            
+            allocate (a_sensors (nsensor,numpatch))
 
             allocate (nac_ln      (numpatch))
 
@@ -948,6 +956,7 @@ CONTAINS
 !Plant Hydraulic parameters
             deallocate (a_vegwp       )
 !END plant hydraulic parameters
+            deallocate (a_dz_lake     )
             deallocate (a_t_lake      )
             deallocate (a_lake_icefrac)
 #ifdef BGC
@@ -1000,6 +1009,8 @@ CONTAINS
             deallocate (a_srviln    )
             deallocate (a_srndln    )
             deallocate (a_srniln    )
+
+            deallocate (a_sensors   )
 
             deallocate (nac_ln      )
 
@@ -1286,6 +1297,7 @@ CONTAINS
 !Plant Hydraulic parameters
             a_vegwp        (:,:) = spval
 !END plant hydraulic parameters
+            a_dz_lake      (:,:) = spval
             a_t_lake       (:,:) = spval
             a_lake_icefrac (:,:) = spval
 #ifdef BGC
@@ -1337,6 +1349,8 @@ CONTAINS
             a_srviln   (:) = spval
             a_srndln   (:) = spval
             a_srniln   (:) = spval
+
+            a_sensors(:,:) = spval
 
             nac_ln  (:) = 0
 
@@ -1723,6 +1737,9 @@ CONTAINS
             IF(DEF_USE_PLANTHYDRAULICS)THEN
                CALL acc2d (vegwp    , a_vegwp        )
             ENDIF
+            IF (DEF_USE_Dynamic_Lake) THEN
+               CALL acc2d (dz_lake  , a_dz_lake      )
+            ENDIF
             CALL acc2d (t_lake      , a_t_lake       )
             CALL acc2d (lake_icefrac, a_lake_icefrac )
 #ifdef BGC
@@ -1991,6 +2008,8 @@ CONTAINS
             CALL acc1d (srviln , a_srviln )
             CALL acc1d (srndln , a_srndln )
             CALL acc1d (srniln , a_srniln )
+            
+            CALL acc2d (sensors, a_sensors)
 
             DO i = 1, numpatch
                IF (solvdln(i) /= spval) THEN

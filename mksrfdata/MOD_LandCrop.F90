@@ -67,12 +67,18 @@ CONTAINS
 
          numpatch = count(SITE_pctcrop > 0.)
 
-         allocate (pctshrpch (numpatch))
+         allocate (pctshrpch(numpatch))
          allocate (cropclass(numpatch))
          cropclass = pack(SITE_croptyp, SITE_pctcrop > 0.)
          pctshrpch = pack(SITE_pctcrop, SITE_pctcrop > 0.)
 
          pctshrpch = pctshrpch / sum(pctshrpch)
+
+         IF (allocated(landpatch%eindex))  deallocate(landpatch%eindex)
+         IF (allocated(landpatch%ipxstt))  deallocate(landpatch%ipxstt)
+         IF (allocated(landpatch%ipxend))  deallocate(landpatch%ipxend)
+         IF (allocated(landpatch%settyp))  deallocate(landpatch%settyp)
+         IF (allocated(landpatch%ielm  ))  deallocate(landpatch%ielm  )
 
          allocate (landpatch%eindex (numpatch))
          allocate (landpatch%ipxstt (numpatch))
@@ -120,8 +126,13 @@ CONTAINS
       
       sharedfilter = (/ 1 /)
 
-      CALL pixelsetshared_build (landpatch, gpatch, pctshared_xy, 2, sharedfilter, &
-         pctshared, classshared)
+      IF (landpatch%has_shared) then
+         CALL pixelsetshared_build (landpatch, gpatch, pctshared_xy, 2, sharedfilter, &
+            pctshared, classshared, fracin = landpatch%pctshared)
+      ELSE
+         CALL pixelsetshared_build (landpatch, gpatch, pctshared_xy, 2, sharedfilter, &
+            pctshared, classshared)
+      ENDIF
 
       IF (p_is_worker) THEN
          IF (landpatch%nset > 0) THEN
@@ -145,6 +156,10 @@ CONTAINS
       landpatch%has_shared = .true.
       IF (p_is_worker) THEN
          IF (numpatch > 0) THEN
+            IF (allocated(landpatch%pctshared)) THEN
+               deallocate(landpatch%pctshared)
+            ENDIF
+
             allocate(landpatch%pctshared(numpatch))
             landpatch%pctshared = pctshrpch
          ENDIF

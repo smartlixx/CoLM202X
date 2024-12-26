@@ -1,7 +1,23 @@
 #include <define.h>
 
 MODULE MOD_Urban_PerviousTemperature
-
+!-----------------------------------------------------------------------
+!
+! !DESCRIPTION:
+!
+!  The urban's pervious ground is equivalent to soil, and the heat
+!  transfer process of the surface soil is calculated consistently. This
+!  includes considering 10 layers of soil and up to 5 layers of snow,
+!  with a layering scheme consistent with the soil (snow). The phase
+!  change process is considered, and soil thermal parameters are
+!  obtained from global data. The difference lies in the fact that the
+!  shortwave and longwave radiation received at the surface, as well as
+!  the turbulent exchange flux (sensible heat, latent heat), are solved
+!  by the corresponding MODULE for the urban model.
+!
+!  Created by Yongjiu Dai and Hua Yuan, 05/2020
+!
+!-----------------------------------------------------------------------
    USE MOD_Precision
    IMPLICIT NONE
    SAVE
@@ -271,7 +287,7 @@ CONTAINS
          brr(j) = cnfac*(fn(j)-fn(j-1)) + (1.-cnfac)*(fn1(j)-fn1(j-1))
       ENDDO
 
-      CALL meltf (patchtype,lb,nl_soil,deltim, &
+      CALL meltf (patchtype,.false.,lb,nl_soil,deltim, &
                   !NOTE: compatibility settings for spliting soil&snow
                   ! temporal input, as urban mode doesn't support split soil&snow
                   ! hs_soil=hs, hs_snow=hs, fsno=0.

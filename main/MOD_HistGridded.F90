@@ -16,11 +16,13 @@ MODULE MOD_HistGridded
    !----------------------------------------------------------------------------
 
    USE MOD_Precision
+   USE MOD_SPMD_Task
    USE MOD_Grid
    USE MOD_DataType
    USE MOD_SpatialMapping
    USE MOD_Namelist
    USE MOD_NetCDFSerial
+   USE MOD_SPMD_Task
 #ifdef USEMPI
    USE MOD_HistWriteBack
 #endif
@@ -39,10 +41,10 @@ MODULE MOD_HistGridded
 CONTAINS
 
    !---------------------------------------
-   SUBROUTINE hist_gridded_init (dir_hist)
+   SUBROUTINE hist_gridded_init (dir_hist, lulcc_call)
 
+   USE MOD_SPMD_Task
    USE MOD_Vars_Global
-   USE MOD_Namelist
    USE MOD_Block
    USE MOD_LandPatch
 #ifdef URBAN_MODEL
@@ -56,7 +58,8 @@ CONTAINS
    USE MOD_Utils
    IMPLICIT NONE
 
-   character(len=*), intent(in) :: dir_hist
+   character(len=*) , intent(in) :: dir_hist
+   logical, optional, intent(in) :: lulcc_call
 
    ! Local Variables
    type(block_data_real8_2d) :: gridarea
@@ -68,12 +71,14 @@ CONTAINS
          CALL ghist%define_by_res (DEF_hist_lon_res, DEF_hist_lat_res)
       ENDIF
 
+      IF (present(lulcc_call)) CALL mp2g_hist%forc_free_mem
       CALL mp2g_hist%build_arealweighted (ghist, landpatch)
 
 #ifdef URBAN_MODEL
+      IF (present(lulcc_call)) CALL mp2g_hist_urb%forc_free_mem
       CALL mp2g_hist_urb%build_arealweighted (ghist, landurban)
 #endif
-            
+
       IF (p_is_io) THEN
          CALL allocate_block_data (ghist, landfraction)
          CALL allocate_block_data (ghist, gridarea)
@@ -91,7 +96,7 @@ CONTAINS
             ENDDO
          ENDDO
       ENDIF
-      
+
       CALL mp2g_hist%get_sumarea (landfraction)
       CALL block_data_division   (landfraction, gridarea)
 
@@ -102,9 +107,9 @@ CONTAINS
 #endif
 
       IF (trim(DEF_HIST_mode) == 'one') THEN
-         hist_data_id = 1
+         hist_data_id = 10001
       ENDIF
-         
+
    END SUBROUTINE hist_gridded_init
 
    ! -------
@@ -112,12 +117,7 @@ CONTAINS
          acc_vec, file_hist, varname, itime_in_file, sumarea, filter, &
          longname, units)
 
-   USE MOD_Precision
-   USE MOD_SPMD_Task
-   USE MOD_Namelist
-   USE MOD_DataType
    USE MOD_Block
-   USE MOD_Grid
    USE MOD_Vars_1DAccFluxes,  only: nac
    USE MOD_Vars_Global, only: spval
    IMPLICIT NONE
@@ -138,7 +138,7 @@ CONTAINS
    integer :: compress
 
       IF (p_is_worker)  WHERE (acc_vec /= spval)  acc_vec = acc_vec / nac
-      IF (p_is_io)      CALL allocate_block_data (ghist, flux_xy_2d)  
+      IF (p_is_io)      CALL allocate_block_data (ghist, flux_xy_2d)
 
       CALL mp2g_hist%pset2grid (acc_vec, flux_xy_2d, spv = spval, msk = filter)
 
@@ -177,12 +177,7 @@ CONTAINS
          acc_vec, file_hist, varname, itime_in_file, sumarea, filter, &
          longname, units)
 
-   USE MOD_Precision
-   USE MOD_SPMD_Task
-   USE MOD_Namelist
-   USE MOD_DataType
    USE MOD_Block
-   USE MOD_Grid
    USE MOD_Vars_1DAccFluxes,  only: nac
    USE MOD_Vars_Global, only: spval
    IMPLICIT NONE
@@ -203,7 +198,7 @@ CONTAINS
    integer :: compress
 
       IF (p_is_worker)  WHERE (acc_vec /= spval)  acc_vec = acc_vec / nac
-      IF (p_is_io)      CALL allocate_block_data (ghist, flux_xy_2d)  
+      IF (p_is_io)      CALL allocate_block_data (ghist, flux_xy_2d)
 
       CALL mp2g_hist_urb%pset2grid (acc_vec, flux_xy_2d, spv = spval, msk = filter)
 
@@ -242,12 +237,7 @@ CONTAINS
          acc_vec, file_hist, varname, itime_in_file, dim1name, lb1, ndim1, sumarea, filter, &
          longname, units)
 
-   USE MOD_Precision
-   USE MOD_SPMD_Task
-   USE MOD_Namelist
-   USE MOD_DataType
    USE MOD_Block
-   USE MOD_Grid
    USE MOD_Vars_1DAccFluxes,  only: nac
    USE MOD_Vars_Global, only: spval
    IMPLICIT NONE
@@ -273,7 +263,7 @@ CONTAINS
          WHERE (acc_vec /= spval)  acc_vec = acc_vec / nac
       ENDIF
       IF (p_is_io) THEN
-         CALL allocate_block_data (ghist, flux_xy_3d, ndim1, lb1)  
+         CALL allocate_block_data (ghist, flux_xy_3d, ndim1, lb1)
       ENDIF
 
       CALL mp2g_hist%pset2grid (acc_vec, flux_xy_3d, spv = spval, msk = filter)
@@ -316,12 +306,7 @@ CONTAINS
          dim1name, lb1, ndim1, dim2name, lb2, ndim2, &
          sumarea, filter, longname, units)
 
-   USE MOD_Precision
-   USE MOD_SPMD_Task
-   USE MOD_Namelist
-   USE MOD_DataType
    USE MOD_Block
-   USE MOD_Grid
    USE MOD_Vars_1DAccFluxes,  only: nac
    USE MOD_Vars_Global, only: spval
    IMPLICIT NONE
@@ -391,12 +376,7 @@ CONTAINS
          acc_vec, file_hist, varname, itime_in_file, sumarea, filter, &
          longname, units)
 
-   USE MOD_Precision
-   USE MOD_SPMD_Task
-   USE MOD_Namelist
-   USE MOD_DataType
    USE MOD_Block
-   USE MOD_Grid
    USE MOD_Vars_1DAccFluxes,  only: nac_ln
    USE MOD_Vars_Global, only: spval
    IMPLICIT NONE
@@ -463,10 +443,7 @@ CONTAINS
    SUBROUTINE hist_gridded_write_time ( &
          filename, dataname, time, itime)
 
-   USE MOD_Namelist
-   USE MOD_Grid
    USE MOD_Block
-   USE MOD_SPMD_Task
    IMPLICIT NONE
 
    character (len=*), intent(in) :: filename
@@ -514,7 +491,7 @@ CONTAINS
                CALL ncio_write_colm_dimension (filename)
 
             ENDIF
-         
+
             CALL ncio_write_time (filename, dataname, time, itime, DEF_HIST_FREQ)
 
 #ifdef USEMPI
@@ -523,7 +500,7 @@ CONTAINS
          ENDIF
 
 #ifdef USEMPI
-         CALL mpi_bcast (itime, 1, MPI_INTEGER, p_root, p_comm_glb, p_err)
+         CALL mpi_bcast (itime, 1, MPI_INTEGER, p_address_master, p_comm_glb, p_err)
 #endif
 
       ELSEIF (trim(DEF_HIST_mode) == 'block') THEN
@@ -562,11 +539,7 @@ CONTAINS
    SUBROUTINE hist_write_var_real8_2d ( &
          filename, dataname, grid, itime, wdata, compress, longname, units)
 
-   USE MOD_Namelist
    USE MOD_Block
-   USE MOD_Grid
-   USE MOD_DataType
-   USE MOD_SPMD_Task
    USE MOD_Vars_Global, only: spval
    IMPLICIT NONE
 
@@ -594,7 +567,7 @@ CONTAINS
 
 #ifdef USEMPI
             IF (.not. DEF_HIST_WriteBack) THEN
-               
+
                allocate (vdata (hist_concat%ginfo%nlon, hist_concat%ginfo%nlat))
                vdata(:,:) = spval
 
@@ -620,7 +593,7 @@ CONTAINS
                   deallocate (rbuf)
 
                ENDDO
-            
+
             ELSE
                CALL hist_writeback_var_header (hist_data_id, filename, dataname, &
                   2, 'lon', 'lat', 'time', '', '', compress, longname, units)
@@ -666,7 +639,7 @@ CONTAINS
                   CALL ncio_put_attr (filename, dataname, 'units', units)
                   CALL ncio_put_attr (filename, dataname, 'missing_value', spval)
                ENDIF
-            
+
                deallocate (vdata)
 #ifdef USEMPI
             ENDIF
@@ -695,9 +668,9 @@ CONTAINS
                      IF (.not. DEF_HIST_WriteBack) THEN
                         smesg = (/p_iam_glb, ixseg, iyseg/)
                         CALL mpi_send (smesg, 3, MPI_INTEGER, &
-                           p_root, hist_data_id, p_comm_glb, p_err)
+                           p_address_master, hist_data_id, p_comm_glb, p_err)
                         CALL mpi_send (sbuf, xcnt*ycnt, MPI_DOUBLE, &
-                           p_root, hist_data_id, p_comm_glb, p_err)
+                           p_address_master, hist_data_id, p_comm_glb, p_err)
                      ELSE
                         CALL hist_writeback_var (hist_data_id, ixseg, iyseg, wdata2d = sbuf)
                      ENDIF
@@ -710,7 +683,7 @@ CONTAINS
          ENDIF
 #endif
 
-         hist_data_id = mod(hist_data_id,1000) + 1
+         hist_data_id = mod(hist_data_id-10000,10000) + 100001
 
       ELSEIF (trim(DEF_HIST_mode) == 'block') THEN
 
@@ -726,7 +699,7 @@ CONTAINS
 
                IF (.not. &
                   ((trim(dataname) == 'landarea') .or. (trim(dataname) == 'landfraction'))) THEN
-               
+
                   CALL ncio_write_serial_time (fileblock, dataname, itime, &
                      wdata%blk(iblk,jblk)%val, 'lon', 'lat', 'time', compress)
 
@@ -746,11 +719,7 @@ CONTAINS
    SUBROUTINE hist_write_var_real8_3d ( &
          filename, dataname, dim1name, grid, itime, wdata, compress, longname, units)
 
-   USE MOD_Namelist
    USE MOD_Block
-   USE MOD_Grid
-   USE MOD_DataType
-   USE MOD_SPMD_Task
    USE MOD_Vars_Global, only: spval
    IMPLICIT NONE
 
@@ -809,7 +778,7 @@ CONTAINS
 
                   deallocate (rbuf)
                ENDDO
-            
+
             ELSE
                CALL hist_writeback_var_header (hist_data_id, filename, dataname, &
                   3, dim1name, 'lon', 'lat', 'time', '', compress, longname, units)
@@ -852,7 +821,7 @@ CONTAINS
                   CALL ncio_put_attr (filename, dataname, 'units', units)
                   CALL ncio_put_attr (filename, dataname, 'missing_value', spval)
                ENDIF
-               
+
                deallocate (vdata)
 #ifdef USEMPI
             ENDIF
@@ -882,9 +851,9 @@ CONTAINS
                      IF (.not. DEF_HIST_WriteBack) THEN
                         smesg = (/p_iam_glb, ixseg, iyseg, ndim1/)
                         CALL mpi_send (smesg, 4, MPI_INTEGER, &
-                           p_root, hist_data_id, p_comm_glb, p_err)
+                           p_address_master, hist_data_id, p_comm_glb, p_err)
                         CALL mpi_send (sbuf, ndim1*xcnt*ycnt, MPI_DOUBLE, &
-                           p_root, hist_data_id, p_comm_glb, p_err)
+                           p_address_master, hist_data_id, p_comm_glb, p_err)
                      ELSE
                         CALL hist_writeback_var (hist_data_id, ixseg, iyseg, wdata3d = sbuf)
                      ENDIF
@@ -896,7 +865,7 @@ CONTAINS
          ENDIF
 #endif
 
-         hist_data_id = mod(hist_data_id,1000) + 1
+         hist_data_id = mod(hist_data_id-10000,10000) + 100001
 
       ELSEIF (trim(DEF_HIST_mode) == 'block') THEN
 
@@ -926,11 +895,7 @@ CONTAINS
    SUBROUTINE hist_write_var_real8_4d ( &
          filename, dataname, dim1name, dim2name, grid, itime, wdata, compress, longname, units)
 
-   USE MOD_Namelist
    USE MOD_Block
-   USE MOD_Grid
-   USE MOD_DataType
-   USE MOD_SPMD_Task
    USE MOD_Vars_Global, only: spval
    IMPLICIT NONE
 
@@ -969,7 +934,7 @@ CONTAINS
                   ixseg = rmesg(2)
                   iyseg = rmesg(3)
                   ndim1 = rmesg(4)
-                  ndim2 = rmesg(4)
+                  ndim2 = rmesg(5)
 
                   xgdsp = hist_concat%xsegs(ixseg)%gdsp
                   ygdsp = hist_concat%ysegs(iyseg)%gdsp
@@ -1029,7 +994,7 @@ CONTAINS
 
                CALL ncio_write_serial_time (filename, dataname, itime, vdata, &
                   dim1name, dim2name, 'lon', 'lat', 'time', compress)
-               
+
                IF (itime == 1) THEN
                   CALL ncio_put_attr (filename, dataname, 'long_name', longname)
                   CALL ncio_put_attr (filename, dataname, 'units', units)
@@ -1066,9 +1031,9 @@ CONTAINS
                      IF (.not. DEF_HIST_WriteBack) THEN
                         smesg = (/p_iam_glb, ixseg, iyseg, ndim1, ndim2/)
                         CALL mpi_send (smesg, 5, MPI_INTEGER, &
-                           p_root, hist_data_id, p_comm_glb, p_err)
+                           p_address_master, hist_data_id, p_comm_glb, p_err)
                         CALL mpi_send (sbuf, ndim1*ndim2*xcnt*ycnt, MPI_DOUBLE, &
-                           p_root, hist_data_id, p_comm_glb, p_err)
+                           p_address_master, hist_data_id, p_comm_glb, p_err)
                      ELSE
                         CALL hist_writeback_var (hist_data_id, ixseg, iyseg, wdata4d = sbuf)
                      ENDIF
@@ -1080,7 +1045,7 @@ CONTAINS
          ENDIF
 #endif
 
-         hist_data_id = mod(hist_data_id,1000) + 1
+         hist_data_id = mod(hist_data_id-10000,10000) + 100001
 
       ELSEIF (trim(DEF_HIST_mode) == 'block') THEN
          IF (p_is_io) THEN
@@ -1110,7 +1075,6 @@ CONTAINS
    SUBROUTINE hist_write_grid_info (fileblock, grid, iblk, jblk)
 
    USE MOD_Block
-   USE MOD_Grid
    IMPLICIT NONE
 
    character(len=*), intent(in) :: fileblock

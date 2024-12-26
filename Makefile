@@ -223,7 +223,6 @@ OBJS_MAIN = \
 				MOD_Catch_SubsurfaceFlow.o                \
 				MOD_Catch_RiverLakeFlow.o                 \
 				MOD_Hydro_Hist.o                          \
-				MOD_Catch_LateralFlow.o                   \
 				MOD_BGC_CNCStateUpdate1.o                 \
 				MOD_BGC_CNCStateUpdate2.o                 \
 				MOD_BGC_CNCStateUpdate3.o                 \
@@ -295,8 +294,10 @@ OBJS_MAIN = \
 				MOD_HistVector.o                          \
 				MOD_HistSingle.o                          \
 				MOD_Hist.o                                \
+				MOD_CheckEquilibrium.o                    \
 				MOD_LightningData.o                       \
 				MOD_CaMa_colmCaMa.o                       \
+				MOD_Catch_LateralFlow.o                   \
 				MOD_Urban_Longwave.o                      \
 				MOD_Urban_NetSolar.o                      \
 				MOD_Urban_Flux.o                          \
@@ -310,7 +311,7 @@ OBJS_MAIN = \
 				MOD_Urban_BEM.o                           \
 				MOD_Urban_LUCY.o                          \
 				MOD_Urban_Thermal.o                       \
-				Urban_CoLMMAIN.o                          \
+				CoLMMAIN_Urban.o                          \
 				MOD_Lulcc_Vars_TimeInvariants.o           \
 				MOD_Lulcc_Vars_TimeVariables.o            \
 				MOD_Lulcc_Initialize.o                    \
@@ -323,6 +324,8 @@ OBJS_MAIN = \
 
 $(OBJS_MAIN) : %.o : %.F90 ${HEADER} ${OBJS_SHARED} ${OBJS_BASIC}
 	${FF} -c ${FOPTS} $(INCLUDE_DIR) -o .bld/$@ $< ${MOD_CMD}.bld
+
+MOD_Urban_Thermal.o: MOD_Urban_Flux.o
 
 OBJS_MAIN_T = $(addprefix .bld/,${OBJS_MAIN})
 

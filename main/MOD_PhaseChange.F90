@@ -881,7 +881,7 @@ CONTAINS
      sm = 0.
      xmf = 0.
 
-     DO j = lb, nl_soil
+     DO j = lbroad, nl_soil
         imelt(j) = 0
         hm(j) = 0.
         xm(j) = 0.
@@ -895,7 +895,7 @@ CONTAINS
      IF(lbroad<=0) &
         we = sum(wice_roadsno(lbroad:0)+wliq_roadsno(lbroad:0))
 
-     DO j = lb, nl_soil
+     DO j = lbroad, nl_soil
 ! Melting identification
 ! IF ice exists above melt point, melt some to liquid.
          IF(wice_roadsno(j) > 0. .and. t_roadsno(j) > tfrz) THEN
@@ -951,7 +951,7 @@ CONTAINS
 
 ! IF snow exists, but its thickness less than the critical value (1 cm)
 ! Note: more work is need on how to tune the snow depth at this case
-            IF(j == 1 .and. lb == 1 .and. scv > 0. .and. xm(j) > 0.) THEN
+            IF(j == 1 .and. lbroad == 1 .and. scv > 0. .and. xm(j) > 0.) THEN
                temp1 = scv                               ! kg/m2
                scv = max(0.,temp1-xm(j))
                propor = scv/temp1

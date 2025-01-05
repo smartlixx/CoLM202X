@@ -10,11 +10,11 @@ MODULE MOD_Road_Const_ThermalParameters
 
    ! albeodo of impervious asphalt pavement [-]
    real(r8), parameter, dimension(2,2)  :: albroad_apt &
-      = (/0.04, 0.04, 0.1, 0.1/)
+      = (/0.03, 0.03, 0.04, 0.04/)
 
    ! albeodo of pervious concrete pavement [-]
    real(r8), parameter, dimension(2,2)  :: albroad_cct &
-      = (/0.2, 0.4, 0.3, 0.45/)
+      = (/0.3, 0.3, 0.5, 0.5/)
 
 
    ! volumetric heat capacity of asphalt pavement [J/m3*K]

@@ -232,6 +232,12 @@ MODULE MOD_Namelist
    logical :: DEF_URBAN_LUCY        = .true.
    logical :: DEF_USE_CANYON_HWR    = .true.
 
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+! ----- Part 10.1: Road model related ------
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   logical :: DEF_ROAD_RUN         = .false.
+
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! ----- Part 11: parameteration schemes -----
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -948,6 +954,8 @@ CONTAINS
       DEF_URBAN_LUCY,                         &
       DEF_USE_CANYON_HWR,                     &
 
+      DEF_ROAD_RUN,                           &
+
       DEF_USE_SOILPAR_UPS_FIT,                &
       DEF_THERMAL_CONDUCTIVITY_SCHEME,        &
       DEF_USE_SUPERCOOL_WATER,                &
@@ -1258,6 +1266,31 @@ CONTAINS
             write(*,*) 'please #define URBAN_MODEL in define.h. otherwise DEF_URBAN_RUN will '
             write(*,*) 'be set to false automatically.'
             DEF_URBAN_RUN = .false.
+         ENDIF
+#endif
+
+
+! ----- Road model ----- Macros&Namelist conflicts and dependency management
+
+#ifdef ROAD_MODEL
+         DEF_ROAD_RUN = .true.
+
+         write(*,*) '                  *****                  '
+         write(*,*) 'When ROAD model is opened, WUEST/SUPERCOOL_WATER/PLANTHYDRAULICS/OZONESTRESS/SOILSNOW'
+         write(*,*) 'will be set to false automatically for simplicity.'
+         DEF_USE_WUEST           = .false.
+         DEF_USE_SUPERCOOL_WATER = .false.
+         DEF_USE_PLANTHYDRAULICS = .false.
+         DEF_USE_OZONESTRESS     = .false.
+         DEF_USE_OZONEDATA       = .false.
+         DEF_SPLIT_SOILSNOW      = .false.
+#else
+         IF (DEF_ROAD_RUN) THEN
+            write(*,*) '                  *****                  '
+            write(*,*) 'Note: The Road model is not opened. IF you want to run Road model '
+            write(*,*) 'please #define ROAD_MODEL in define.h. otherwise DEF_ROAD_RUN will '
+            write(*,*) 'be set to false automatically.'
+            DEF_ROAD_RUN = .false.
          ENDIF
 #endif
 

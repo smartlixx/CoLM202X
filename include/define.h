@@ -23,6 +23,9 @@
 #undef LULC_IGBP_PC
 #endif
 
+! 2.2 Road model (put it temporarily here)
+#undef ROAD_MODEL
+
 ! 3. If defined, debug information is output.
 #define CoLMDEBUG
 ! 3.1 If defined, range of variables is checked.

@@ -80,8 +80,8 @@ CONTAINS
         fevpg_road,  &! evaporation heat flux from road [mm/s]
         fevpg_snow,  &! evaporation heat flux from ground snow [mm/s]
         cgrnd,       &! deriv. of soil energy flux wrt to soil temp [w/m2/k]
-        cgrndl,      &! deriv, of soil sensible heat flux wrt soil temp [w/m2/k]
-        cgrnds,      &! deriv of soil latent heat flux wrt soil temp [w/m**2/k]
+        cgrndl,      &! deriv, of soil latent heat flux wrt soil temp [w/m2/k]
+        cgrnds,      &! deriv of soil sensible heat flux wrt soil temp [w/m**2/k]
         tref,        &! 2 m height air temperature [kelvin]
         qref          ! 2 m height air humidity
 

@@ -433,7 +433,7 @@ SUBROUTINE RoadCoLMMain ( &
 !        qsubl_lake ,&! sublimation rate from snow pack (mm h2o /s) [+]
         qfros_road ,&! surface dew added to snow pack (mm h2o /s) [+]
 !        qfros_lake ,&! surface dew added to snow pack (mm h2o /s) [+]
-        scvold_road   ! snow mass on road for previous time step [kg/m2]
+        scvold_road,&! snow mass on road for previous time step [kg/m2]
 !        scvold_lake,&! snow mass on lake for previous time step [kg/m2]
 
         sm_road    ,&! rate of snowmelt [kg/(m2 s)]
@@ -620,7 +620,7 @@ SUBROUTINE RoadCoLMMain ( &
 !  ENDIF
 
   !============================================================
-  totwb  = sum(wice_soisno(1:) + wliq_soisno(1:))
+  totwb  = sum(wice_roadsno(1:) + wliq_roadsno(1:))
 !  totwb  = totwb + scv + ldew*fveg + wa*(1-froof)*fgper
 
 !----------------------------------------------------------------------
@@ -674,7 +674,7 @@ SUBROUTINE RoadCoLMMain ( &
     ! forcing
     forc_hgt_u       ,forc_hgt_t            ,forc_hgt_q        ,forc_us                    ,&
     forc_vs          ,forc_t                ,forc_q            ,forc_psrf                  ,&
-    forc_rhoair      ,forc_frl              ,forc_po2m         ,forc_pco2m                 ,&
+    forc_rhoair      ,forc_frl              ,& !forc_po2m         ,forc_pco2m                 ,&
     forc_sols        ,forc_soll             ,forc_solsd        ,forc_solld                 ,&
     theta            ,& !sabwsun               ,sabwsha                                       ,&
     sabroad          ,& !sablake               ,sabv              ,
@@ -711,7 +711,7 @@ SUBROUTINE RoadCoLMMain ( &
 !    sai                  ,htop                 ,hbot                 ,&
 !    extkd                ,
     lroad                ,&
-    t_road               ,t_roadsno(lbroad:)   ,wliq_roadsno(lbroad:)                      ,&
+    troad                ,t_roadsno(lbroad:)   ,wliq_roadsno(lbroad:)                      ,&
     wice_roadsno(lbroad:),&
 !    lake_icefrac(:)      ,savedtke1            ,lveg                 ,tleaf                ,&
 !    ldew                 ,&
@@ -805,18 +805,19 @@ SUBROUTINE RoadCoLMMain ( &
 ! ----------------------------------------
 ! water balance check
 ! ----------------------------------------
-  wliq_soisno(: ) = 0.
-  wliq_soisno(:1) = wliq_soisno(:1) + wliq_roadsno(:1)
+! LIXX TODO: Check these statements  
+  wliq_roadsno(:) = 0.
+  wliq_roadsno(:1) = wliq_roadsno(:1) + wliq_roadsno(:1)
   !wliq_soisno(:) = wliq_soisno(:)*(1-flake) + wliq_lakesno(:)*flake
   
-  wice_soisno(: ) = 0.
-  wice_soisno(:1) = wice_soisno(:1) + wice_roadsno(:1)
+  wice_roadsno(:) = 0.
+  wice_roadsno(:1) = wice_roadsno(:1) + wice_roadsno(:1)
   !wice_soisno(:) = wice_soisno(:)*(1-flake) + wice_lakesno(:)*flake
   
   scv = scv_road
   !scv = scv*(1-flake) + scv_lake*flake
   
-  endwb  = sum(wice_soisno(1:) + wliq_soisno(1:))
+  endwb  = sum(wice_roadsno(1:) + wliq_roadsno(1:))
   endwb  = endwb + scv !+ ldew*fveg
   errorw = (endwb - totwb) - (forc_prc + forc_prl - fevpa - rnof - errw_rsub)*deltim
   xerr   = errorw/deltim
@@ -872,8 +873,8 @@ SUBROUTINE RoadCoLMMain ( &
 !  laisha = 0.0
 !  green  = 1.
 
-  h2osoi = wliq_soisno(1:)/(dz_soi(1:)*denh2o) + wice_soisno(1:)/(dz_soi(1:)*denice)
-  wat = sum(wice_soisno(1:)+wliq_soisno(1:))
+  h2osoi = wliq_roadsno(1:)/(dz_soi(1:)*denh2o) + wice_roadsno(1:)/(dz_soi(1:)*denice)
+  wat = sum(wice_roadsno(1:)+wliq_roadsno(1:))
   wat = wat + scv !+ ldew*fveg
 
   z_sno_road (maxsnl+1:0) = z_roadsno (maxsnl+1:0)

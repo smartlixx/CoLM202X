@@ -6,7 +6,7 @@ MODULE MOD_Road_Albedo
 ! Calculate road albedo,
 !
 ! Created by Hua Yuan, 09/2021
-! Adapted for road
+! Adapted for road by Xianxiang Li, 09/2024
 !
 ! REVISIONS:
 !

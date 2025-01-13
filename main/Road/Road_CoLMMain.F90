@@ -35,7 +35,7 @@ SUBROUTINE RoadCoLMMain ( &
            forc_frl     ,forc_hgt_u   ,forc_hgt_t   ,forc_hgt_q   ,&
            forc_rhoair  ,&
             ! cbl forcing
-           forc_hpbl,    &
+           !forc_hpbl,    &
            ! aerosol deposition
          !  forc_aerdep,  &
 
@@ -52,9 +52,11 @@ SUBROUTINE RoadCoLMMain ( &
 !           green,        lai,          &
 !           sai,          
            alb,          & !ssun,         ssha,         &
-           ssoi,         ssno,         thermk,       extkb,        &
-           extkd,        vegwp,        gs0sun,       gs0sha,       &
-           zwt,          wdsrf,        wa,           wetwat,       &
+           ssoi,         ssno,         &
+          ! thermk,       extkb,        &
+          ! extkd,        vegwp,        gs0sun,       gs0sha,       &
+           zwt,          & !wdsrf,
+           wa,           wetwat,       &
            sag_road     ,scv_road     ,&
            snowdp_road  ,fsno_road    ,&
            sroad        ,lroad        ,&
@@ -71,13 +73,15 @@ SUBROUTINE RoadCoLMMain ( &
 
          ! FLUXES
            taux         ,tauy         ,fsena        ,fevpa        ,&
-           lfevpa       ,fsenl        ,fevpl        ,etr          ,&
+           lfevpa       ,& !fsenl        ,fevpl        ,
+           etr          ,&
            fseng        ,fevpg        ,olrg         ,fgrnd        ,&
            fsen_road    ,lfevp_road   ,&
            trad         ,tref         ,&!tmax       ,tmin         ,&
            qref         ,rsur         ,rnof         ,qintr        ,&
            qinfl        ,qdrip        ,rst          ,assim        ,&
-           respc        ,sabvsun      ,sabvsha      ,sabg         ,&
+           respc        ,& !sabvsun      ,sabvsha      ,
+           sabg         ,&
            sr           ,solvd        ,solvi        ,solnd        ,&
            solni        ,srvd         ,srvi         ,srnd         ,&
            srni         ,solvdln      ,solviln      ,solndln      ,&
@@ -110,11 +114,11 @@ SUBROUTINE RoadCoLMMain ( &
   USE MOD_ALBEDO, only: snowage
   USE MOD_Qsadv, only: qsadv
 
-  USE MOD_Road_GroundFlux
-  USE MOD_Road_GroundTemperature
+!  USE MOD_Road_GroundFlux
+!  USE MOD_Road_GroundTemperature
   USE MOD_Road_Hydrology
   Use MOD_Road_Thermal
-  USE MOD_Urban_Albedo
+  USE MOD_Road_Albedo
 
   IMPLICIT NONE
 
@@ -230,8 +234,8 @@ SUBROUTINE RoadCoLMMain ( &
       forc_hgt_u ,&! observational height of wind [m]
       forc_hgt_t ,&! observational height of temperature [m]
       forc_hgt_q ,&! observational height of humidity [m]
-      forc_rhoair,&! density air [kg/m3]
-      forc_hpbl    ! atmospheric boundary layer height [m]
+      forc_rhoair  ! density air [kg/m3]
+!      forc_hpbl    ! atmospheric boundary layer height [m]
 !      forc_aerdep(14)!atmospheric aerosol deposition data [kg/m/s]
 
 ! Variables required for restart run
@@ -303,14 +307,14 @@ SUBROUTINE RoadCoLMMain ( &
 
         !coszen      ,&! cosine of solar zenith angle
         alb(2,2)    ,&! averaged albedo [-]
-        ssun(2,2)   ,&! sunlit canopy absorption for solar radiation
-        ssha(2,2)   ,&! shaded canopy absorption for solar radiation
+      !  ssun(2,2)   ,&! sunlit canopy absorption for solar radiation
+      !  ssha(2,2)   ,&! shaded canopy absorption for solar radiation
         ssoi(2,2)   ,&! ground soil absorption [-]
         ssno(2,2)   ,&! ground snow absorption [-]
-        thermk      ,&! canopy gap fraction for tir radiation
-        extkb       ,&! (k, g(mu)/mu) direct solar extinction coefficient
-        extkd       ,&! diffuse and scattered diffuse PAR extinction coefficient
-        lroad       ,&! net longwave of impervious  [W/m2]
+      !  thermk      ,&! canopy gap fraction for tir radiation
+      !  extkb       ,&! (k, g(mu)/mu) direct solar extinction coefficient
+      !  extkd       ,&! diffuse and scattered diffuse PAR extinction coefficient
+        lroad       ,&! net longwave of road  [W/m2]
 !        lveg       ,&! net longwave of vegetation [W/m2]
         
 !        ssun (2,2) ,&! sunlit canopy absorption for solar radiation
@@ -423,12 +427,13 @@ SUBROUTINE RoadCoLMMain ( &
 !        tlake      ,&! temperature of lake surface [K]
         qseva_road ,&! ground surface evaporation rate (mm h2o/s)
 !        qseva_lake ,&! ground surface evaporation rate (mm h2o/s)
+        qsdew_road ,&! ground surface dew formation (mm h2o /s) [+]
 !        qsdew_lake ,&! ground surface dew formation (mm h2o /s) [+]
         qsubl_road ,&! sublimation rate from snow pack (mm h2o /s) [+]
 !        qsubl_lake ,&! sublimation rate from snow pack (mm h2o /s) [+]
         qfros_road ,&! surface dew added to snow pack (mm h2o /s) [+]
 !        qfros_lake ,&! surface dew added to snow pack (mm h2o /s) [+]
-        scvold_road   ! snow mass on impervious surfaces for previous time step [kg/m2]
+        scvold_road   ! snow mass on road for previous time step [kg/m2]
 !        scvold_lake,&! snow mass on lake for previous time step [kg/m2]
 
         sm_road    ,&! rate of snowmelt [kg/(m2 s)]
@@ -466,11 +471,11 @@ SUBROUTINE RoadCoLMMain ( &
   real(r8) :: &
         errw_rsub    ! the possible subsurface runoff deficit after PHS is included
 
-  real(r8) :: &
-        ei,         &! vapor pressure on leaf surface [pa]
-        deidT,      &! derivative of "ei" on "tl" [pa/K]
-        qsatl,      &! leaf specific humidity [kg/kg]
-        qsatldT      ! derivative of "qsatl" on "tlef"
+  !real(r8) :: &
+  !      ei,         &! vapor pressure on leaf surface [pa]
+  !      deidT,      &! derivative of "ei" on "tl" [pa/K]
+  !      qsatl,      &! leaf specific humidity [kg/kg]
+  !      qsatldT      ! derivative of "qsatl" on "tlef"
 
   integer :: &
         snlroad    ,&! number of snow layers on road
@@ -673,9 +678,9 @@ SUBROUTINE RoadCoLMMain ( &
     forc_sols        ,forc_soll             ,forc_solsd        ,forc_solld                 ,&
     theta            ,& !sabwsun               ,sabwsha                                       ,&
     sabroad          ,& !sablake               ,sabv              ,
-    par              ,&
+  !  par              ,&
     ! GROUND PARAMETERS
-!    flake            ,
+  !  flake            ,
     pondmx           ,em_road               ,trsmx0            ,zlnd   ,&
     zsno             ,capr                  ,cnfac             ,vf_quartz                  ,&
     vf_gravels       ,vf_om                 ,vf_sand           ,wf_gravels                 ,&
@@ -694,17 +699,19 @@ SUBROUTINE RoadCoLMMain ( &
     z_roadsno(lbroad:)                      ,&
     zi_roadsno(lbroad-1:)                   ,&
 !    dz_lake(1:)      ,lakedepth             ,&
-    dewmx            ,sqrtdi                ,rootfr(:)         ,effcon                     ,&
-    vmax25           ,slti                  ,hlti              ,shti                       ,&
-    hhti             ,trda                  ,trdm              ,trop                       ,&
-    g1               ,g0                    ,gradm             ,binter                     ,&
-    extkn            ,&
+    ! vegetation parameters
+!    dewmx            ,sqrtdi                ,rootfr(:)         ,effcon                     ,&
+!    vmax25           ,slti                  ,hlti              ,shti                       ,&
+!    hhti             ,trda                  ,trdm              ,trop                       ,&
+!    g1               ,g0                    ,gradm             ,binter                     ,&
+!    extkn            ,&
     ! surface status
-    fsno_road            ,scv_road             ,snowdp_road          ,&
-    lai                  ,&
-    sai                  ,htop                 ,hbot                 ,&
-    extkd                ,lroad                ,&
-    t_road               ,t_roadsno(lbroad:)   ,wliq_roadsno(lbroad:),&
+    fsno_road        ,scv_road              ,snowdp_road                                   ,&
+!    lai                  ,&
+!    sai                  ,htop                 ,hbot                 ,&
+!    extkd                ,
+    lroad                ,&
+    t_road               ,t_roadsno(lbroad:)   ,wliq_roadsno(lbroad:)                      ,&
     wice_roadsno(lbroad:),&
 !    lake_icefrac(:)      ,savedtke1            ,lveg                 ,tleaf                ,&
 !    ldew                 ,&
@@ -713,7 +720,7 @@ SUBROUTINE RoadCoLMMain ( &
 !! END SNICAR model variables
     ! output
     taux                 ,tauy                 ,fsena                ,fevpa                ,&
-    lfevpa               ,fsenl                ,fevpl                ,etr                  ,&
+    lfevpa               ,& !fsenl             ,fevpl                ,etr                  ,&
     fseng                ,fevpg                ,olrg                 ,fgrnd                ,&
     fsen_road            ,lfevp_road           ,qseva_road           ,&
     qsdew_road           ,qsubl_road           ,qfros_road           ,&

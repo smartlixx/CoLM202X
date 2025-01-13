@@ -54,6 +54,4 @@ MODULE MOD_Road_Const_ThermalParameters
                     0 ,    0 ,    0 ,    0 ,    0 ,      0 ,    0 ,    0 ,    0 ,    0], &
                 shape(tkroad_cct))
 
-   !TODO:AHE coding
-
 END MODULE MOD_Road_Const_ThermalParameters

@@ -13,7 +13,6 @@ CONTAINS
 
 
    SUBROUTINE RoadTHERMAL ( &
-
         ! model running information
         ipatch         ,patchtype      ,lbroad         ,& !lbl            ,&
         deltim         ,patchlatr      ,&
@@ -24,7 +23,7 @@ CONTAINS
         forc_sols      ,forc_soll      ,forc_solsd     ,forc_solld     ,&
         theta          ,& !sabwsun        ,sabwsha                        ,&
         sabroad        ,& !sablake        ,  sabv           ,
-        par            ,&
+!        par            ,&
         ! surface parameters
 !        flake          ,
         pondmx         ,eroad          ,trsmx0         ,&
@@ -46,18 +45,20 @@ CONTAINS
         z_roadsno      ,&
         zi_roadsno     ,&
 !        dz_lake        ,lakedepth      ,&
-        dewmx          ,sqrtdi         ,rootfr         ,effcon         ,&
-        vmax25         ,slti           ,hlti           ,shti           ,&
-        hhti           ,trda           ,trdm           ,trop           ,&
-        g1             ,g0             ,gradm          ,binter         ,&
-        extkn          ,&
+        ! vegetation parameters
+!        dewmx          ,sqrtdi         ,rootfr         ,effcon         ,&
+!        vmax25         ,slti           ,hlti           ,shti           ,&
+!        hhti           ,trda           ,trdm           ,trop           ,&
+!        g1             ,g0             ,gradm          ,binter         ,&
+!        extkn          ,&
         ! surface status
         fsno_road      ,scv_road       ,& !scv_lake       ,
         snowdp_road    ,&
 !        snowdp_lake    ,&
-        lai            ,&
-        sai            ,htop           ,hbot           ,& !sigf           ,&
-        extkd          ,lroad         ,&
+   !     lai            ,&
+   !     sai            ,htop           ,hbot           ,& !sigf           ,&
+   !     extkd          ,
+        lroad          ,&
         t_road         ,t_roadsno      ,& !t_lakesno      ,
         wliq_roadsno   ,&
 !        wliq_lakesno   ,&
@@ -69,13 +70,12 @@ CONTAINS
 !! END SNICAR model variables
         ! output
         taux           ,tauy           ,fsena          ,fevpa          ,&
-        lfevpa         ,fsenl          ,fevpl          ,etr            ,&
+        lfevpa         ,& !fsenl       ,fevpl          ,etr            ,&
         fseng          ,fevpg          ,olrg           ,fgrnd          ,&
         fseng_road     ,lfevp_road     ,qseva_road     ,qseva_lake     ,&
-        qsdew_road     ,qsdew_lake     ,qsubl_road     ,qsubl_lake     ,&
-        qfros_road     ,qfros_lake     ,&
-        imelt_road     ,imelt_lake     ,&
-        sm_road        ,sm_lake        ,&
+        qsdew_road     ,qsubl_road     ,qfros_road     ,&
+        imelt_road     ,& !imelt_lake     ,&
+        sm_road        ,& !sm_lake        ,&
         sabg           ,rstfac         ,rootr          ,tref           ,&
         qref           ,trad           ,rst            ,assim          ,&
         respc          ,errore         ,emis           ,z0m            ,&
@@ -94,6 +94,7 @@ CONTAINS
    USE MOD_Vars_Global
    USE MOD_Const_Physical, only: denh2o,roverg,hvap,hsub,rgas,cpair,&
                                  stefnc,denice,tfrz,vonkar,grav
+   USE MOD_Qsadv
    USE MOD_Road_GroundFlux
    USE MOD_Road_Flux
    USE MOD_Road_GroundTemperature
@@ -137,7 +138,7 @@ CONTAINS
         forc_solsd ,&! atm vis diffuse solar rad onto srf [W/m2]
         forc_solld ,&! atm nir diffuse solar rad onto srf [W/m2]
         theta      ,&! sun zenith angle
-        par        ,&! vegetation PAR
+!        par        ,&! vegetation PAR
 !        sabv       ,&! absorbed shortwave radiation by vegetation [W/m2]
 !        sabwsun    ,&! absorbed shortwave radiation by sunlit wall [W/m2]
 !        sabwsha    ,&! absorbed shortwave radiation by shaded wall [W/m2]
@@ -184,34 +185,34 @@ CONTAINS
 !        zi_lakesno(maxsnl  :nl_soil) ,&! interface depth [m]
 
         ! vegetationparameters
-        dewmx      ,&! maximum dew
-        sqrtdi     ,&! inverse sqrt of leaf dimension [m**-0.5]
-        rootfr(1:nl_soil) ,&! root fraction
+!        dewmx      ,&! maximum dew
+!        sqrtdi     ,&! inverse sqrt of leaf dimension [m**-0.5]
+!        rootfr(1:nl_soil) ,&! root fraction
 
-        effcon     ,&! quantum efficiency of RuBP regeneration (mol CO2/mol quanta)
-        vmax25     ,&! maximum carboxylation rate at 25 C at canopy top
-        slti       ,&! slope of low temperature inhibition function      [s3]
-        hlti       ,&! 1/2 point of low temperature inhibition function  [s4]
-        shti       ,&! slope of high temperature inhibition function     [s1]
-        hhti       ,&! 1/2 point of high temperature inhibition function [s2]
-        trda       ,&! temperature coefficient in gs-a model             [s5]
-        trdm       ,&! temperature coefficient in gs-a model             [s6]
-        trop       ,&! temperature coefficient in gs-a model
-        g1         ,&! conductance-photosynthesis slope parameter for medlyn model
-        g0         ,&! conductance-photosynthesis intercept for medlyn model
-        gradm      ,&! conductance-photosynthesis slope parameter
-        binter     ,&! conductance-photosynthesis intercept
-        extkn        ! coefficient of leaf nitrogen allocation
+!        effcon     ,&! quantum efficiency of RuBP regeneration (mol CO2/mol quanta)
+!        vmax25     ,&! maximum carboxylation rate at 25 C at canopy top
+!        slti       ,&! slope of low temperature inhibition function      [s3]
+!        hlti       ,&! 1/2 point of low temperature inhibition function  [s4]
+!        shti       ,&! slope of high temperature inhibition function     [s1]
+!        hhti       ,&! 1/2 point of high temperature inhibition function [s2]
+!        trda       ,&! temperature coefficient in gs-a model             [s5]
+!        trdm       ,&! temperature coefficient in gs-a model             [s6]
+!        trop       ,&! temperature coefficient in gs-a model
+!        g1         ,&! conductance-photosynthesis slope parameter for medlyn model
+!        g0         ,&! conductance-photosynthesis intercept for medlyn model
+!        gradm      ,&! conductance-photosynthesis slope parameter
+!        binter     ,&! conductance-photosynthesis intercept
+!        extkn        ! coefficient of leaf nitrogen allocation
 
    real(r8), intent(in) :: &
-        fsno_road  ,&! fraction of ground covered by snow
-        lai        ,&! adjusted leaf area index for seasonal variation [-]
-        sai        ,&! stem area index  [-]
-        htop       ,&! canopy crown top height [m]
-        hbot       ,&! canopy crown bottom height [m]
+        fsno_road     ! fraction of ground covered by snow
+!        lai        ,&! adjusted leaf area index for seasonal variation [-]
+!        sai        ,&! stem area index  [-]
+!        htop       ,&! canopy crown top height [m]
+!        hbot       ,&! canopy crown bottom height [m]
 !        fveg       ,&! fraction of veg cover
 !        sigf       ,&! fraction of veg cover, excluding snow-covered veg [-]
-        extkd        ! diffuse and scattered diffuse PAR extinction coefficient
+!        extkd        ! diffuse and scattered diffuse PAR extinction coefficient
 
    real(r8), intent(in) :: hpbl       ! atmospheric boundary layer height [m]
 
@@ -242,9 +243,9 @@ CONTAINS
         fsena      ,&! sensible heat from canopy height to atmosphere [W/m2]
         fevpa      ,&! evapotranspiration from canopy height to atmosphere [mm/s]
         lfevpa     ,&! latent heat flux from canopy height to atmosphere [W/m2]
-        fsenl      ,&! ensible heat from leaves [W/m2]
-        fevpl      ,&! evaporation+transpiration from leaves [mm/s]
-        etr        ,&! transpiration rate [mm/s]
+!        fsenl      ,&! ensible heat from leaves [W/m2]
+!        fevpl      ,&! evaporation+transpiration from leaves [mm/s]
+!        etr        ,&! transpiration rate [mm/s]
         fseng      ,&! sensible heat flux from ground [W/m2]
         fevpg      ,&! evaporation heat flux from ground [mm/s]
         olrg       ,&! outgoing long-wave radiation from ground+canopy
@@ -254,21 +255,20 @@ CONTAINS
         lfevp_road ,&! latent heat flux from road [W/m2]
         
         qseva_road ,&! ground soil surface evaporation rate (mm h2o/s)
-        qseva_lake ,&! ground soil surface evaporation rate (mm h2o/s)
+!        qseva_lake ,&! ground soil surface evaporation rate (mm h2o/s)
         qsdew_road ,&! ground soil surface dew formation (mm h2o /s) [+]
-        qsdew_lake ,&! ground soil surface dew formation (mm h2o /s) [+]
+!        qsdew_lake ,&! ground soil surface dew formation (mm h2o /s) [+]
         qsubl_road ,&! sublimation rate from soil ice pack (mm h2o /s) [+]
-        qsubl_lake ,&! sublimation rate from soil ice pack (mm h2o /s) [+]
-        qfros_road ,&! surface dew added to snow pack (mm h2o /s) [+]
-        qfros_lake   ! surface dew added to snow pack (mm h2o /s) [+]
+!        qsubl_lake ,&! sublimation rate from soil ice pack (mm h2o /s) [+]
+        qfros_road    ! surface dew added to snow pack (mm h2o /s) [+]
+!        qfros_lake   ! surface dew added to snow pack (mm h2o /s) [+]
 
    integer, intent(out) :: &
-        imelt_road(lbroad:nl_soil)    ,&! flag for melting or freezing [-]
-        imelt_lake(maxsnl+1:nl_soil)    ! flag for melting or freezing [-]
+        imelt_road(lbroad:nl_soil)       ! flag for melting or freezing [-]
 
    real(r8), intent(out) :: &
         sm_road    ,&! rate of snowmelt [kg/(m2 s)]
-        sm_lake    ,&! rate of snowmelt [kg/(m2 s)]
+!        sm_lake    ,&! rate of snowmelt [kg/(m2 s)]
         sabg       ,&! overall ground solar radiation absorption
         rstfac     ,&! factor of soil water stress
         rootr(1:nl_soil) ,&! root resistance of a layer, all layers add to 1
@@ -293,8 +293,8 @@ CONTAINS
         fq           ! integral of profile function for moisture
 
 ! SNICAR model variables
-   real(r8), intent(in)  :: sabg_lyr(lbp:1) !snow layer aborption
-   real(r8), intent(out) :: snofrz (lbp:0)  !snow freezing rate (col,lyr) [kg m-2 s-1]
+!   real(r8), intent(in)  :: sabg_lyr(lbp:1) !snow layer aborption
+!   real(r8), intent(out) :: snofrz (lbp:0)  !snow freezing rate (col,lyr) [kg m-2 s-1]
 ! END SNICAR model variables
 
 !---------------------Local Variables-----------------------------------
@@ -303,7 +303,7 @@ CONTAINS
         fsenroad   ,&! sensible heat flux from road [W/m2]
         fevproad   ,&! evaporation heat flux from impervious road [mm/s]
 
-        cgrnds     ,&! deriv of ground latent heat flux wrt soil temp [w/m**2/k]
+        croads     ,&! deriv of road sensible heat flux wrt soil temp [w/m**2/k]
         croadl     ,&! deriv of road latent heat flux wrt soil temp [w/m**2/k]
         croad      ,&! deriv of road total heat flux wrt soil temp [w/m**2/k]
         
@@ -316,9 +316,9 @@ CONTAINS
         egidif     ,&! the excess of evaporation over "egsmax"
         emg        ,&! ground emissivity (0.97 for snow,
                      ! glaciers and water surface; 0.96 for soil and wetland)
-        etrc       ,&! maximum possible transpiration rate [mm/s]
+!        etrc       ,&! maximum possible transpiration rate [mm/s]
         fac        ,&! soil wetness of surface layer
-        factroad(lbroad:nl_soil) ,&! used in computing tridiagonal matrix for road
+        fact_road(lbroad:nl_soil) ,&! used in computing tridiagonal matrix for road
         hr         ,&! relative humidity
         htvp_road  ,&! latent heat of vapor of water (or sublimation) [J/Kg]
         olru       ,&! olrg excluding dwonwelling reflection [W/m2]
@@ -327,7 +327,7 @@ CONTAINS
 
         rsr        ,&! soil resistance
         qroad      ,&! ground impervious road specific humudity [kg/kg]
-        q_snow,       &! ground snow specific humudity [kg/kg]
+        q_snow     ,&! ground snow specific humudity [kg/kg]
         qsatg      ,&! saturated humidity [kg/kg]
         qsatgdT    ,&! d(qsatg)/dT
         qred       ,&! soil surface relative humidity
@@ -336,15 +336,14 @@ CONTAINS
         thv        ,&! virtual potential temperature (kelvin)
 
         troad      ,&! temperature of road
-        tlake      ,&! lake surface temperature
-        troad_bef  ,&! temperature of impervious road
+        troad_bef  ,&! temperature of road at previous time step
         t_snow     ,&! ground snow temperature
         t_soisno_bef(lbroad:nl_soil), &! soil/snow temperature before update 
         tinc       ,&! temperature difference of two time step
-        ev         ,&! emissivity of vegetation [-]
+!        ev         ,&! emissivity of vegetation [-]
         lout       ,&! out-going longwave radiation
         lnet       ,&! overall net longwave radiation
-        lroad_bef  ,&! net longwave radiation of impervious road
+        lroad_bef  ,&! net longwave radiation of road at previous time step
         dlout      ,&! changed out-going radiation due to temp change
         clroad     ,&! deriv of lroad wrt gimp temp [w/m**2/k]
         
@@ -364,10 +363,11 @@ CONTAINS
       ! fluxes
       taux   = 0.;  tauy   = 0.
       fsena  = 0.;  fevpa  = 0.
-      lfevpa = 0.;  fsenl  = 0.
+      lfevpa = 0.;  !fsenl  = 0.
       fseng  = 0.;  fevpg  = 0.
-      fsenl = 0.;   fevpl = 0.
-      etr   = 0.;   rst   = 2.0e4
+!      fsenl = 0.;   fevpl = 0.
+!      etr   = 0.;   
+      rst   = 2.0e4
       assim = 0.;   respc = 0.
 
       cgrnds = 0.;  cgrndl = 0.
@@ -395,20 +395,11 @@ CONTAINS
       ! temperature and water mass from previous time step
       troad = t_roadsno(lbroad)
 
-      !TODO: ???how to calculate tlake
-      IF (lbl < 1) THEN
-         tlake = t_lakesno(lbl)
-      ELSE
-         tlake = t_lake(1)
-      ENDIF
-
       ! SAVE temperature
       troad_bef = troad
 
       ! SAVE longwave for the last time
       lroad_bef = lroad
-
-   !   fg  = 1. !- froof
 
 !=======================================================================
 ! [2] specific humidity and its derivative at ground surface
@@ -464,7 +455,7 @@ CONTAINS
 !        qgper = forc_q; dqgperdT = 0.
 !      ENDIF
 
-      CALL qsadv(traod,forc_psrf,eg,degdT,qsatg,qsatgdT)
+      CALL qsadv(troad,forc_psrf,eg,degdT,qsatg,qsatgdT)
       qroad    = qsatg
       dqroaddT = qsatgdT
 
@@ -642,7 +633,7 @@ CONTAINS
 ! [8] total fluxes to atmosphere
 !=======================================================================
 
-      lnet  = lgimp
+      lnet  = lroad
 
       sabg  = sab_road
 

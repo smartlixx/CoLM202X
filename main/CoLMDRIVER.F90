@@ -23,7 +23,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
    USE MOD_Vars_1DFluxes
    USE MOD_LandPatch, only: numpatch
    USE MOD_LandUrban, only: patch2urban
-   USE MOD_Namelist, only: DEF_forcing, DEF_URBAN_RUN
+   USE MOD_Namelist, only: DEF_forcing, DEF_URBAN_RUN, DEF_ROAD_RUN
    USE MOD_Forcing, only: forcmask_pch
    USE omp_lib
 #ifdef CaMa_Flood
@@ -197,7 +197,103 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 
 #ifdef ROAD_MODEL
          IF (DEF_ROAD_RUN .and. m.eq.URBAN) THEN
-           CALL RoadCoLMMAIN ()
+           CALL RoadCoLMMAIN ( &
+            ! model running information
+           i               ,idate           ,coszen(i)       ,deltim           ,&
+           patchlonr(i)    ,patchlatr(i)    ,patchclass(i)   ,patchtype(i)     ,&
+
+         ! road information
+           em_road         ,cv_road(1:nl_soil)         ,tk_road(1:nl_soil)     ,&
+    !       z_road       ,dz_road                                  ,&
+         ! soil information
+           vf_quartz(1:,i) ,vf_gravels(1:,i),vf_om(1:,i)    ,vf_sand(1:,i)     ,&
+           wf_gravels(1:,i),wf_sand(1:,i)   ,porsl(1:,i)    ,psi0(1:,i)        ,&
+           bsw(1:,i)       ,theta_r(1:,i)   ,&
+!#ifdef vanGenuchten_Mualem_SOIL_MODEL
+!           alpha_vgm    ,n_vgm        ,L_vgm        ,&
+!           sc_vgm       ,fc_vgm       ,&
+!#endif
+           hksati(1:,i)    ,csol(1:,i)      ,k_solids(1:,i) ,dksatu(1:,i)      ,&
+           dksatf(1:,i)    ,dkdry(1:,i)     ,BA_alpha(1:,i) ,BA_beta(1:,i)     ,&
+     
+         ! vegetation information
+!           sqrtdi       ,chil         ,&
+!           effcon       ,vmax25       ,slti         ,hlti         ,&
+!           shti         ,hhti         ,trda         ,trdm         ,&
+!           trop         ,g1           ,g0           ,gradm        ,&
+!           binter       ,extkn        ,rho          ,tau          ,&
+!           rootfr                     ,&
+
+         ! atmospheric forcing
+           forc_us(i)      ,forc_vs(i)      ,&
+           forc_t(i)       ,forc_q(i)       ,forc_prc(i)     ,forc_prl(i)     ,&
+           forc_rain(i)    ,forc_snow(i)    ,forc_psrf(i)    ,forc_pbot(i)    ,&
+           forc_sols(i)    ,forc_soll(i)    ,forc_solsd(i)   ,forc_solld(i)   ,&
+           forc_frl(i)     ,forc_hgt_u(i)   ,forc_hgt_t(i)   ,forc_hgt_q(i)   ,&
+           forc_rhoair(i)  ,&
+            ! cbl forcing
+           !forc_hpbl,    &
+           ! aerosol deposition
+         !  forc_aerdep,  &
+
+         ! land surface variables required for restart
+           z_sno_road  (maxsnl+1:,i) ,dz_sno_road (maxsnl+1:,i) ,t_roadsno(maxsnl+1:,i),&
+           wliq_roadsno(maxsnl+1:,i) ,wice_roadsno(maxsnl+1:,i) ,&
+           z_sno       (maxsnl+1:,i) ,dz_sno      (maxsnl+1:,i) ,&
+!           wliq_soisno  ,wice_soisno  ,t_soisno     ,&
+           smp         (1:,i)        ,hk          (1:,i)        ,t_grnd(i)       ,&
+          
+!           tleaf,        ldew,         ldew_rain,    ldew_snow,    &
+           sag(i),      scv(i),          snowdp(i),       & !fveg,         &
+           fsno(i),         & !sigf,         
+!           green,        lai,          &
+!           sai,          
+           alb(1:,1:,i),  & !ssun,         ssha,         &
+           ssoi(i),         ssno(i),       & !  thermk,       extkb,        &
+          ! extkd,        vegwp,        gs0sun,       gs0sha,       &
+           zwt(i),          & !wdsrf,
+           wa(i),           wetwat(i),       &
+           sag_road(i)     ,scv_road(i)     ,&
+           snowdp_road(i)  ,fsno_road(i)    ,&
+           sroad(1:,1:,i)  ,lroad(i)        ,&
+
+!         ! SNICAR snow model related
+!           snw_rds,      ssno_lyr,                                 &
+!           mss_bcpho,    mss_bcphi,   mss_ocpho,     mss_ocphi,    &
+!           mss_dst1,     mss_dst2,    mss_dst3,      mss_dst4,     &
+
+         ! additional diagnostic variables for output
+!           laisun       ,laisha       ,&
+           rss(i)                        ,&
+           rstfac(i)       ,h2osoi(1:,i)       ,wat(i)                        ,&
+
+         ! FLUXES
+           taux(i)         ,tauy(i)         ,fsena(i)        ,fevpa(i)        ,&
+           lfevpa(i)       ,& !fsenl(i)        ,fevpl(i)        ,
+           etr(i)          ,&
+           fseng(i)        ,fevpg(i)        ,olrg(i)         ,fgrnd(i)        ,&
+           fsen_road(i)    ,lfevp_road(i)   ,&
+           trad(i)         ,tref(i)         ,&!tmax       ,tmin         ,&
+           qref(i)         ,rsur(i)         ,rnof(i)         ,qintr(i)        ,&
+           qinfl(i)        ,qdrip(i)        ,rst(i)          ,assim(i)        ,&
+           respc(i)        ,& !sabvsun      ,sabvsha      ,
+           sabg(i)         ,&
+           sr(i)           ,solvd(i)        ,solvi(i)        ,solnd(i)        ,&
+           solni(i)        ,srvd(i)         ,srvi(i)         ,srnd(i)         ,&
+           srni(i)         ,solvdln(i)      ,solviln(i)      ,solndln(i)      ,&
+           solniln(i)      ,srvdln(i)       ,srviln(i)       ,srndln(i)       ,&
+           srniln(i)       ,qcharge(i)      ,xerr(i)         ,zerr(i)         ,&
+
+         ! TUNABLE modle constants
+           zlnd         ,zsno         ,csoilc       ,dewmx        ,&
+           wtfact       ,capr         ,cnfac        ,ssi          ,&
+           wimp         ,pondmx       ,smpmax       ,smpmin       ,&
+           trsmx0       ,tcrit                                    ,&
+
+         ! additional variables required by coupling with WRF model
+           emis(i)         ,z0m(i)          ,zol(i)          ,rib(i)     ,&
+           ustar(i)        ,qstar(i)        ,tstar(i)        ,fm(i)      ,&
+           fh(i)           ,fq(i)           ,forc_hpbl(i)                )
          ENDIF
 #endif
 

@@ -25,7 +25,7 @@ CONTAINS
                               imelt,sm,xmf,fact)
 
 !=======================================================================
-! Snow and impervious road temperatures
+! Snow and road temperatures
 ! o The volumetric heat capacity is calculated as a linear combination
 !   in terms of the volumetric fraction of the constituent phases.
 ! o The thermal conductivity of road soil is computed from
@@ -49,13 +49,14 @@ CONTAINS
    USE MOD_Precision
    USE MOD_Vars_Global
    USE MOD_Const_Physical
+  !USE MOD_Road_Const_ThermalParameters
    USE MOD_SoilThermalParameters
    USE MOD_PhaseChange, only: meltf_road
    USE MOD_Utils, only: tridia
 
    IMPLICIT NONE
 
-   integer, intent(in)  :: lbroad                          !lower bound of array
+   integer, intent(in)  :: lbroad                      !lower bound of array
    integer, intent(in)  :: patchtype                   !land patch type (0=soil,1=urban or built-up,2=wetland,
                                                        !3=land ice, 4=deep lake, 5=shallow lake)
    real(r8), intent(in) :: deltim                      !seconds in a time step [second]
@@ -88,7 +89,7 @@ CONTAINS
    real(r8), intent(in) :: z_roadsno (lbroad  :nl_soil)    !node depth [m]
    real(r8), intent(in) :: zi_roadsno(lbroad-1:nl_soil)    !interface depth [m]
 
-   real(r8), intent(in) :: sab_road                    !solar radiation absorbed by ground [W/m2]
+   real(r8), intent(in) :: sab_road                     !solar radiation absorbed by ground [W/m2]
 !   real(r8), intent(in) :: frl                         !atmospheric infrared (longwave) radiation [W/m2]
 !   real(r8), intent(in) :: clgimp                      !deriv. of longwave wrt to soil temp [w/m2/k]
 !   real(r8), intent(in) :: dlrad                       !downward longwave radiation blow the canopy [W/m2]
@@ -157,7 +158,7 @@ CONTAINS
                         t_roadsno(i),vf_water(i),vf_ice(i),hcap(i),thk(i))
       cv(i) = hcap(i)*dz_roadsno(i)
    ENDDO
-   IF(lbroad==1 .and. scv_road>0.) cv(1) = cv(1) + cpice*scv_road
+!   IF(lbroad==1 .and. scv_road>0.) cv(1) = cv(1) + cpice*scv_road
 
 ! Snow heat capacity
    IF(lbroad <= 0) THEN
@@ -261,7 +262,7 @@ CONTAINS
    ct(j) = 0.
    rt(j) = t_roadsno(j) - cnfac*fact(j)*fn(j-1)
 
-! solve for t_gimpsno
+! solve for t_roadsno
    i = size(at)
    CALL tridia (i ,at ,bt ,ct ,rt ,t_roadsno)
 
@@ -281,7 +282,7 @@ CONTAINS
       brr(j) = cnfac*(fn(j)-fn(j-1)) + (1.-cnfac)*(fn1(j)-fn1(j-1))
    ENDDO
 
-!  can also call meltf_urban directly
+!  can also call meltf_road directly
    CALL meltf_road (lbroad,1,deltim, &
             fact(lbroad:1),brr(lbroad:1),hs,dhsdT, &
             t_roadsno_bef(lbroad:1),t_roadsno(lbroad:1), &

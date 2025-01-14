@@ -19,7 +19,7 @@ CONTAINS
         ! forcing
         forc_hgt_u     ,forc_hgt_t     ,forc_hgt_q     ,forc_us        ,&
         forc_vs        ,forc_t         ,forc_q         ,forc_psrf      ,&
-        forc_rhoair    ,forc_frl       ,forc_po2m      ,forc_pco2m     ,&
+        forc_rhoair    ,forc_frl       ,& !forc_po2m      ,forc_pco2m     ,&
         forc_sols      ,forc_soll      ,forc_solsd     ,forc_solld     ,&
         theta          ,& !sabwsun        ,sabwsha                        ,&
         sabroad        ,& !sablake        ,  sabv           ,
@@ -72,7 +72,7 @@ CONTAINS
         taux           ,tauy           ,fsena          ,fevpa          ,&
         lfevpa         ,& !fsenl       ,fevpl          ,etr            ,&
         fseng          ,fevpg          ,olrg           ,fgrnd          ,&
-        fseng_road     ,lfevp_road     ,qseva_road     ,qseva_lake     ,&
+        fseng_road     ,lfevp_road     ,qseva_road     ,&
         qsdew_road     ,qsubl_road     ,qfros_road     ,&
         imelt_road     ,& !imelt_lake     ,&
         sm_road        ,& !sm_lake        ,&
@@ -96,8 +96,7 @@ CONTAINS
                                  stefnc,denice,tfrz,vonkar,grav
    USE MOD_Qsadv
    USE MOD_Road_GroundFlux
-   USE MOD_Road_Flux
-   USE MOD_Road_GroundTemperature
+   USE MOD_Road_RoadTemperature
 !   USE MOD_Lake
    USE MOD_Eroot, only: eroot
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
@@ -108,7 +107,7 @@ CONTAINS
 
 !---------------------Argument------------------------------------------
    integer,  intent(in) :: &
-        idate(3)   ,&
+!        idate(3)   ,&
         ipatch     ,&! patch index
         patchtype  ,&! land patch type (0=soil, 1=urban or built-up, 2=wetland,
                      ! 3=glacier/ice sheet, 4=land water bodies)
@@ -131,8 +130,8 @@ CONTAINS
         forc_psrf  ,&! atmosphere pressure at the surface [pa]
         forc_rhoair,&! density air [kg/m3]
         forc_frl   ,&! atmospheric infrared (longwave) radiation [W/m2]
-        forc_po2m  ,&! O2 concentration in atmos. (pascals)
-        forc_pco2m ,&! CO2 concentration in atmos. (pascals)
+!        forc_po2m  ,&! O2 concentration in atmos. (pascals)
+!        forc_pco2m ,&! CO2 concentration in atmos. (pascals)
         forc_sols  ,&! atm vis direct beam solar rad onto srf [W/m2]
         forc_soll  ,&! atm nir direct beam solar rad onto srf [W/m2]
         forc_solsd ,&! atm vis diffuse solar rad onto srf [W/m2]
@@ -301,14 +300,14 @@ CONTAINS
    real(r8) :: &
       !  fg         ,&! ground fraction ( impervious + soil + snow )
         fsenroad   ,&! sensible heat flux from road [W/m2]
-        fevproad   ,&! evaporation heat flux from impervious road [mm/s]
-
+        fevproad   ,&! evaporation heat flux from impervious road [W/m2]
+        fsensnow   ,&! sensible heat flux from snow [W/m2]
+        fevpsnow   ,&! evaporation heat flux from snow [W/m2]
         croads     ,&! deriv of road sensible heat flux wrt soil temp [w/m**2/k]
         croadl     ,&! deriv of road latent heat flux wrt soil temp [w/m**2/k]
         croad      ,&! deriv of road total heat flux wrt soil temp [w/m**2/k]
         
         dqroaddT   ,&! d(qroad)/dT
-      !  dqgperdT   ,&! d(qgper)/dT
 
         degdT      ,&! d(eg)/dT
         eg         ,&! water vapor pressure at temperature T [pa]
@@ -338,7 +337,7 @@ CONTAINS
         troad      ,&! temperature of road
         troad_bef  ,&! temperature of road at previous time step
         t_snow     ,&! ground snow temperature
-        t_soisno_bef(lbroad:nl_soil), &! soil/snow temperature before update 
+!        t_soisno_bef(lbroad:nl_soil), &! soil/snow temperature before update 
         tinc       ,&! temperature difference of two time step
 !        ev         ,&! emissivity of vegetation [-]
         lout       ,&! out-going longwave radiation
@@ -351,6 +350,7 @@ CONTAINS
         wx         ,&! patitial volume of ice and water of surface layer
         xmf          ! total latent heat of phase change of ground water
 
+   ! LIXX TODO: clarify *_g and those without _g.
    real(r8) :: z0m_g,z0h_g,zol_g,obu_g,ustar_g,qstar_g,tstar_g
    real(r8) :: fm10m,fm_g,fh_g,fq_g,fh2m,fq2m,um,obu,eb
 
@@ -370,16 +370,18 @@ CONTAINS
       rst   = 2.0e4
       assim = 0.;   respc = 0.
 
-      cgrnds = 0.;  cgrndl = 0.
-      cgrnd  = 0.;  tref   = 0.
-      qref   = 0.;  hprl   = 0.
+!      cgrnds = 0.;  cgrndl = 0.
+!      cgrnd  = 0.;  
+      tref   = 0.
+      qref   = 0. !;  hprl   = 0.
 
       emis  = 0.;  z0m   = 0.
       zol   = 0.;  rib   = 0.
       ustar = 0.;  qstar = 0.
       tstar = 0.;  rootr = 0.
 
-      t_snow = t_soisno(lbroad)
+      ! Is this necessary
+      t_snow = t_roadsno(lbroad)
       ! latent heat, assumed that the sublimation occured only as wliq_gpersno=0
       htvp_road = hvap
       
@@ -459,9 +461,9 @@ CONTAINS
       qroad    = qsatg
       dqroaddT = qsatgdT
 
-      IF (qsatg > forc_q .and. forc_q > qred*qsatg) THEN
-         qroad = forc_q; dqgdT = 0.
-      ENDIF
+!      IF (qsatg > forc_q .and. forc_q > qred*qsatg) THEN
+!         qroad = forc_q ; dqroaddT = 0.
+!      ENDIF
 
       q_snow = qroad
 !!=======================================================================
@@ -518,11 +520,11 @@ CONTAINS
       CALL RoadGroundFlux (forc_hgt_u,forc_hgt_t,forc_hgt_q,forc_us, &
                            forc_vs,forc_t,forc_q,forc_rhoair,forc_psrf, hpbl, &
                            ur,thm,th,thv,zlnd,zsno,fsno_road, lbroad, &
-                           rss, dqroaddT, htvp, croad, croadl, croads, &
+                           rsr, dqroaddT, htvp_road, croad, croadl, croads, &
                            troad,qroad,t_snow,q_snow, &
-                           taux,tauy,fseng_road,fseng_snow, &
-                           fevpg_road,fevpg_snow,tref,qref, &
-                           z0m_g,z0h_g,zol_g,rib_g,ustar_g,qstar_g,tstar_g,&
+                           taux,tauy,fsenroad,fsensnow, &
+                           fevproad,fevpsnow,tref,qref, &
+                           z0m_g,z0h_g,zol_g,rib,ustar_g,qstar_g,tstar_g,&
                            fm_g,fh_g,fq_g)
 
       ! SAVE variables for bareground case
@@ -589,8 +591,8 @@ CONTAINS
            dz_roadsno,z_roadsno,zi_roadsno,&
            t_roadsno,wice_roadsno,wliq_roadsno,&
            scv_road,snowdp_road,&
-           lroad,clroad,sabg_road,&
-           fseng_road,fseng_snow,fevpg_road,fevpg_snow,&
+           lroad,clroad,sabroad,&
+           fsenroad,fsensnow,fevproad,fevpsnow,&
            croad,htvp_road,&
            imelt_road,sm_road,xmf,fact_road)
 
@@ -605,9 +607,9 @@ CONTAINS
       dT = troad - troad_bef
 
       ! flux change due to temperture change
-      fseng_road = fseng_road + dT*croads
+      fsenroad = fsenroad + dT*croads
     
-      fevpg_road = fevpg_road + dT*croadl
+      fevproad = fevproad + dT*croadl
 
 ! calculation of evaporative potential; flux in kg m-2 s-1.
 ! egidif holds the excess energy IF all water is evaporated
@@ -618,16 +620,16 @@ CONTAINS
       ! update of snow
       IF (lbroad < 1) THEN
          egsmax = (wice_roadsno(lbroad)+wliq_roadsno(lbroad)) / deltim
-         egidif = max( 0., fevpg_road - egsmax )
-         fevpg_road = min ( fevpg_road, egsmax )
-         fseng_road = fseng_road + htvp_road*egidif
+         egidif = max( 0., fevproad - egsmax )
+         fevproad = min ( fevproad, egsmax )
+         fsenroad = fsenroad + htvp_road*egidif
       ENDIF
 
       ! update of soil
       egsmax = (wice_roadsno(1)+wliq_roadsno(1)) / deltim
-      egidif = max( 0., fevpg_road - egsmax )
-      fevpg_road = min ( fevpg_road, egsmax )
-      fseng_road = fseng_road + htvp_road*egidif
+      egidif = max( 0., fevproad - egsmax )
+      fevproad = min ( fevproad, egsmax )
+      fsenroad = fsenroad + htvp_road*egidif
 
 !=======================================================================
 ! [8] total fluxes to atmosphere
@@ -635,17 +637,18 @@ CONTAINS
 
       lnet  = lroad
 
-      sabg  = sab_road
+! LIXX TODO: Is this correct?       
+      sabg  = sabroad
 
-      fseng = fseng_road
+      fseng = fsenroad
       
-      fsen_road = fseng_road
+      fseng_road = fsenroad
       
-      fevpg = fevpg_road
+      fevpg = fevproad
 
-      lfevpa = htvp_road*fevpg_road     
+      lfevpa = htvp_road*fevproad     
 
-      lfevp_road = htvp_road*fevpg_road
+      lfevp_road = htvp_road*fevproad
 
       fsena  = fseng
       fevpa  = fevpg
@@ -676,15 +679,15 @@ CONTAINS
       qfros_road = 0.
       qsdew_road = 0.
 
-      IF (fevpg_road >= 0.)THEN
+      IF (lfevp_road >= 0.) THEN
 ! not allow for sublimation in melting (melting ==> evap. ==> sublimation)
-         qseva_road = min(wliq_roadsno(lbroad)/deltim, fevpg_road)
-         qsubl_road = fevpg_road - qseva_road
+         qseva_road = min(wliq_roadsno(lbroad)/deltim, lfevp_road)
+         qsubl_road = lfevp_road - qseva_road
       ELSE
-         IF (troad < tfrz)THEN
-            qfros_road = abs(fevpg_road)
+         IF (troad < tfrz) THEN
+            qfros_road = abs(lfevp_road)
          ELSE
-            qsdew_road = abs(fevpg_road)
+            qsdew_road = abs(lfevp_road)
          ENDIF
       ENDIF
 
@@ -777,9 +780,9 @@ CONTAINS
 #if (defined CoLMDEBUG)
       IF (abs(errore)>.5) THEN
       write(6,*) 'RoadTHERMAL.F90: energy balance violation'
-      write(6,*) ipatch,errore,sabg,forc_frl,olrg,fsenl,fseng,hvap*fevpl,lfevpa,xmf
+      write(6,*) ipatch,errore,sabg,forc_frl,olrg,fseng,lfevpa,xmf
       ENDIF
-100   format(10(f15.3))
+100   format(8(f15.3))
 #endif
 
 !      ! diagnostic sabg only for pervious and impervious ground

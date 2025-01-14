@@ -61,7 +61,10 @@ OBJS_SHARED =    \
 				  MOD_SrfdataRestart.o         \
 				  MOD_ElmVector.o              \
 				  MOD_HRUVector.o              \
-				  MOD_Urban_Const_LCZ.o
+				  MOD_MeshFilter.o             \
+				  MOD_RegionClip.o             \
+				  MOD_Urban_Const_LCZ.o        \
+				  MOD_Road_Const_ThermalParameters.o
 
 ${OBJS_SHARED} : %.o : %.F90 ${HEADER}
 	${FF} -c ${FOPTS} $(INCLUDE_DIR) -o .bld/$@ $< ${MOD_CMD}.bld
@@ -80,8 +83,6 @@ OBJS_MKSRFDATA = \
 				  Aggregation_TopographyFactors.o   \
 				  Aggregation_Urban.o               \
 				  Aggregation_SoilTexture.o         \
-				  MOD_MeshFilter.o                  \
-				  MOD_RegionClip.o                  \
 				  MKSRFDATA.o
 
 $(OBJS_MKSRFDATA) : %.o : %.F90 ${HEADER} ${OBJS_SHARED}
@@ -112,6 +113,7 @@ OBJS_BASIC =    \
 				 MOD_Urban_Vars_1DFluxes.o      \
 				 MOD_Urban_Vars_TimeVariables.o \
 				 MOD_Urban_Vars_TimeInvariants.o\
+				 MOD_Road_Vars_TimeVariables.o  \
 				 MOD_Const_PFT.o                \
 				 MOD_Vars_TimeInvariants.o      \
 				 MOD_Vars_TimeVariables.o       \
@@ -138,6 +140,7 @@ OBJS_BASIC =    \
 				 MOD_Urban_LAIReadin.o          \
 				 MOD_Urban_Shortwave.o          \
 				 MOD_Urban_Albedo.o             \
+				 MOD_Road_Albedo.o             \
 				 MOD_MonthlyinSituCO2MaunaLoa.o \
 				 MOD_PercentagesPFTReadin.o     \
 				 MOD_LakeDepthReadin.o          \
@@ -314,6 +317,11 @@ OBJS_MAIN = \
 				MOD_Urban_LUCY.o                          \
 				MOD_Urban_Thermal.o                       \
 				CoLMMAIN_Urban.o                          \
+				MOD_Road_GroundFlux.o                     \
+				MOD_Road_RoadTemperature.o                \
+				MOD_Road_Thermal.o                        \
+				MOD_Road_Hydrology.o                      \
+				Road_CoLMMain.o                           \
 				MOD_Lulcc_Vars_TimeInvariants.o           \
 				MOD_Lulcc_Vars_TimeVariables.o            \
 				MOD_Lulcc_Initialize.o                    \

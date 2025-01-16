@@ -13,7 +13,7 @@ MODULE MOD_LandRoad
 
    USE MOD_Grid
    USE MOD_Pixelset
-!   USE MOD_Vars_Global, only: N_URB, URBAN
+   USE MOD_Vars_Global, only: URBAN
 #ifdef SinglePoint
    USE MOD_SingleSrfdata
 #endif
@@ -60,32 +60,16 @@ CONTAINS
 
    integer, intent(in) :: lc_year
    ! Local Variables
-   character(len=256) :: dir_urban
+   character(len=256) :: dir_road
    type (block_data_int32_2d) :: data_urb_class ! urban type index
 
-   ! local vars
-   integer, allocatable :: ibuff(:), types(:), order(:)
-
    ! index
-   integer :: ipatch, jpatch, iurban
-   integer :: ie, ipxstt, ipxend, npxl, ipxl
-   integer :: nurb_glb, npatch_glb
+   integer :: nr_glb, npatch_glb
 
-   ! local vars for landpath and landurban
-   integer :: numpatch_
-   integer*8, allocatable :: eindex_(:)
-   integer,   allocatable :: ipxstt_(:)
-   integer,   allocatable :: ipxend_(:)
-   integer,   allocatable :: settyp_(:)
-   integer,   allocatable :: ielm_  (:)
-
-   integer :: numurban_
-   integer, allocatable :: urbclass (:)
-
-   character(len=256) :: suffix, cyear
+   character(len=256) :: suffix, cyear ! delete unneeded index and vars
 
       IF (p_is_master) THEN
-         write(*,'(A)') 'Making urban type tiles :'
+         write(*,'(A)') 'Making road type tiles :'
       ENDIF
 
 #ifdef USEMPI
@@ -95,244 +79,78 @@ CONTAINS
       ! allocate and read the grided LCZ/NCAR urban type
       IF (p_is_io) THEN
 
-         dir_urban = trim(DEF_dir_rawdata) // '/urban_type'
+         dir_road = trim(DEF_dir_rawdata) // '/urban_type'
 
-         CALL allocate_block_data (gurban, data_urb_class)
+         CALL allocate_block_data (groad, data_urb_class)
          CALL flush_block_data (data_urb_class, 0)
 
-         !write(cyear,'(i4.4)') int(lc_year/5)*5
+         !read LCZ data
          suffix = 'URBTYP'
-IF (DEF_URBAN_type_scheme == 1) THEN
-         ! NOTE!!!
-         ! region id is assigned in aggreagation_urban.F90 now
-         CALL read_5x5_data (dir_urban, suffix, gurban, 'URBAN_DENSITY_CLASS', data_urb_class)
-ELSE IF (DEF_URBAN_type_scheme == 2) THEN
-         CALL read_5x5_data (dir_urban, suffix, gurban, 'LCZ_DOM', data_urb_class)
-ENDIF
+         CALL read_5x5_data (dir_road, suffix, groad, 'LCZ_DOM', data_urb_class)
 
 #ifdef USEMPI
-         CALL aggregation_data_daemon (gurban, data_i4_2d_in1 = data_urb_class)
+         CALL aggregation_data_daemon (groad, data_i4_2d_in1 = data_urb_class)
 #endif
       ENDIF
 
       IF (p_is_worker) THEN
 
+         ! delete urban types and update road patch number
          IF (numpatch > 0) THEN
-            ! a temporary numpatch with max urban patch
-            numpatch_ = numpatch + count(landpatch%settyp == URBAN) * (N_URB-1)
-
-            allocate (eindex_(numpatch_))
-            allocate (ipxstt_(numpatch_))
-            allocate (ipxend_(numpatch_))
-            allocate (settyp_(numpatch_))
-            allocate (ielm_  (numpatch_))
-
-            ! max urban patch number
-            numurban_ = count(landpatch%settyp == URBAN) * N_URB
-            IF (numurban_ > 0) THEN
-               allocate (urbclass(numurban_))
-            ENDIF
-         ENDIF
-
-         jpatch = 0
-         iurban = 0
-
-         ! loop for temporary numpatch to filter duplicate urban patch
-         DO ipatch = 1, numpatch
-            IF (landpatch%settyp(ipatch) == URBAN) THEN
-
-               !???
-               ie     = landpatch%ielm  (ipatch)
-               ipxstt = landpatch%ipxstt(ipatch)
-               ipxend = landpatch%ipxend(ipatch)
-
-               CALL aggregation_request_data (landpatch, ipatch, gurban, zip = .false., &
-                  data_i4_2d_in1 = data_urb_class, data_i4_2d_out1 = ibuff)
-
-IF (DEF_URBAN_type_scheme == 1) THEN
-               ! Some urban patches and NCAR data are inconsistent (NCAR has no urban ID),
-               ! so the these points are assigned by the 3(medium density), or can define by ueser
-               WHERE (ibuff < 1 .or. ibuff > 3)
-                  ibuff = 3
-               END WHERE
-ELSE IF(DEF_URBAN_type_scheme == 2) THEN
-               ! Same for NCAR, fill the gap LCZ class of urban patch if LCZ data is non-urban
-               WHERE (ibuff > 10 .or. ibuff == 0)
-                  ibuff = 9
-               END WHERE
-ENDIF
-
-               npxl = ipxend - ipxstt + 1
-
-               allocate (types (ipxstt:ipxend))
-
-               types(:) = ibuff
-
-               deallocate (ibuff)
-
-               allocate (order (ipxstt:ipxend))
-               order = (/ (ipxl, ipxl = ipxstt, ipxend) /)
-
-               ! change order vars, types->regid
-               ! add region information, because urban type may be same,
-               ! but from different region in this urban patch
-               ! relative code is changed
-               CALL quicksort (npxl, types, order)
-
-               mesh(ie)%ilon(ipxstt:ipxend) = mesh(ie)%ilon(order)
-               mesh(ie)%ilat(ipxstt:ipxend) = mesh(ie)%ilat(order)
-
-               DO ipxl = ipxstt, ipxend
-                  IF (ipxl /= ipxstt) THEN
-                     IF (types(ipxl) /= types(ipxl-1)) THEN
-                        ipxend_(jpatch) = ipxl - 1
-                     ELSE
-                        CYCLE
-                     ENDIF
-                  ENDIF
-
-                  jpatch = jpatch + 1
-                  eindex_(jpatch) = mesh(ie)%indx
-                  settyp_(jpatch) = URBAN
-                  ipxstt_(jpatch) = ipxl
-                  ielm_  (jpatch) = ie
-
-                  iurban = iurban + 1
-                  urbclass(iurban) = types(ipxl)
-               ENDDO
-
-               ipxend_(jpatch) = ipxend
-
-               deallocate (types)
-               deallocate (order)
-
-            ELSE
-               jpatch = jpatch + 1
-               eindex_(jpatch) = landpatch%eindex(ipatch)
-               ipxstt_(jpatch) = landpatch%ipxstt(ipatch)
-               ipxend_(jpatch) = landpatch%ipxend(ipatch)
-               settyp_(jpatch) = landpatch%settyp(ipatch)
-               ielm_  (jpatch) = landpatch%ielm  (ipatch)
-            ENDIF
-         ENDDO
-
-#ifdef USEMPI
-         CALL aggregation_worker_done ()
-#endif
-
-         numpatch = jpatch
-
-         IF (numpatch > 0) THEN
-            ! update landpath with new patch number
-            ! all urban type patch are included
-            IF (allocated (landpatch%eindex)) deallocate (landpatch%eindex)
-            IF (allocated (landpatch%ipxstt)) deallocate (landpatch%ipxstt)
-            IF (allocated (landpatch%ipxend)) deallocate (landpatch%ipxend)
-            IF (allocated (landpatch%settyp)) deallocate (landpatch%settyp)
-            IF (allocated (landpatch%ielm  )) deallocate (landpatch%ielm  )
-
-            allocate (landpatch%eindex (numpatch))
-            allocate (landpatch%ipxstt (numpatch))
-            allocate (landpatch%ipxend (numpatch))
-            allocate (landpatch%settyp (numpatch))
-            allocate (landpatch%ielm   (numpatch))
-
-            ! update all information of landpatch
-            landpatch%eindex = eindex_(1:jpatch)
-            landpatch%ipxstt = ipxstt_(1:jpatch)
-            landpatch%ipxend = ipxend_(1:jpatch)
-            landpatch%settyp = settyp_(1:jpatch)
-            landpatch%ielm   = ielm_  (1:jpatch)
-         ENDIF
-
-         ! update urban patch number
-         IF (numpatch > 0) THEN
-            numurban = count(landpatch%settyp == URBAN)
+            numroad = count(landpatch%settyp == URBAN)
          ELSE
-            numurban = 0
+            numroad = 0
          ENDIF
 
-         IF (numurban > 0) THEN
-            allocate (landurban%eindex (numurban))
-            allocate (landurban%settyp (numurban))
-            allocate (landurban%ipxstt (numurban))
-            allocate (landurban%ipxend (numurban))
-            allocate (landurban%ielm   (numurban))
+         IF (numroad > 0) THEN
+            allocate (landroad%eindex (numroad))
+            allocate (landroad%settyp (numroad))
+            allocate (landroad%ipxstt (numroad))
+            allocate (landroad%ipxend (numroad))
+            allocate (landroad%ielm   (numroad))
 
-            ! copy urban path information from landpatch for landurban
-            landurban%eindex = pack(landpatch%eindex, landpatch%settyp == URBAN)
-            landurban%ipxstt = pack(landpatch%ipxstt, landpatch%settyp == URBAN)
-            landurban%ipxend = pack(landpatch%ipxend, landpatch%settyp == URBAN)
-            landurban%ielm   = pack(landpatch%ielm  , landpatch%settyp == URBAN)
-
-            ! assign urban region id and type for each urban patch
-            landurban%settyp = urbclass(1:numurban)
+            ! copy urban path information from landpatch for landroad
+            landroad%eindex = pack(landpatch%eindex, landpatch%settyp == URBAN)
+            landroad%ipxstt = pack(landpatch%ipxstt, landpatch%settyp == URBAN)
+            landroad%ipxend = pack(landpatch%ipxend, landpatch%settyp == URBAN)
+            landroad%ielm   = pack(landpatch%ielm  , landpatch%settyp == URBAN)
+            landroad%settyp = URBAN
          ENDIF
 
-         ! update land patch with urban type patch
-         ! set numurban
-         landurban%nset = numurban
+         ! update land patch with roadr type patch
+         ! set numroad
+         landroad%nset = numroad
          landpatch%nset = numpatch
       ENDIF
 
       CALL landpatch%set_vecgs
-      CALL landurban%set_vecgs
+      CALL landroad%set_vecgs
 
-      CALL map_patch_to_urban
+      CALL map_patch_to_road
 
 #ifdef USEMPI
       IF (p_is_worker) THEN
-         CALL mpi_reduce (numurban, nurb_glb, 1, MPI_INTEGER, MPI_SUM, p_root, p_comm_worker, p_err)
+         CALL mpi_reduce (numroad, nr_glb, 1, MPI_INTEGER, MPI_SUM, p_root, p_comm_worker, p_err)
          IF (p_iam_worker == 0) THEN
-            write(*,'(A,I12,A)') 'Total: ', nurb_glb, ' urban tiles.'
+            write(*,'(A,I12,A)') 'Total: ', nr_glb, ' road tiles.'
          ENDIF
       ENDIF
 
       CALL mpi_barrier (p_comm_glb, p_err)
 #else
-      write(*,'(A,I12,A)') 'Total: ', numurban, ' urban tiles.'
+      write(*,'(A,I12,A)') 'Total: ', numroad, ' road tiles.'
 #endif
 
 #ifdef SinglePoint
 
-      allocate  ( SITE_urbtyp   (numurban) )
-      allocate  ( SITE_lucyid   (numurban) )
+      ! delete urban vars
+      allocate  ( SITE_em_road   (numroad) )
 
-IF (.not. USE_SITE_urban_paras) THEN
-      allocate  ( SITE_fveg_urb (numurban) )
-      allocate  ( SITE_htop_urb (numurban) )
-      allocate  ( SITE_flake_urb(numurban) )
+      allocate  ( SITE_cv_road   (nl_soil) ) ! or nl_road
+      allocate  ( SITE_tk_road   (nl_soil) )
 
-      allocate  ( SITE_popden   (numurban) )
-      allocate  ( SITE_froof    (numurban) )
-      allocate  ( SITE_hroof    (numurban) )
-      allocate  ( SITE_hwr      (numurban) )
-      allocate  ( SITE_fgper    (numurban) )
-      allocate  ( SITE_fgimp    (numurban) )
-ENDIF
+      allocate  ( SITE_alb_road  (2,2)     )
 
-      allocate  ( SITE_em_roof  (numurban) )
-      allocate  ( SITE_em_wall  (numurban) )
-      allocate  ( SITE_em_gimp  (numurban) )
-      allocate  ( SITE_em_gper  (numurban) )
-      allocate  ( SITE_t_roommax(numurban) )
-      allocate  ( SITE_t_roommin(numurban) )
-      allocate  ( SITE_thickroof(numurban) )
-      allocate  ( SITE_thickwall(numurban) )
-
-      allocate  ( SITE_cv_roof  (nl_roof) )
-      allocate  ( SITE_cv_wall  (nl_wall) )
-      allocate  ( SITE_cv_gimp  (nl_soil) )
-      allocate  ( SITE_tk_roof  (nl_roof) )
-      allocate  ( SITE_tk_wall  (nl_wall) )
-      allocate  ( SITE_tk_gimp  (nl_soil) )
-
-      allocate  ( SITE_alb_roof (2, 2) )
-      allocate  ( SITE_alb_wall (2, 2) )
-      allocate  ( SITE_alb_gimp (2, 2) )
-      allocate  ( SITE_alb_gper (2, 2) )
-
-      SITE_urbtyp(:) = landurban%settyp
 #endif
 
 #ifndef CROP
@@ -355,18 +173,6 @@ ENDIF
 #endif
       CALL write_patchfrac (DEF_dir_landdata, lc_year)
 #endif
-
-      IF (allocated(ibuff)) deallocate (ibuff)
-      IF (allocated(types)) deallocate (types)
-      IF (allocated(order)) deallocate (order)
-
-      IF (allocated(eindex_)) deallocate (eindex_)
-      IF (allocated(ipxstt_)) deallocate (ipxstt_)
-      IF (allocated(ipxend_)) deallocate (ipxend_)
-      IF (allocated(settyp_)) deallocate (settyp_)
-      IF (allocated(ielm_  )) deallocate (ielm_  )
-
-      IF (allocated(urbclass)) deallocate (urbclass)
 
    END SUBROUTINE landroad_build
 

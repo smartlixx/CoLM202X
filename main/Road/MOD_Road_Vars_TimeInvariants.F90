@@ -11,15 +11,15 @@ MODULE MOD_Road_Vars_TimeInvariants
    IMPLICIT NONE
    SAVE
 
-   integer, parameter :: ns    = 2
-   integer, parameter :: nr    = 2
-   integer, parameter :: ulev  = 10
-   integer, parameter :: ityp  = 3
-   integer, parameter :: ihour = 24
-   integer, parameter :: iweek = 7
-   integer, parameter :: iday  = 365
+   !integer, parameter :: ns    = 2
+   !integer, parameter :: nr    = 2
+   !integer, parameter :: ulev  = 10
+   !integer, parameter :: ityp  = 3
+   !integer, parameter :: ihour = 24
+   !integer, parameter :: iweek = 7
+   !integer, parameter :: iday  = 365
 
-   !integer , allocatable :: roadclass    (:)  !urban type
+   !integer , allocatable :: roadclass    (:)  !road type
    !integer , allocatable :: patch2road   (:)  !projection from patch to road
    !integer , allocatable :: road2patch   (:)  !projection from road to patch
 
@@ -41,8 +41,8 @@ MODULE MOD_Road_Vars_TimeInvariants
 ! PUBLIC MEMBER FUNCTIONS:
    PUBLIC :: allocate_RoadTimeInvariants
    PUBLIC :: deallocate_RoadTimeInvariants
-   PUBLIC :: READ_RoadTimeInvariants
-   PUBLIC :: WRITE_RoadTimeInvariants
+   !PUBLIC :: READ_RoadTimeInvariants
+   !PUBLIC :: WRITE_RoadTimeInvariants
 
 ! PRIVATE MEMBER FUNCTIONS:
 
@@ -54,9 +54,9 @@ CONTAINS
 
    SUBROUTINE allocate_RoadTimeInvariants ()
 ! ------------------------------------------------------
-! Allocates memory for CoLM 1d [numurban] variants
+! Allocates memory for CoLM 1d [numroad] variants
 ! ------------------------------------------------------
-   USE MOD_Precision
+   !USE MOD_Precision
    USE MOD_SPMD_Task
    USE MOD_LandRoad
    USE MOD_Vars_Global
@@ -65,16 +65,16 @@ CONTAINS
       IF (p_is_worker) THEN
          IF (numurban > 0) THEN
 
-            allocate (alb_roof         (2,2,numurban))
+            allocate (alb_rood          (2,2,numroad))
 
-            allocate (em_roof              (numurban))
+            allocate (em_road              (numurban))
 
-            allocate (z_roof     (1:nl_roof,numurban))
-            allocate (dz_roof    (1:nl_roof,numurban))
+            allocate (z_road      (1:nl_road,numroad))
+            allocate (dz_road     (1:nl_road,numroad))
 
-            allocate (cv_roof    (1:nl_roof,numurban))
+            allocate (cv_road     (1:nl_road,numroad))
 
-            allocate (tk_roof    (1:nl_roof,numurban))
+            allocate (tk_road     (1:nl_road,numroad))
 
          ENDIF
       ENDIF

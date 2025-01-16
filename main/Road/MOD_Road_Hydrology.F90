@@ -12,18 +12,18 @@ CONTAINS
 
    SUBROUTINE RoadHydrology ( &
         ! model running information
-        ipatch         ,patchtype      ,lbroad         ,deltim         ,&
+        ipatch         ,patchtype      ,lbroad         ,deltim     ,&
         ! forcing
-        pg_rain        ,pgroad_rain    ,pg_snow                        ,&
+        pg_rain        ,pgroad_rain    ,pg_snow                    ,&
         ! surface parameters or status
         ssi            ,wimp           ,&
         fseng          ,fgrnd          ,&
-        dz_roadsno     ,wliq_roadsno   ,wice_roadsno                   ,&
-        qseva_road     ,qsdew_road     ,qsubl_road     ,qfros_road     ,&
-        sm_road        ,forc_us        ,forc_vs                        ,&
+        dz_roadsno     ,wliq_roadsno   ,wice_roadsno               ,&
+        qseva_road     ,qsdew_road     ,qsubl_road     ,qfros_road ,&
+        sm_road        ,forc_us        ,forc_vs                    ,&
         ! output
-        rsur           ,rnof           ,errw_rsub                      ,&
-      )
+        rsur           ,rnof           ,errw_rsub                   &
+   )
 
 !=======================================================================
 ! this is the main SUBROUTINE to execute the calculation of URBAN
@@ -65,15 +65,15 @@ CONTAINS
         dz_roadsno  (lbroad:nl_soil)  ,&! layer thickness (m)
         wliq_roadsno(lbroad:nl_soil)  ,&! liquid water (kg/m2)
         wice_roadsno(lbroad:nl_soil)  ,&! ice lens (kg/m2)
-        fseng            ,&! sensible heat from ground
-        fgrnd              ! ground heat flux
+        fseng                         ,&! sensible heat from ground
+        fgrnd                           ! ground heat flux
 
    real(r8), intent(out) :: &
-        rsur             ,&! surface runoff (mm h2o/s)
-        rnof               ! total runoff (mm h2o/s)
+        rsur                          ,&! surface runoff (mm h2o/s)
+        rnof                            ! total runoff (mm h2o/s)
 
    real(r8), intent(out) :: &
-        errw_rsub          ! the possible subsurface runoff deficit after PHS is included
+        errw_rsub                       ! the possible subsurface runoff deficit after PHS is included
 !
 !-----------------------Local Variables------------------------------
 !

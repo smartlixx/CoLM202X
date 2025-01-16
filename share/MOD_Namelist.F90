@@ -232,6 +232,12 @@ MODULE MOD_Namelist
    logical :: DEF_URBAN_LUCY        = .true.
    logical :: DEF_USE_CANYON_HWR    = .true.
 
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+! ----- Part 10.1: Road model related ------
+! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   logical :: DEF_ROAD_RUN         = .false.
+
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! ----- Part 11: parameteration schemes -----
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -948,6 +954,8 @@ CONTAINS
       DEF_URBAN_LUCY,                         &
       DEF_USE_CANYON_HWR,                     &
 
+      DEF_ROAD_RUN,                           &
+
       DEF_USE_SOILPAR_UPS_FIT,                &
       DEF_THERMAL_CONDUCTIVITY_SCHEME,        &
       DEF_USE_SUPERCOOL_WATER,                &
@@ -1074,6 +1082,11 @@ CONTAINS
          DEF_HIST_mode = 'one'
 #endif
 
+         IF (DEF_simulation_time%timestep > 3600.) THEN
+            write(*,*) '                  *****                  '
+            write(*,*) 'Warning: timestep should be less than or equal to 3600 seconds.'
+            CALL CoLM_Stop ()
+         ENDIF
 
 ! ===============================================================
 ! ----- Macros&Namelist conflicts and dependency management -----
@@ -1262,6 +1275,31 @@ CONTAINS
 #endif
 
 
+! ----- Road model ----- Macros&Namelist conflicts and dependency management
+
+#ifdef ROAD_MODEL
+         DEF_ROAD_RUN = .true.
+
+         write(*,*) '                  *****                  '
+         write(*,*) 'When ROAD model is opened, WUEST/SUPERCOOL_WATER/PLANTHYDRAULICS/OZONESTRESS/SOILSNOW'
+         write(*,*) 'will be set to false automatically for simplicity.'
+         DEF_USE_WUEST           = .false.
+         DEF_USE_SUPERCOOL_WATER = .false.
+         DEF_USE_PLANTHYDRAULICS = .false.
+         DEF_USE_OZONESTRESS     = .false.
+         DEF_USE_OZONEDATA       = .false.
+         DEF_SPLIT_SOILSNOW      = .false.
+#else
+         IF (DEF_ROAD_RUN) THEN
+            write(*,*) '                  *****                  '
+            write(*,*) 'Note: The Road model is not opened. IF you want to run Road model '
+            write(*,*) 'please #define ROAD_MODEL in define.h. otherwise DEF_ROAD_RUN will '
+            write(*,*) 'be set to false automatically.'
+            DEF_ROAD_RUN = .false.
+         ENDIF
+#endif
+
+
 ! ----- LULCC ----- Macros&Namelist conflicts and dependency management
 
 #ifdef LULCC
@@ -1337,17 +1375,17 @@ CONTAINS
 #ifndef CATCHMENT
          IF ((.not. DEF_USE_VariablySaturatedFlow) .and. DEF_USE_Dynamic_Lake) THEN
             DEF_USE_Dynamic_Lake = .false.
-            write(*,*) '                         *** Warning ***                                '
-            write(*,*) 'Dynamic Lake is closed if variably saturated flow algorithm is not used.'
+            write(*,*) '                  *****                  '
+            write(*,*) 'Warning: Dynamic Lake is closed if variably saturated flow algorithm is not used.'
          ENDIF
          IF (DEF_USE_Dynamic_Lake) THEN
-            write(*,*) '                   *** Warning ***                      '
-            write(*,*) 'Dynamic Lake is not well supported without lateral flow.'
+            write(*,*) '                  *****                  '
+            write(*,*) 'Warning: Dynamic Lake is not well supported without lateral flow.'
          ENDIF
 #else
          DEF_USE_Dynamic_Lake = .true.
-         write(*,*) '                 *** Warning ***                          '
-         write(*,*) 'Dynamic Lake is used if CATCHMENT-based lateral flow used.'
+         write(*,*) '                  *****                  '
+         write(*,*) 'Warning: Dynamic Lake is used if CATCHMENT-based lateral flow used.'
 #endif
 
 ! ----- [Complement IF needed] ----- Macros&Namelist conflicts and dependency management

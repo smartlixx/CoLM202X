@@ -71,16 +71,16 @@ SUBROUTINE Aggregation_SoilTexture ( &
 #endif
 
 #ifdef SinglePoint
-      IF (USE_SITE_soilparameters) THEN
+      IF (USE_SITE_soilparameters .or. (DEF_Runoff_SCHEME /= 3)) THEN
          RETURN
       ENDIF
 #endif
 
-      lndname = trim(dir_rawdata)//'/soil/soil_type.nc'
+      lndname = trim(dir_rawdata)//'/soil/soiltexture_0cm-60cm_mean.nc'
 
       IF (p_is_io) THEN
          CALL allocate_block_data (gland, soiltext)
-         CALL ncio_read_block (lndname, 'soil_type_l6', gland, soiltext)
+         CALL ncio_read_block (lndname, 'soiltexture', gland, soiltext)
 
 #ifdef USEMPI
          CALL aggregation_data_daemon (gland, data_i4_2d_in1 = soiltext)

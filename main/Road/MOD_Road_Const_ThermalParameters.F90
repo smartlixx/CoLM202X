@@ -22,7 +22,7 @@ MODULE MOD_Road_Const_ThermalParameters
 
    ! emissivity of concrete pavement [-]
    real(r8), parameter, dimension(2,2)  :: emroad_cct &
-      = resahpe([0.87, 0.87, 0.92, 0.92], sahpe(emroad_cct))
+      = reshape([0.87, 0.87, 0.92, 0.92], shape(emroad_cct))
 
    
 

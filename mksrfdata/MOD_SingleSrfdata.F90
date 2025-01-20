@@ -128,6 +128,11 @@ MODULE MOD_SingleSrfdata
    real(r8), allocatable :: SITE_alb_gimp (:,:)
    real(r8), allocatable :: SITE_alb_gper (:,:)
 
+   real(r8), allocatable :: SITE_em_road  (:)
+   real(r8), allocatable :: SITE_cv_road  (:)
+   real(r8), allocatable :: SITE_tk_road  (:)
+   real(r8), allocatable :: SITE_alb_road  (:,:)
+
 CONTAINS
 
    ! -----

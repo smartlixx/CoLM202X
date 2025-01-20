@@ -55,6 +55,7 @@ OBJS_SHARED =    \
 				  MOD_LandHRU.o                \
 				  MOD_LandPatch.o              \
 				  MOD_LandUrban.o              \
+				  MOD_LandRoad.o               \
 				  MOD_LandCrop.o               \
 				  MOD_LandPFT.o                \
 				  MOD_SrfdataDiag.o            \

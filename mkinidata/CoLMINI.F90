@@ -38,6 +38,9 @@ PROGRAM CoLMINI
 #ifdef URBAN_MODEL
    USE MOD_LandUrban
 #endif
+#ifdef ROAD_MODEL
+   USE MOD_LandRoad
+#endif
 #ifdef SinglePoint
    USE MOD_SingleSrfdata
 #endif
@@ -133,6 +136,9 @@ PROGRAM CoLMINI
 #ifdef URBAN_MODEL
       CALL pixelset_load_from_file (dir_landdata, 'landurban', landurban, numurban, lc_year)
       CALL map_patch_to_urban
+#endif
+#ifdef ROAD_MODEL
+      CALL map_patch_to_road
 #endif
 #if (defined UNSTRUCTURED || defined CATCHMENT)
       CALL elm_vector_init ()

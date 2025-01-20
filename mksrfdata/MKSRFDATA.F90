@@ -67,6 +67,9 @@ PROGRAM MKSRFDATA
 #ifdef URBAN_MODEL
    USE MOD_LandUrban
 #endif
+#ifdef ROAD_MODEL
+   USE MOD_LandRoad
+#endif
 #ifdef CROP
    USE MOD_LandCrop
 #endif
@@ -224,6 +227,10 @@ PROGRAM MKSRFDATA
    CALL grid_urban_5km%define_by_name  ('colm_5km' )
 #endif
 
+#ifdef ROAD_MODEL
+   CALL groad%define_by_name          ('colm_500m')
+#endif
+
    ! assimilate grids to build pixels
 #ifndef SinglePoint
    CALL pixel%assimilate_grid (gridmesh)
@@ -242,6 +249,9 @@ PROGRAM MKSRFDATA
    CALL pixel%assimilate_grid (gurban         )
    CALL pixel%assimilate_grid (grid_urban_500m)
    CALL pixel%assimilate_grid (grid_urban_5km )
+#endif
+#ifdef ROAD_MODEL
+   CALL pixel%assimilate_grid (groad         )
 #endif
 #if (defined CROP)
    CALL pixel%assimilate_grid (gcrop )
@@ -271,6 +281,9 @@ PROGRAM MKSRFDATA
    CALL pixel%map_to_grid (gurban         )
    CALL pixel%map_to_grid (grid_urban_500m)
    CALL pixel%map_to_grid (grid_urban_5km )
+#endif
+#ifdef ROAD_MODEL
+   CALL pixel%map_to_grid (groad         )
 #endif
 #if (defined CROP)
    CALL pixel%map_to_grid (gcrop )
@@ -313,6 +326,10 @@ PROGRAM MKSRFDATA
 
 #ifdef URBAN_MODEL
    CALL landurban_build(lc_year)
+#endif
+
+#ifdef ROAD_MODEL
+   CALL landroad_build(lc_year)
 #endif
 
 #ifdef CROP

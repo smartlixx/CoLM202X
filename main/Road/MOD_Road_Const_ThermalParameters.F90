@@ -8,14 +8,23 @@ MODULE MOD_Road_Const_ThermalParameters
    SAVE
 
 
-   ! albeodo of impervious asphalt pavement [-]
+   ! albeodo of asphalt pavement [-]
    real(r8), parameter, dimension(2,2)  :: albroad_apt &
       = reshape([0.03, 0.03, 0.04, 0.04], shape(albroad_apt))
 
-   ! albeodo of pervious concrete pavement [-]
+   ! albeodo of concrete pavement [-]
    real(r8), parameter, dimension(2,2)  :: albroad_cct &
       = reshape([0.3, 0.3, 0.5, 0.5], shape(albroad_cct))
 
+   ! emissivity of asphalt pavement [-]
+   real(r8), parameter, dimension(2,2)  :: emroad_apt &
+      = reshape([0.90, 0.90, 0.92, 0.92], shape(emroad_apt))
+
+   ! emissivity of concrete pavement [-]
+   real(r8), parameter, dimension(2,2)  :: emroad_cct &
+      = reshape([0.87, 0.87, 0.92, 0.92], shape(emroad_cct))
+
+   
 
    ! volumetric heat capacity of asphalt pavement [J/m3*K]
    real(r8), parameter, dimension(10,5)  :: cvroad_apt &

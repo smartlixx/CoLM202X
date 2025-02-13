@@ -219,8 +219,8 @@ MODULE MOD_Vars_TimeInvariants
 
    integer,  allocatable :: soiltext(:)  ! USDA soil texture class
 
-   real(r8), allocatable :: fsatmax (:)  ! maximum saturated area fraction [-]                         
-   real(r8), allocatable :: fsatdcf (:)  ! decay factor in calucation of saturated area fraction [1/m] 
+   real(r8), allocatable :: fsatmax (:)  ! maximum saturated area fraction [-]
+   real(r8), allocatable :: fsatdcf (:)  ! decay factor in calucation of saturated area fraction [1/m]
 
    real(r8), allocatable :: vic_b_infilt (:)
    real(r8), allocatable :: vic_Dsmax    (:)
@@ -249,7 +249,7 @@ MODULE MOD_Vars_TimeInvariants
    real(r8) :: zsno                             !roughness length for snow [m]
    real(r8) :: csoilc                           !drag coefficient for soil under canopy [-]
    real(r8) :: dewmx                            !maximum dew
-   ! 'wtfact' is updated to gridded 'fsatmax' data. 
+   ! 'wtfact' is updated to gridded 'fsatmax' data.
    ! real(r8) :: wtfact                         !fraction of model area with high water table
    real(r8) :: capr                             !tuning factor to turn first layer T into surface T
    real(r8) :: cnfac                            !Crank Nicholson factor between 0 and 1
@@ -412,6 +412,7 @@ CONTAINS
 #endif
    USE MOD_LandPatch
    USE MOD_Vars_Global
+   USE MOD_Const_LC, only: patchtypes
 
    IMPLICIT NONE
 
@@ -522,11 +523,18 @@ CONTAINS
 #else
          CALL ncio_read_vector (file_restart, 'sf_curve_patches' , num_azimuth , num_zenith_parameter, landpatch, sf_curve_patches)
 #endif
-       ENDIF
+      ENDIF
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
+#ifdef SinglePoint
+      IF (patchtypes(SITE_landtype) == 0) THEN
+         file_restart = trim(dir_restart) // '/const/' // trim(casename) //'_restart_pft_const' // '_lc' // trim(cyear) // '.nc'
+         CALL READ_PFTimeInvariants (file_restart)
+      ENDIF
+#else
       file_restart = trim(dir_restart) // '/const/' // trim(casename) //'_restart_pft_const' // '_lc' // trim(cyear) // '.nc'
       CALL READ_PFTimeInvariants (file_restart)
+#endif
 #endif
 
 #if (defined BGC)
@@ -650,7 +658,7 @@ CONTAINS
 
       CALL ncio_write_vector (file_restart, 'fsatmax', 'patch', landpatch, fsatmax)
       CALL ncio_write_vector (file_restart, 'fsatdcf', 'patch', landpatch, fsatdcf)
-      
+
       CALL ncio_write_vector (file_restart, 'vic_b_infilt', 'patch', landpatch, vic_b_infilt)
       CALL ncio_write_vector (file_restart, 'vic_Dsmax'   , 'patch', landpatch, vic_Dsmax   )
       CALL ncio_write_vector (file_restart, 'vic_Ds'      , 'patch', landpatch, vic_Ds      )
@@ -862,6 +870,8 @@ CONTAINS
 
    IMPLICIT NONE
 
+      real(r8), allocatable :: tmpcheck(:,:)
+
       IF (p_is_master) THEN
          write(*,'(/,A29)') 'Checking Time Invariants ...'
       ENDIF
@@ -915,7 +925,7 @@ CONTAINS
       IF(DEF_USE_BEDROCK)THEN
          CALL check_vector_data ('dbedrock     [m]     ', dbedrock    ) !
       ENDIF
-      
+
       CALL check_vector_data ('topoelv      [m]     ', topoelv     ) !
       CALL check_vector_data ('topostd      [m]     ', topostd     ) !
       CALL check_vector_data ('BVIC         [-]     ', BVIC        ) !
@@ -929,9 +939,16 @@ CONTAINS
 #ifdef SinglePoint
          CALL check_vector_data ('sf_lut       [-]     ', sf_lut_patches   ) ! shadow mask
 #else
-         CALL check_vector_data ('1 sf_curve p [-]     ', sf_curve_patches(:,1,:)) ! shadow mask
-         CALL check_vector_data ('2 sf_curve p [-]     ', sf_curve_patches(:,2,:)) ! shadow mask
-         CALL check_vector_data ('3 sf_curve p [-]     ', sf_curve_patches(:,3,:)) ! shadow mask
+         IF (allocated(sf_curve_patches)) allocate(tmpcheck(size(sf_curve_patches,1),size(sf_curve_patches,3)))
+         
+         IF (allocated(sf_curve_patches)) tmpcheck = sf_curve_patches(:,1,:)
+         CALL check_vector_data ('1 sf_curve p [-]     ', tmpcheck) ! shadow mask
+         IF (allocated(sf_curve_patches)) tmpcheck = sf_curve_patches(:,2,:)
+         CALL check_vector_data ('2 sf_curve p [-]     ', tmpcheck) ! shadow mask
+         IF (allocated(sf_curve_patches)) tmpcheck = sf_curve_patches(:,3,:)
+         CALL check_vector_data ('3 sf_curve p [-]     ', tmpcheck) ! shadow mask
+         
+         IF (allocated(tmpcheck)) deallocate(tmpcheck)
 #endif
       ENDIF
 

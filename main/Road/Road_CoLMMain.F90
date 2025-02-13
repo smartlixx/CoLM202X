@@ -1,12 +1,12 @@
 #include <define.h>
 
-SUBROUTINE RoadCoLMMain ( &
+SUBROUTINE CoLMMain_Road ( &
          ! model running information
            ipatch       ,idate        ,coszen       ,deltim       ,&
            patchlonr    ,patchlatr    ,patchclass   ,patchtype    ,&
 
          ! road information
-           em_road      ,cv_road      ,tk_road                    ,&
+           em_road      ,cv_road      ,tk_road      ,alb_road     ,&
     !       z_road       ,dz_road                                  ,&
          ! soil information
            vf_quartz    ,vf_gravels   ,vf_om        ,vf_sand      ,&
@@ -56,7 +56,7 @@ SUBROUTINE RoadCoLMMain ( &
           ! thermk,       extkb,        &
           ! extkd,        vegwp,        gs0sun,       gs0sha,       &
            zwt,          & !wdsrf,
-           wa,           wetwat,       &
+           wa,           & !wetwat,       &
            sag_road     ,scv_road     ,&
            snowdp_road  ,fsno_road    ,&
            sroad        ,lroad        ,&
@@ -141,9 +141,10 @@ SUBROUTINE RoadCoLMMain ( &
 ! Parameters
 ! ----------------------
   real(r8), intent(in) :: &
-      em_road    ,        &! emissivity of road [-]  
+      em_road           , &! emissivity of road [-]  
       cv_road(1:nl_soil), &! heat capacity of road [J/(m2 K)] 
-      tk_road(1:nl_soil)   ! thermal conductivity of road [W/m-K]
+      tk_road(1:nl_soil), &! thermal conductivity of road [W/m-K]
+      alb_road(2,2)        ! albedo of road [-]
 
   real(r8), intent(in) :: &
     ! soil physical parameters
@@ -529,7 +530,7 @@ SUBROUTINE RoadCoLMMain ( &
   ! calculate the local secs
   radpsec = pi/12./3600.
   IF ( isgreenwich ) THEN
-    local_secs = idate(3) + nint((dlon/radpsec)/deltim)*deltim
+    local_secs = idate(3) + nint((patchlonr/radpsec)/deltim)*deltim
     local_secs = mod(local_secs, 86400)
   ELSE
     local_secs = idate(3)
@@ -846,7 +847,8 @@ SUBROUTINE RoadCoLMMain ( &
   coszen = orb_coszen(calday,patchlonr,patchlatr)
 
   ! fraction of snow cover.
-  CALL snowfraction ( 0., 0.,z0m,zlnd,scv_road,snowdp_road,wt,sigf,fsno_road)
+  ! TODO: this is for vegetation only? Or should I rewrite it?
+!  CALL snowfraction ( 0., 0.,z0m,zlnd,scv_road,snowdp_road,wt,sigf,fsno_road)
 
 !  lai = tlai(ipatch)
 !  sai = tsai(ipatch) * sigf
@@ -866,7 +868,7 @@ SUBROUTINE RoadCoLMMain ( &
   ! other vegeation related parameters are needed to create
 
   CALL albroad (ipatch,alb_road,coszen,fsno_road,&
-                scv_road,sag_road,sroad)
+                scv_road,sag_road,alb,sroad)
 
   ! zero-filling set for glacier/ice-sheet/land water bodies/ocean components
 !  laisun = lai
@@ -891,7 +893,7 @@ SUBROUTINE RoadCoLMMain ( &
 !  CALL qsadv(tref,forc_psrf,ei,deiDT,qsatl,qsatlDT)
 !  qref = qref/qsatl
 
-END SUBROUTINE RoadCoLMMain
+END SUBROUTINE CoLMMain_Road
 ! ----------------------------------------------------------------------
 ! EOP
     

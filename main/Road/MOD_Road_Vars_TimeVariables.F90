@@ -6,9 +6,9 @@ MODULE MOD_Road_Vars_TimeVariables
 !-----------------------------------------------------------------------
 ! !DESCRIPTION:
 !
-!  Define urban model time variant variables.
+!  Define road model time variant variables.
 !
-!  Created by Hua Yuan, 12/2020
+!  Created by Xianxiang Li, 09/2024
 !-----------------------------------------------------------------------
 
    USE MOD_Precision

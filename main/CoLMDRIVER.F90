@@ -8,7 +8,8 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 ! CoLM MODEL DRIVER
 !
 ! Initial : Yongjiu Dai, 1999-2014
-! Revised : Hua Yuan, Shupeng Zhang, Nan Wei, Xingjie Lu, Zhongwang Wei, Yongjiu Dai
+! Revised : Hua Yuan, Shupeng Zhang, Nan Wei, Xingjie Lu, Zhongwang Wei, 
+!           Xianxiang Li, Yongjiu Dai
 !           2014-2024
 !
 !=======================================================================
@@ -23,6 +24,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
    USE MOD_Vars_1DFluxes
    USE MOD_LandPatch, only: numpatch
    USE MOD_LandUrban, only: patch2urban
+   USE MOD_LandRoad, only: patch2road
    USE MOD_Namelist, only: DEF_forcing, DEF_URBAN_RUN, DEF_ROAD_RUN
    USE MOD_Forcing, only: forcmask_pch
    USE omp_lib
@@ -45,7 +47,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 
    real(r8) :: deltim_phy
    integer  :: steps_in_one_deltim
-   integer  :: i, m, u, k
+   integer  :: i, m, u, k, r
 
 ! ======================================================================
 
@@ -197,13 +199,14 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 
 #ifdef ROAD_MODEL
          IF (DEF_ROAD_RUN .and. m.eq.URBAN) THEN
-           CALL RoadCoLMMAIN ( &
+           r = patch2road(i)
+           CALL CoLMMAIN_Road ( &
             ! model running information
            i               ,idate           ,coszen(i)       ,deltim           ,&
            patchlonr(i)    ,patchlatr(i)    ,patchclass(i)   ,patchtype(i)     ,&
 
          ! road information
-           em_road         ,cv_road(1:nl_soil)         ,tk_road(1:nl_soil)     ,&
+           em_road(r)      ,cv_road(:,r)    ,tk_road(:,r)    ,alb_road(:,:,r)  ,&
     !       z_road       ,dz_road                                  ,&
          ! soil information
            vf_quartz(1:,i) ,vf_gravels(1:,i),vf_om(1:,i)    ,vf_sand(1:,i)     ,&
@@ -215,7 +218,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 !#endif
            hksati(1:,i)    ,csol(1:,i)      ,k_solids(1:,i) ,dksatu(1:,i)      ,&
            dksatf(1:,i)    ,dkdry(1:,i)     ,BA_alpha(1:,i) ,BA_beta(1:,i)     ,&
-     
+
          ! vegetation information
 !           sqrtdi       ,chil         ,&
 !           effcon       ,vmax25       ,slti         ,hlti         ,&
@@ -237,8 +240,8 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
          !  forc_aerdep,  &
 
          ! land surface variables required for restart
-           z_sno_road  (maxsnl+1:,i) ,dz_sno_road (maxsnl+1:,i) ,t_roadsno(maxsnl+1:,i),&
-           wliq_roadsno(maxsnl+1:,i) ,wice_roadsno(maxsnl+1:,i) ,&
+           z_sno_road  (maxsnl+1:,r) ,dz_sno_road (maxsnl+1:,r) ,t_roadsno(maxsnl+1:,r),&
+           wliq_roadsno(maxsnl+1:,r) ,wice_roadsno(maxsnl+1:,r) ,&
            z_sno       (maxsnl+1:,i) ,dz_sno      (maxsnl+1:,i) ,&
 !           wliq_soisno  ,wice_soisno  ,t_soisno     ,&
            smp         (1:,i)        ,hk          (1:,i)        ,t_grnd(i)       ,&
@@ -252,10 +255,10 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
            ssoi(i),         ssno(i),       & !  thermk,       extkb,        &
           ! extkd,        vegwp,        gs0sun,       gs0sha,       &
            zwt(i),          & !wdsrf,
-           wa(i),           wetwat(i),       &
-           sag_road(i)     ,scv_road(i)     ,&
-           snowdp_road(i)  ,fsno_road(i)    ,&
-           sroad(1:,1:,i)  ,lroad(i)        ,&
+           wa(i),           & !wetwat(i),       &
+           sag_road(r)     ,scv_road(r)     ,&
+           snowdp_road(r)  ,fsno_road(r)    ,&
+           sroad(1:,1:,r)  ,lroad(r)        ,&
 
 !         ! SNICAR snow model related
 !           snw_rds,      ssno_lyr,                                 &
@@ -272,7 +275,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
            lfevpa(i)       ,& !fsenl(i)        ,fevpl(i)        ,
            etr(i)          ,&
            fseng(i)        ,fevpg(i)        ,olrg(i)         ,fgrnd(i)        ,&
-           fsen_road(i)    ,lfevp_road(i)   ,&
+           fsen_road(r)    ,lfevp_road(r)   ,&
            trad(i)         ,tref(i)         ,&!tmax       ,tmin         ,&
            qref(i)         ,rsur(i)         ,rnof(i)         ,qintr(i)        ,&
            qinfl(i)        ,qdrip(i)        ,rst(i)          ,assim(i)        ,&

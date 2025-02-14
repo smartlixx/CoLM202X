@@ -25,6 +25,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
    USE MOD_LandPatch, only: numpatch
    USE MOD_LandUrban, only: patch2urban
    USE MOD_LandRoad, only: patch2road
+   USE MOD_Road_Const_ThermalParameters
    USE MOD_Namelist, only: DEF_forcing, DEF_URBAN_RUN, DEF_ROAD_RUN
    USE MOD_Forcing, only: forcmask_pch
    USE omp_lib
@@ -201,17 +202,18 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
          IF (DEF_ROAD_RUN .and. m.eq.URBAN) THEN
            r = patch2road(i)
            CALL CoLMMAIN_Road ( &
-            ! model running information
+         ! model running information
            i               ,idate           ,coszen(i)       ,deltim           ,&
            patchlonr(i)    ,patchlatr(i)    ,patchclass(i)   ,patchtype(i)     ,&
 
          ! road information
-           em_road(r)      ,cv_road(:,r)    ,tk_road(:,r)    ,alb_road(:,:,r)  ,&
-    !       z_road       ,dz_road                                  ,&
+           emroad_apt(1,1)      ,cvroad_apt(1:,1)    ,tkroad_apt(1:,1)    ,albroad_apt(:,:)  ,&
+         ! z_road       ,dz_road                                  ,&
+
          ! soil information
            vf_quartz(1:,i) ,vf_gravels(1:,i),vf_om(1:,i)    ,vf_sand(1:,i)     ,&
            wf_gravels(1:,i),wf_sand(1:,i)   ,porsl(1:,i)    ,psi0(1:,i)        ,&
-           bsw(1:,i)       ,theta_r(1:,i)   ,&
+           bsw(1:,i)       ,theta_r(1:,i)   ,fsatmax(i)     ,fsatdcf(i)        ,&
 !#ifdef vanGenuchten_Mualem_SOIL_MODEL
 !           alpha_vgm    ,n_vgm        ,L_vgm        ,&
 !           sc_vgm       ,fc_vgm       ,&
@@ -252,7 +254,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 !           green,        lai,          &
 !           sai,          
            alb(1:,1:,i),  & !ssun,         ssha,         &
-           ssoi(i),         ssno(i),       & !  thermk,       extkb,        &
+           ssoi(:,:,i)     ,ssno(:,:,i),       & !  thermk,       extkb,        &
           ! extkd,        vegwp,        gs0sun,       gs0sha,       &
            zwt(i),          & !wdsrf,
            wa(i),           & !wetwat(i),       &
@@ -268,7 +270,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
          ! additional diagnostic variables for output
 !           laisun       ,laisha       ,&
            rss(i)                        ,&
-           rstfac(i)       ,h2osoi(1:,i)       ,wat(i)                        ,&
+           rstfacsun_out(i)       ,h2osoi(1:,i)       ,wat(i)                        ,&
 
          ! FLUXES
            taux(i)         ,tauy(i)         ,fsena(i)        ,fevpa(i)        ,&
@@ -289,7 +291,8 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 
          ! TUNABLE modle constants
            zlnd         ,zsno         ,csoilc       ,dewmx        ,&
-           wtfact       ,capr         ,cnfac        ,ssi          ,&
+         !  wtfact       ,
+           capr         ,cnfac        ,ssi          ,&
            wimp         ,pondmx       ,smpmax       ,smpmin       ,&
            trsmx0       ,tcrit                                    ,&
 

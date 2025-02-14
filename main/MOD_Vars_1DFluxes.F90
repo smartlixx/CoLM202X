@@ -18,6 +18,9 @@ MODULE MOD_Vars_1DFluxes
 #ifdef URBAN_MODEL
    USE MOD_Urban_Vars_1DFluxes
 #endif
+#ifdef ROAD_MODEL
+   USE MOD_Road_Vars_1DFluxes
+#endif
    IMPLICIT NONE
    SAVE
 
@@ -175,6 +178,10 @@ CONTAINS
       CALL allocate_1D_UrbanFluxes
 #endif
 
+#ifdef ROAD_MODEL
+      CALL allocate_1D_RoadFluxes
+#endif
+
    END SUBROUTINE allocate_1D_Fluxes
 
    SUBROUTINE deallocate_1D_Fluxes ()
@@ -257,6 +264,10 @@ CONTAINS
 
 #ifdef URBAN_MODEL
       CALL deallocate_1D_UrbanFluxes
+#endif
+
+#ifdef ROAD_MODEL
+      CALL deallocate_1D_RoadFluxes
 #endif
 
    END SUBROUTINE deallocate_1D_Fluxes

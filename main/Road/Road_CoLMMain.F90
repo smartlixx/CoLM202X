@@ -11,7 +11,7 @@ SUBROUTINE CoLMMain_Road ( &
          ! soil information
            vf_quartz    ,vf_gravels   ,vf_om        ,vf_sand      ,&
            wf_gravels   ,wf_sand      ,porsl        ,psi0         ,&
-           bsw          ,theta_r      ,&
+           bsw          ,theta_r      ,fsatmax      ,fsatdcf      ,&
 !#ifdef vanGenuchten_Mualem_SOIL_MODEL
 !           alpha_vgm    ,n_vgm        ,L_vgm        ,&
 !           sc_vgm       ,fc_vgm       ,&
@@ -90,7 +90,8 @@ SUBROUTINE CoLMMain_Road ( &
 
          ! TUNABLE modle constants
            zlnd         ,zsno         ,csoilc       ,dewmx        ,&
-           wtfact       ,capr         ,cnfac        ,ssi          ,&
+         !  wtfact       ,
+           capr         ,cnfac        ,ssi          ,&
            wimp         ,pondmx       ,smpmax       ,smpmin       ,&
            trsmx0       ,tcrit                                    ,&
 
@@ -158,6 +159,8 @@ SUBROUTINE CoLMMain_Road ( &
       psi0      (nl_soil),&! minimum soil suction [mm]
       bsw       (nl_soil),&! clapp and hornbereger "b" parameter [-]
       theta_r   (nl_soil),&! residual water content (cm3/cm3)   
+      fsatmax            ,&! maximum saturated area fraction [-]
+      fsatdcf            ,&! decay factor in calucation of saturated area fraction [1/m]
 
 !#ifdef vanGenuchten_Mualem_SOIL_MODEL
 !      alpha_vgm(1:nl_soil),&! the parameter corresponding approximately to the inverse of the air-entry value
@@ -203,7 +206,7 @@ SUBROUTINE CoLMMain_Road ( &
       zsno       ,&! roughness length for snow [m]
       csoilc     ,&! drag coefficient for soil under canopy [-]
       dewmx      ,&! maximum dew
-      wtfact     ,&! fraction of model area with high water table
+      !wtfact     ,&! fraction of model area with high water table
       capr       ,&! tuning factor to turn first layer T into surface T
       cnfac      ,&! Crank Nicholson factor between 0 and 1
       ssi        ,&! irreducible water saturation of snow

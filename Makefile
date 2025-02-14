@@ -115,6 +115,7 @@ OBJS_BASIC =    \
 				 MOD_Urban_Vars_1DFluxes.o      \
 				 MOD_Urban_Vars_TimeVariables.o \
 				 MOD_Urban_Vars_TimeInvariants.o\
+				 MOD_Road_Vars_1DFluxes.o       \
 				 MOD_Road_Vars_TimeVariables.o  \
 				 MOD_Const_PFT.o                \
 				 MOD_Vars_TimeInvariants.o      \
@@ -142,7 +143,7 @@ OBJS_BASIC =    \
 				 MOD_Urban_LAIReadin.o          \
 				 MOD_Urban_Shortwave.o          \
 				 MOD_Urban_Albedo.o             \
-				 MOD_Road_Albedo.o             \
+				 MOD_Road_Albedo.o              \
 				 MOD_MonthlyinSituCO2MaunaLoa.o \
 				 MOD_PercentagesPFTReadin.o     \
 				 MOD_LakeDepthReadin.o          \

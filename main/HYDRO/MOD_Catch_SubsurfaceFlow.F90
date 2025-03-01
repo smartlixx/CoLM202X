@@ -59,9 +59,9 @@ CONTAINS
    USE MOD_LandElm
    USE MOD_LandPatch
    USE MOD_ElementNeighbour
-   USE MOD_Catch_BasinNetwork,     only : worker_push_data, iam_bsn, iam_elm
-   USE MOD_Catch_RiverLakeNetwork, only : lake_id, riverdpth
-   USE MOD_Vars_TimeInvariants,    only : patchtype, lakedepth
+   USE MOD_Catch_BasinNetwork,     only: worker_push_data, iam_bsn, iam_elm
+   USE MOD_Catch_RiverLakeNetwork, only: lake_id, riverdpth
+   USE MOD_Vars_TimeInvariants,    only: patchtype, lakedepth
    IMPLICIT NONE
    
    integer :: ielm, inb, i, ihru, ps, pe, ipatch, ipxl
@@ -94,8 +94,8 @@ CONTAINS
          IF (numelm > 0) allocate (lakedepth_elm(numelm))
          IF (numelm > 0) allocate (wdsrf_elm    (numelm))
 
-         CALL worker_push_data (iam_bsn, iam_elm, .false., lake_id,   lake_id_elm  )
-         CALL worker_push_data (iam_bsn, iam_elm, .false., riverdpth, riverdpth_elm)
+         CALL worker_push_data (iam_bsn, iam_elm, lake_id,   lake_id_elm  )
+         CALL worker_push_data (iam_bsn, iam_elm, riverdpth, riverdpth_elm)
 
          DO ielm = 1, numelm
             IF (lake_id_elm(ielm) <= 0) THEN
@@ -188,9 +188,9 @@ CONTAINS
    USE MOD_Vars_1DFluxes
    USE MOD_Catch_HillslopeNetwork
    USE MOD_ElementNeighbour
-   USE MOD_Const_Physical,  only : denice, denh2o
-   USE MOD_Vars_Global,     only : pi, nl_soil, zi_soi
-   USE MOD_Hydro_SoilWater, only : soilwater_aquifer_exchange
+   USE MOD_Const_Physical,  only: denice, denh2o
+   USE MOD_Vars_Global,     only: pi, nl_soil, zi_soi
+   USE MOD_Hydro_SoilWater, only: soilwater_aquifer_exchange
 
    IMPLICIT NONE
    
@@ -253,8 +253,6 @@ CONTAINS
          xsubs_pch(:) = 0.  ! subsurface lateral flow between patches inside one HRU     
 
          xwsub(:) = 0. ! total recharge/discharge from subsurface lateral flow
-
-         bdamp = 4.8
 
          IF (numelm > 0) THEN
             allocate (theta_a_elm (numelm));  theta_a_elm = 0.
@@ -462,6 +460,8 @@ CONTAINS
                ! Inside hydrological units
                IF (hrus%agwt(i) > 0) THEN
                
+                  bdamp = 4.8
+
                   IF (zwt_h(i) > 1.5) THEN
                      ! from Fan et al., JGR 112(D10125)
                      Kl_in = Kl_h(i) * bdamp * exp(-(zwt_h(i)-1.5)/bdamp)

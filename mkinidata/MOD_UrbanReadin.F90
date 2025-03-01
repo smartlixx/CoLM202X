@@ -12,8 +12,8 @@ MODULE MOD_UrbanReadin
 !  Created by Hua Yuan, 11/26/2021
 !
 ! !REVISIONS:
-!
 !  05/2023, Wenzong Dong, Hua Yuan: porting codes to MPI parallel version.
+!
 !-----------------------------------------------------------------------
 
    USE MOD_Precision
@@ -239,7 +239,7 @@ ELSEIF (DEF_URBAN_type_scheme == 2) THEN
             ENDDO
 
             em_roof(u) = emroof_lcz    (landurban%settyp(u)) !emissivity of roof
-            em_wall(u) = emwall_lcz    (landurban%settyp(u)) !emissiviry of wall
+            em_wall(u) = emwall_lcz    (landurban%settyp(u)) !emissivity of wall
             em_gimp(u) = emimproad_lcz (landurban%settyp(u)) !emissivity of impervious
             em_gper(u) = emperroad_lcz (landurban%settyp(u)) !emissivity of pervious
 

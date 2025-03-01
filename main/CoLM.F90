@@ -2,16 +2,16 @@
 
 PROGRAM CoLM
 !-----------------------------------------------------------------------------
-! Description:
-!   This is the main program for the Common Land Model (CoLM)
+!  Description:
+!    This is the main program for the Common Land Model (CoLM)
 !
-!   @Copyright Yongjiu Dai Land Modeling Grop at the School of Atmospheric Sciences
-!   of the Sun Yat-sen University, Guangdong, CHINA.
-!   All rights reserved.
+!    Copyright © Yongjiu Dai Land Modeling Group at the School of Atmospheric Sciences
+!    of the Sun Yat-sen University, Guangdong, CHINA.
+!    All rights reserved.
 !
-! Initial : Yongjiu Dai, 1998-2014
-! Revised : Hua Yuan, Shupeng Zhang, Nan Wei, Xingjie Lu, Zhongwang Wei, Yongjiu Dai
-!           2014-2024
+!  Initial : Yongjiu Dai, 1998-2014
+!  Revised : Hua Yuan, Shupeng Zhang, Nan Wei, Xingjie Lu, Zhongwang Wei, Yongjiu Dai
+!            2014-2024
 !-----------------------------------------------------------------------------
 
    USE MOD_Precision
@@ -116,7 +116,7 @@ PROGRAM CoLM
    logical  :: greenwich    ! greenwich time
 
    logical :: doalb         ! true => start up the surface albedo calculation
-   logical :: dolai         ! true => start up the time-varying vegetation paramter
+   logical :: dolai         ! true => start up the time-varying vegetation parameter
    logical :: dosst         ! true => update sst/ice/snow
 
    integer :: Julian_1day_p, Julian_1day
@@ -131,6 +131,7 @@ PROGRAM CoLM
    type(timestamp) :: ststamp, itstamp, etstamp, ptstamp
 
    integer*8 :: start_time, end_time, c_per_sec, time_used
+!-----------------------------------------------------------------------
 
 #ifdef USEMPI
 #ifdef USESplitAI
@@ -211,8 +212,8 @@ PROGRAM CoLM
       pdate(1) = p_year; pdate(2) = p_julian; pdate(3) = p_seconds
 
       CALL Init_GlobalVars
-      CAll Init_LC_Const
-      CAll Init_PFT_Const
+      CALL Init_LC_Const
+      CALL Init_PFT_Const
 
       CALL pixel%load_from_file    (dir_landdata)
       CALL gblock%load_from_file   (dir_landdata)
@@ -434,7 +435,7 @@ PROGRAM CoLM
 #endif
 
 
-         ! Call colm driver
+         ! Call CoLM driver
          ! ----------------------------------------------------------------------
          IF (p_is_worker) THEN
             CALL CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oroflag)
@@ -459,7 +460,7 @@ PROGRAM CoLM
 
          CALL CheckEquilibrium (idate, deltim, itstamp, dir_hist, casename)
 
-         ! DO land USE and land cover change simulation
+         ! DO land use and land cover change simulation
          ! ----------------------------------------------------------------------
 #ifdef LULCC
          IF ( isendofyear(idate, deltim) ) THEN
@@ -471,8 +472,7 @@ PROGRAM CoLM
             CALL hist_final    ()
 
             ! Call LULCC driver
-            CALL LulccDriver (casename,dir_landdata,dir_restart,&
-                              idate,greenwich)
+            CALL LulccDriver (casename,dir_landdata,dir_restart,idate,greenwich)
 
             ! Allocate Forcing and Fluxes variable of next year
             CALL allocate_1D_Forcing
@@ -501,8 +501,8 @@ PROGRAM CoLM
          ! Hua Yuan, 06/2023: change namelist DEF_LAI_CLIM to DEF_LAI_MONTHLY
          ! and add DEF_LAI_CHANGE_YEARLY for monthly LAI data
          !
-         ! NOTES: Should be caution for setting DEF_LAI_CHANGE_YEARLY to ture in non-LULCC
-         ! case, that means the LAI changes without condisderation of land cover change.
+         ! NOTES: Should be caution for setting DEF_LAI_CHANGE_YEARLY to true in non-LULCC
+         ! case, that means the LAI changes without consideration of land cover change.
 
          IF (DEF_LAI_CHANGE_YEARLY) THEN
             lai_year = jdate(1)
@@ -522,7 +522,7 @@ PROGRAM CoLM
             Julian_8day = int(calendarday(jdate)-1)/8*8 + 1
             IF ((itstamp < etstamp) .and. (Julian_8day /= Julian_8day_p)) THEN
                CALL LAI_readin (jdate(1), Julian_8day, dir_landdata)
-               ! 06/2023, yuan: or depend on DEF_LAI_CHANGE_YEARLY nanemlist
+               ! 06/2023, yuan: or depend on DEF_LAI_CHANGE_YEARLY namelist
                !CALL LAI_readin (lai_year, Julian_8day, dir_landdata)
             ENDIF
          ENDIF
@@ -540,9 +540,11 @@ PROGRAM CoLM
             ENDIF
 #endif
          ENDIF
+
 #ifdef RangeCheck
          CALL check_TimeVariables ()
 #endif
+
 #ifdef USEMPI
          CALL mpi_barrier (p_comm_glb, p_err)
 #endif
@@ -552,7 +554,6 @@ PROGRAM CoLM
             CALL print_VSF_iteration_stat_info ()
          ENDIF
 #endif
-
 
          IF (p_is_master) THEN
             CALL system_clock (end_time, count_rate = c_per_sec)

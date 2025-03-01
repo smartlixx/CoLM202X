@@ -1,17 +1,17 @@
 #include <define.h>
 
-! -------------------------------
+!-----------------------------------------------------------------------
 ! Created by Yongjiu Dai, 03/2014
-! -------------------------------
+!-----------------------------------------------------------------------
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
 MODULE MOD_Vars_PFTimeVariables
-! -----------------------------------------------------------------
+!-----------------------------------------------------------------------
 ! !DESCRIPTION:
-! Define PFT time variables
+!  Define PFT time variables
 !
-! Added by Hua Yuan, 08/2019
-! -----------------------------------------------------------------
+!  Added by Hua Yuan, 08/2019
+!-----------------------------------------------------------------------
 
    USE MOD_Precision
    USE MOD_TimeManager
@@ -21,8 +21,8 @@ MODULE MOD_Vars_PFTimeVariables
 
    IMPLICIT NONE
    SAVE
-! -----------------------------------------------------------------
-! Time-varying state variables which reaquired by restart run
+!-----------------------------------------------------------------------
+! Time-varying state variables which required by restart run
 
    ! for LULC_IGBP_PFT or LULC_IGBP_PC
    real(r8), allocatable :: tleaf_p      (:) !shaded leaf temperature [K]
@@ -51,7 +51,7 @@ MODULE MOD_Vars_PFTimeVariables
 ! Plant Hydraulic variables
    real(r8), allocatable :: vegwp_p    (:,:) !vegetation water potential [mm]
    real(r8), allocatable :: gs0sun_p     (:) !working copy of sunlit stomata conductance
-   real(r8), allocatable :: gs0sha_p     (:) !working copy of shalit stomata conductance
+   real(r8), allocatable :: gs0sha_p     (:) !working copy of shaded stomata conductance
 ! END plant hydraulic variables
 ! Ozone Stress Variables
    real(r8), allocatable :: o3coefv_sun_p(:) !Ozone stress factor for photosynthesis on sunlit leaf
@@ -84,9 +84,9 @@ CONTAINS
 !-----------------------------------------------------------------------
 
    SUBROUTINE allocate_PFTimeVariables ()
-! ------------------------------------------------------
-! Allocates memory for CoLM 1d [numpft] variables
-! ------------------------------------------------------
+   !--------------------------------------------------------------------
+   ! Allocates memory for CoLM 1d [numpft] variables
+   !--------------------------------------------------------------------
    USE MOD_Precision
    USE MOD_SPMD_Task
    USE MOD_LandPFT
@@ -117,7 +117,7 @@ CONTAINS
             allocate (qref_p       (numpft)) ; qref_p       (:) = spval !2 m height air specific humidity
             allocate (rst_p        (numpft)) ; rst_p        (:) = spval !canopy stomatal resistance (s/m)
             allocate (z0m_p        (numpft)) ; z0m_p        (:) = spval !effective roughness [m]
-! Plant Hydraulic variables; draulic variables
+! Plant Hydraulic variables
             allocate (vegwp_p(1:nvegwcs,numpft)); vegwp_p (:,:) = spval
             allocate (gs0sun_p     (numpft)); gs0sun_p      (:) = spval
             allocate (gs0sha_p     (numpft)); gs0sha_p      (:) = spval
@@ -197,8 +197,8 @@ ENDIF
 
    SUBROUTINE WRITE_PFTimeVariables (file_restart)
 
-   USE MOD_Namelist, only : DEF_REST_CompressLevel, DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, &
-                            DEF_USE_IRRIGATION
+   USE MOD_Namelist, only: DEF_REST_CompressLevel, DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, &
+                           DEF_USE_IRRIGATION
    USE MOD_LandPFT
    USE MOD_NetCDFVector
    USE MOD_Vars_Global
@@ -263,9 +263,9 @@ ENDIF
 
 
    SUBROUTINE deallocate_PFTimeVariables
-! --------------------------------------------------
-! Deallocates memory for CoLM 1d [numpft/numpc] variables
-! --------------------------------------------------
+   !--------------------------------------------------------------------
+   ! Deallocates memory for CoLM 1d [numpft/numpc] variables
+   !--------------------------------------------------------------------
    USE MOD_SPMD_Task
    USE MOD_LandPFT
 
@@ -296,7 +296,7 @@ ENDIF
 ! Plant Hydraulic variables
             deallocate (vegwp_p        )  ! vegetation water potential [mm]
             deallocate (gs0sun_p       )  ! working copy of sunlit stomata conductance
-            deallocate (gs0sha_p       )  ! working copy of shalit stomata conductance
+            deallocate (gs0sha_p       )  ! working copy of shaded stomata conductance
 ! END plant hydraulic variables
 ! Ozone Stress variables
             deallocate (o3coefv_sun_p  )  ! Ozone stress factor for photosynthesis on sunlit leaf
@@ -321,7 +321,7 @@ ENDIF
    SUBROUTINE check_PFTimeVariables
 
    USE MOD_RangeCheck
-   USE MOD_Namelist, only : DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, DEF_USE_IRRIGATION
+   USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, DEF_USE_IRRIGATION
 
    IMPLICIT NONE
 
@@ -402,7 +402,7 @@ MODULE MOD_Vars_TimeVariables
    IMPLICIT NONE
    SAVE
 ! -----------------------------------------------------------------
-! Time-varying state variables which reaquired by restart run
+! Time-varying state variables which required by restart run
    real(r8), allocatable :: z_sno       (:,:) ! node depth [m]
    real(r8), allocatable :: dz_sno      (:,:) ! interface depth [m]
    real(r8), allocatable :: t_soisno    (:,:) ! soil temperature [K]
@@ -416,7 +416,7 @@ MODULE MOD_Vars_TimeVariables
 !Plant Hydraulic variables
    real(r8), allocatable :: vegwp       (:,:) ! vegetation water potential [mm]
    real(r8), allocatable :: gs0sun        (:) ! working copy of sunlit stomata conductance
-   real(r8), allocatable :: gs0sha        (:) ! working copy of shalit stomata conductance
+   real(r8), allocatable :: gs0sha        (:) ! working copy of shaded stomata conductance
 !END plant hydraulic variables
 !Ozone stress variables
    real(r8), allocatable :: o3coefv_sun   (:) ! Ozone stress factor for photosynthesis on sunlit leaf
@@ -472,7 +472,7 @@ MODULE MOD_Vars_TimeVariables
    real(r8), allocatable :: wdsrf         (:) ! depth of surface water [mm]
    real(r8), allocatable :: rss           (:) ! soil surface resistance [s/m]
 
-   real(r8), allocatable :: t_lake      (:,:) ! lake layer teperature [K]
+   real(r8), allocatable :: t_lake      (:,:) ! lake layer temperature [K]
    real(r8), allocatable :: lake_icefrac(:,:) ! lake mass fraction of lake layer that is frozen
    real(r8), allocatable :: savedtke1     (:) ! top level eddy conductivity (W/m K)
 
@@ -541,9 +541,9 @@ CONTAINS
 !-----------------------------------------------------------------------
 
    SUBROUTINE allocate_TimeVariables
-! --------------------------------------------------------------------
-! Allocates memory for CoLM 1d [numpatch] variables
-! ------------------------------------------------------
+   !--------------------------------------------------------------------
+   ! Allocates memory for CoLM 1d [numpatch] variables
+   !--------------------------------------------------------------------
 
    USE MOD_Precision
    USE MOD_Vars_Global
@@ -709,9 +709,9 @@ CONTAINS
    USE MOD_LandPatch, only: numpatch
    IMPLICIT NONE
 
-      ! --------------------------------------------------
-      ! Deallocates memory for CoLM 1d [numpatch] variables
-      ! --------------------------------------------------
+   !--------------------------------------------------------------------
+   ! Deallocates memory for CoLM 1d [numpatch] variables
+   !--------------------------------------------------------------------
 
       IF (p_is_worker) THEN
 
@@ -900,20 +900,20 @@ CONTAINS
 
    END FUNCTION save_to_restart
 
-   !---------------------------------------
+
    SUBROUTINE WRITE_TimeVariables (idate, lc_year, site, dir_restart)
 
-   !=======================================================================
+   !====================================================================
    ! Original version: Yongjiu Dai, September 15, 1999, 03/2014
-   !=======================================================================
+   !====================================================================
 
    USE MOD_SPMD_Task
-   USE MOD_Namelist, only : DEF_REST_CompressLevel, DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, &
-                            DEF_USE_IRRIGATION, DEF_USE_Dynamic_Lake, SITE_landtype
+   USE MOD_Namelist, only: DEF_REST_CompressLevel, DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, &
+                           DEF_USE_IRRIGATION, DEF_USE_Dynamic_Lake, SITE_landtype
    USE MOD_LandPatch
    USE MOD_NetCDFVector
    USE MOD_Vars_Global
-   USE MOD_Vars_TimeInvariants, only : dz_lake
+   USE MOD_Vars_TimeInvariants, only: dz_lake
    USE MOD_Const_LC, only: patchtypes
    IMPLICIT NONE
 
@@ -960,7 +960,7 @@ ENDIF
       CALL ncio_define_dimension_vector (file_restart, landpatch, 'band', 2)
       CALL ncio_define_dimension_vector (file_restart, landpatch, 'rtyp', 2)
 
-      ! Time-varying state variables which reaquired by restart run
+      ! Time-varying state variables which required by restart run
       CALL ncio_write_vector (file_restart, 'z_sno   '   , 'snow', -maxsnl, 'patch', landpatch, z_sno , compress)                 ! node depth [m]
       CALL ncio_write_vector (file_restart, 'dz_sno  '   , 'snow', -maxsnl, 'patch', landpatch, dz_sno, compress)                 ! interface depth [m]
       CALL ncio_write_vector (file_restart, 't_soisno'   , 'soilsnow', nl_soil-maxsnl, 'patch', landpatch, t_soisno   , compress) ! soil temperature [K]
@@ -1027,7 +1027,7 @@ ENDIF
       CALL ncio_write_vector (file_restart, 'mss_dst4 ', 'snow', -maxsnl, 'patch', landpatch, mss_dst4 , compress)
       CALL ncio_write_vector (file_restart, 'ssno_lyr', 'band', 2, 'rtyp', 2, 'snowp1', -maxsnl+1, 'patch', landpatch, ssno_lyr, compress)
 
-      ! Additional va_vectorriables required by reginal model (such as WRF ) RSM)
+      ! Additional va_vectorriables required by regional model (such as WRF ) RSM)
       CALL ncio_write_vector (file_restart, 'trad ', 'patch', landpatch, trad , compress) ! radiative temperature of surface [K]
       CALL ncio_write_vector (file_restart, 'tref ', 'patch', landpatch, tref , compress) ! 2 m height air temperature [kelvin]
       CALL ncio_write_vector (file_restart, 'qref ', 'patch', landpatch, qref , compress) ! 2 m height air specific humidity
@@ -1100,12 +1100,12 @@ ENDIF
 #endif
    END SUBROUTINE WRITE_TimeVariables
 
-   !---------------------------------------
+
    SUBROUTINE READ_TimeVariables (idate, lc_year, site, dir_restart)
 
-   !=======================================================================
+   !====================================================================
    ! Original version: Yongjiu Dai, September 15, 1999, 03/2014
-   !=======================================================================
+   !====================================================================
 
    USE MOD_Namelist
    USE MOD_SPMD_Task
@@ -1115,7 +1115,7 @@ ENDIF
 #endif
    USE MOD_LandPatch
    USE MOD_Vars_Global
-   USE MOD_Vars_TimeInvariants, only : dz_lake
+   USE MOD_Vars_TimeInvariants, only: dz_lake
    USE MOD_Const_LC, only: patchtypes
 
    IMPLICIT NONE
@@ -1143,7 +1143,7 @@ ENDIF
       write(cdate,'(i4.4,"-",i3.3,"-",i5.5)') idate(1), idate(2), idate(3)
       file_restart = trim(dir_restart)// '/'//trim(cdate)//'/' // trim(site) //'_restart_'//trim(cdate)//'_lc'//trim(cyear)//'.nc'
 
-      ! Time-varying state variables which reaquired by restart run
+      ! Time-varying state variables which required by restart run
       CALL ncio_read_vector (file_restart, 'z_sno   '   , -maxsnl, landpatch, z_sno )             ! node depth [m]
       CALL ncio_read_vector (file_restart, 'dz_sno  '   , -maxsnl, landpatch, dz_sno)             ! interface depth [m]
       CALL ncio_read_vector (file_restart, 't_soisno'   , nl_soil-maxsnl, landpatch, t_soisno   ) ! soil temperature [K]
@@ -1154,7 +1154,7 @@ ENDIF
 IF(DEF_USE_PLANTHYDRAULICS)THEN
       CALL ncio_read_vector (file_restart, 'vegwp',       nvegwcs,        landpatch, vegwp      ) ! vegetation water potential [mm]
       CALL ncio_read_vector (file_restart, 'gs0sun  ',    landpatch, gs0sun     ) ! working copy of sunlit stomata conductance
-      CALL ncio_read_vector (file_restart, 'gs0sha  ',    landpatch, gs0sha     ) ! working copy of shalit stomata conductance
+      CALL ncio_read_vector (file_restart, 'gs0sha  ',    landpatch, gs0sha     ) ! working copy of shaded stomata conductance
 ENDIF
 IF(DEF_USE_OZONESTRESS)THEN
       CALL ncio_read_vector (file_restart, 'lai_old    ', landpatch, lai_old    )
@@ -1211,7 +1211,7 @@ ENDIF
       CALL ncio_read_vector (file_restart, 'mss_dst4 ', -maxsnl, landpatch, mss_dst4 )
       CALL ncio_read_vector (file_restart, 'ssno_lyr', 2,2, -maxsnl+1, landpatch, ssno_lyr)
 
-      ! Additional variables required by reginal model (such as WRF ) RSM)
+      ! Additional variables required by regional model (such as WRF ) RSM)
       CALL ncio_read_vector (file_restart, 'trad ', landpatch, trad ) ! radiative temperature of surface [K]
       CALL ncio_read_vector (file_restart, 'tref ', landpatch, tref ) ! 2 m height air temperature [kelvin]
       CALL ncio_read_vector (file_restart, 'qref ', landpatch, qref ) ! 2 m height air specific humidity
@@ -1293,7 +1293,7 @@ ENDIF
 
    END SUBROUTINE READ_TimeVariables
 
-  !---------------------------------------
+
 #ifdef RangeCheck
    SUBROUTINE check_TimeVariables ()
 
@@ -1301,7 +1301,7 @@ ENDIF
    USE MOD_RangeCheck
    USE MOD_Namelist, only: DEF_USE_PLANTHYDRAULICS, DEF_USE_OZONESTRESS, DEF_USE_IRRIGATION, &
                            DEF_USE_SNICAR, DEF_USE_Dynamic_Lake
-   USE MOD_Vars_TimeInvariants, only : dz_lake
+   USE MOD_Vars_TimeInvariants, only: dz_lake
 
    IMPLICIT NONE
 
@@ -1359,7 +1359,7 @@ ENDIF
 IF(DEF_USE_PLANTHYDRAULICS)THEN
       CALL check_vector_data ('vegwp       [m]    ', vegwp      ) ! vegetation water potential [mm]
       CALL check_vector_data ('gs0sun      []     ', gs0sun     ) ! working copy of sunlit stomata conductance
-      CALL check_vector_data ('gs0sha      []     ', gs0sha     ) ! working copy of shalit stomata conductance
+      CALL check_vector_data ('gs0sha      []     ', gs0sha     ) ! working copy of shaded stomata conductance
 ENDIF
 IF(DEF_USE_OZONESTRESS)THEN
       CALL check_vector_data ('o3coefv_sun        ', o3coefv_sun)

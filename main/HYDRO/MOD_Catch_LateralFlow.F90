@@ -30,8 +30,8 @@ MODULE MOD_Catch_LateralFlow
    USE MOD_Catch_SubsurfaceFlow
    USE MOD_Catch_RiverLakeFlow
    USE MOD_Vars_TimeVariables
-   USE MOD_Vars_Global,    only : dz_soi
-   USE MOD_Const_Physical, only : denice, denh2o
+   USE MOD_Vars_Global,    only: dz_soi
+   USE MOD_Const_Physical, only: denice, denh2o
    IMPLICIT NONE 
 
    integer, parameter :: nsubstep = 20
@@ -92,20 +92,20 @@ CONTAINS
    ! ----------
    SUBROUTINE lateral_flow (deltime)
 
-   USE MOD_Namelist,  only : DEF_USE_Dynamic_Lake
-   USE MOD_Mesh,      only : numelm
-   USE MOD_LandHRU,   only : landhru,  numhru,    elm_hru
-   USE MOD_LandPatch, only : numpatch, elm_patch, hru_patch
+   USE MOD_Namelist,  only: DEF_USE_Dynamic_Lake
+   USE MOD_Mesh,      only: numelm
+   USE MOD_LandHRU,   only: landhru,  numhru,    elm_hru
+   USE MOD_LandPatch, only: numpatch, elm_patch, hru_patch
 
-   USE MOD_Vars_Global,         only : nl_lake
-   USE MOD_Const_Physical,      only : tfrz
-   USE MOD_Vars_TimeVariables,  only : wdsrf, t_lake, lake_icefrac, t_soisno
-   USE MOD_Vars_TimeInvariants, only : lakedepth, dz_lake
+   USE MOD_Vars_Global,         only: nl_lake
+   USE MOD_Const_Physical,      only: tfrz
+   USE MOD_Vars_TimeVariables,  only: wdsrf, t_lake, lake_icefrac, t_soisno
+   USE MOD_Vars_TimeInvariants, only: lakedepth, dz_lake
    USE MOD_Catch_Vars_1DFluxes
    USE MOD_Catch_Vars_TimeVariables
    USE MOD_Catch_RiverLakeNetwork
 
-   USE MOD_Lake, only : adjust_lake_layer
+   USE MOD_Lake, only: adjust_lake_layer
 
    USE MOD_RangeCheck
    IMPLICIT NONE
@@ -234,7 +234,7 @@ CONTAINS
 #ifdef RangeCheck
       IF (p_is_worker .and. (p_iam_worker == 0)) THEN
          write(*,'(/,A)') 'Checking Lateral Flow Variables ...'
-         write(*,'(A,F12.5,A)') 'River Lake Flow average timestep: ', &
+         write(*,'(A,F12.5,A)') 'River Lake Flow minimum average timestep: ', &
                dt_average/nsubstep, ' seconds'
       ENDIF
 
@@ -265,7 +265,7 @@ CONTAINS
          CALL mpi_allreduce (MPI_IN_PLACE, toldis, 1, MPI_REAL8, MPI_SUM, p_comm_worker, p_err)
 #endif
          IF (p_iam_worker == 0) THEN
-            write(*,'(A,F10.2,A,ES10.3,A,ES10.3,A)') 'Total surface water error: ', dtolw, &
+            write(*,'(A,F12.2,A,ES8.1,A,ES10.3,A)') 'Total surface water error: ', dtolw, &
                '(m^3) in area ', landarea, '(m^2), discharge ', toldis, '(m^3)' 
          ENDIF
 
@@ -275,7 +275,7 @@ CONTAINS
          CALL mpi_allreduce (MPI_IN_PLACE, dtolw,  1, MPI_REAL8, MPI_SUM, p_comm_worker, p_err)
 #endif
          IF (p_iam_worker == 0) THEN
-            write(*,'(A,F10.2,A,ES10.3,A)') 'Total ground  water error: ', dtolw, &
+            write(*,'(A,F12.2,A,ES8.1,A)') 'Total ground  water error: ', dtolw, &
                '(m^3) in area ', landarea, '(m^2)'
          ENDIF
       ENDIF
@@ -291,6 +291,7 @@ CONTAINS
 
       CALL river_lake_network_final ()
       CALL subsurface_network_final ()
+      CALL basin_network_final      ()
 
 #ifdef CoLMDEBUG
       IF (allocated(patcharea)) deallocate(patcharea)

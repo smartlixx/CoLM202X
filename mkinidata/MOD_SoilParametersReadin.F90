@@ -2,17 +2,17 @@
 
 MODULE MOD_SoilParametersReadin
 
-!------------------------------------------------------------------------------------------
-! DESCRIPTION:
-! Read in soil parameters; make unit conversion for soil physical process modeling;
-! soil parameters 8 layers => 10 layers
+!-----------------------------------------------------------------------
+! !DESCRIPTION:
+!  Read in soil parameters; make unit conversion for soil physical process
+!  modeling; soil parameters 8 layers => 10 layers
 !
-! Original author: Yongjiu Dai, 03/2014
+!  Original author: Yongjiu Dai, 03/2014
 !
-! Revisions:
-! Nan Wei, 01/2019: read more parameters from mksrfdata results
-! Shupeng Zhang and Nan Wei, 01/2022: porting codes to parallel version
-!------------------------------------------------------------------------------------------
+! !REVISIONS:
+!  Nan Wei, 01/2019: read more parameters from mksrfdata results
+!  Shupeng Zhang and Nan Wei, 01/2022: porting codes to parallel version
+!-----------------------------------------------------------------------
 
    USE MOD_Precision
    IMPLICIT NONE
@@ -66,8 +66,8 @@ CONTAINS
    real(r8), allocatable :: soil_k_s_l     (:)  ! saturated hydraulic conductivity (cm/day)
    real(r8), allocatable :: soil_csol_l    (:)  ! heat capacity of soil solids [J/(m3 K)]
    real(r8), allocatable :: soil_k_solids_l(:)  ! thermal conductivity of minerals soil [W/m-K]
-   real(r8), allocatable :: soil_tksatu_l  (:)  ! thermal conductivity of saturated unforzen soil [W/m-K]
-   real(r8), allocatable :: soil_tksatf_l  (:)  ! thermal conductivity of saturated forzen soil [W/m-K]
+   real(r8), allocatable :: soil_tksatu_l  (:)  ! thermal conductivity of saturated unfrozen soil [W/m-K]
+   real(r8), allocatable :: soil_tksatf_l  (:)  ! thermal conductivity of saturated frozen soil [W/m-K]
    real(r8), allocatable :: soil_tkdry_l   (:)  ! thermal conductivity for dry soil  [W/(m-K)]
    real(r8), allocatable :: soil_BA_alpha_l(:)  ! alpha in Balland and Arp(2005) thermal conductivity scheme
    real(r8), allocatable :: soil_BA_beta_l (:)  ! beta in Balland and Arp(2005) thermal conductivity scheme
@@ -431,7 +431,7 @@ CONTAINS
          ENDIF
       ENDIF
 
-      ! Soil reflectance of broadband of visible(_v) and near-infrared(_n) of the sarurated(_s) and dry(_d) soil
+      ! Soil reflectance of broadband of visible(_v) and near-infrared(_n) of the saturated(_s) and dry(_d) soil
       ! SCHEME 1: Guessed soil color type according to land cover classes
       IF (DEF_SOIL_REFL_SCHEME .eq. 1) THEN
          IF (p_is_worker) THEN

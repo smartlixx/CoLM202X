@@ -19,12 +19,12 @@ CONTAINS
 
 
    SUBROUTINE LAI_readin (year, time, dir_landdata)
-   ! ===========================================================
-   ! Read in the LAI, the LAI dataset was created by Yuan et al. (2011)
-   ! http://globalchange.bnu.edu.cn
-   !
-   ! Created by Yongjiu Dai, March, 2014
-   ! ===========================================================
+!=======================================================================
+!  Read in the LAI, the LAI dataset was created by Yuan et al. (2011)
+!  http://globalchange.bnu.edu.cn
+!
+!  Created by Yongjiu Dai, March, 2014
+!=======================================================================
 
    USE MOD_Precision
    USE MOD_Namelist
@@ -196,6 +196,13 @@ CONTAINS
                !TODO@yuan: may need to revise patch LAI/SAI
                green(npatch) = 1.
                fveg (npatch) = fveg0(m)
+
+               IF (m == WATERBODY) THEN
+                  fveg(npatch)  = 0.
+                  tlai(npatch)  = 0.
+                  tsai(npatch)  = 0.
+                  green(npatch) = 0.
+               ENDIF
 
             ENDDO
          ENDIF

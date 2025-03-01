@@ -6,7 +6,7 @@ MODULE MOD_BGC_Vars_PFTimeVariables
 
 !---------------------------------------------------------------------------------------------------------
 ! !DESCRIPTION
-! Define, allocate, and deallocate biogeochmeical state variables at pft level.
+! Define, allocate, and deallocate biogeochemical state variables at pft level.
 ! Read and write biogeochemical state variables at pft level from/to restart files.
 
 ! !ORIGINAL:
@@ -15,13 +15,13 @@ MODULE MOD_BGC_Vars_PFTimeVariables
 #ifdef BGC
 
    USE MOD_Precision
-   USE MOD_Namelist, only : DEF_USE_SASU, DEF_USE_DiagMatrix
+   USE MOD_Namelist, only: DEF_USE_SASU, DEF_USE_DiagMatrix
    USE MOD_TimeManager
 
    IMPLICIT NONE
    SAVE
 ! -----------------------------------------------------------------
-! Time-varying state variables which reaquired by restart run
+! Time-varying state variables which required by restart run
 !--------------------- bgc variables ---------------------------------------
    real(r8), allocatable :: leafc_p                  (:)     ! leaf display C (gC m-2)
    real(r8), allocatable :: leafc_storage_p          (:)     ! leaf storage C (gC m-2)
@@ -46,7 +46,7 @@ MODULE MOD_BGC_Vars_PFTimeVariables
    real(r8), allocatable :: grainc_xfer_p            (:)     ! grain transfer C (gC m-2)
    real(r8), allocatable :: cropseedc_deficit_p      (:)     ! crop seed deficit C (gC m-2)
    real(r8), allocatable :: cropprod1c_p             (:)     ! product C (gC m-2)
-   real(r8), allocatable :: xsmrpool_p               (:)     !! maintenance respiration storage C (gC m-2)
+   real(r8), allocatable :: xsmrpool_p               (:)     ! maintenance respiration storage C (gC m-2)
    real(r8), allocatable :: gresp_storage_p          (:)     ! growth respiration storage C (gC m-2)
    real(r8), allocatable :: gresp_xfer_p             (:)     ! growth respiration transfer C (gC m-2)
    real(r8), allocatable :: cpool_p                  (:)     ! available C (gC m-2)
@@ -1245,7 +1245,7 @@ CONTAINS
 
    SUBROUTINE WRITE_BGCPFTimeVariables (file_restart)
 
-   USE MOD_Namelist, only : DEF_REST_CompressLevel
+   USE MOD_Namelist, only: DEF_REST_CompressLevel
    USE MOD_LandPFT
    USE MOD_NetCDFVector
    USE MOD_Vars_Global

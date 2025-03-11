@@ -2,16 +2,16 @@
 
 PROGRAM CoLM
 !-----------------------------------------------------------------------------
-! Description:
-!   This is the main program for the Common Land Model (CoLM)
+!  Description:
+!    This is the main program for the Common Land Model (CoLM)
 !
-!   @Copyright Yongjiu Dai Land Modeling Grop at the School of Atmospheric Sciences
-!   of the Sun Yat-sen University, Guangdong, CHINA.
-!   All rights reserved.
+!    Copyright © Yongjiu Dai Land Modeling Group at the School of Atmospheric Sciences
+!    of the Sun Yat-sen University, Guangdong, CHINA.
+!    All rights reserved.
 !
-! Initial : Yongjiu Dai, 1998-2014
-! Revised : Hua Yuan, Shupeng Zhang, Nan Wei, Xingjie Lu, Zhongwang Wei, Yongjiu Dai
-!           2014-2024
+!  Initial : Yongjiu Dai, 1998-2014
+!  Revised : Hua Yuan, Shupeng Zhang, Nan Wei, Xingjie Lu, Zhongwang Wei, Yongjiu Dai
+!            2014-2024
 !-----------------------------------------------------------------------------
 
    USE MOD_Precision
@@ -60,8 +60,8 @@ PROGRAM CoLM
 #ifdef SinglePoint
    USE MOD_SingleSrfdata
 #endif
-
 #if (defined CatchLateralFlow)
+   USE MOD_Catch_BasinNetwork
    USE MOD_Catch_LateralFlow
 #endif
 
@@ -107,7 +107,7 @@ PROGRAM CoLM
    character(len=256) :: dir_restart
    character(len=256) :: fsrfdata
 
-   real(r8) :: deltim       ! time step (senconds)
+   real(r8) :: deltim       ! time step (seconds)
    integer  :: sdate(3)     ! calendar (year, julian day, seconds)
    integer  :: idate(3)     ! calendar (year, julian day, seconds)
    integer  :: edate(3)     ! calendar (year, julian day, seconds)
@@ -116,7 +116,7 @@ PROGRAM CoLM
    logical  :: greenwich    ! greenwich time
 
    logical :: doalb         ! true => start up the surface albedo calculation
-   logical :: dolai         ! true => start up the time-varying vegetation paramter
+   logical :: dolai         ! true => start up the time-varying vegetation parameter
    logical :: dosst         ! true => update sst/ice/snow
 
    integer :: Julian_1day_p, Julian_1day
@@ -131,6 +131,7 @@ PROGRAM CoLM
    type(timestamp) :: ststamp, itstamp, etstamp, ptstamp
 
    integer*8 :: start_time, end_time, c_per_sec, time_used
+!-----------------------------------------------------------------------
 
 #ifdef USEMPI
 #ifdef USESplitAI
@@ -211,8 +212,8 @@ PROGRAM CoLM
       pdate(1) = p_year; pdate(2) = p_julian; pdate(3) = p_seconds
 
       CALL Init_GlobalVars
-      CAll Init_LC_Const
-      CAll Init_PFT_Const
+      CALL Init_LC_Const
+      CALL Init_PFT_Const
 
       CALL pixel%load_from_file    (dir_landdata)
       CALL gblock%load_from_file   (dir_landdata)
@@ -234,8 +235,15 @@ PROGRAM CoLM
       CALL pixelset_load_from_file (dir_landdata, 'landpatch', landpatch, numpatch, lc_year)
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
+#ifdef SinglePoint
+      IF (patchtypes(SITE_landtype) == 0) THEN
+         CALL pixelset_load_from_file (dir_landdata, 'landpft', landpft , numpft  , lc_year)
+         CALL map_patch_to_pft
+      ENDIF
+#else
       CALL pixelset_load_from_file (dir_landdata, 'landpft'  , landpft  , numpft  , lc_year)
       CALL map_patch_to_pft
+#endif
 #endif
 
 #ifdef URBAN_MODEL
@@ -253,6 +261,10 @@ PROGRAM CoLM
 #ifdef CATCHMENT
       CALL hru_vector_init ()
 #endif
+#endif
+
+#ifdef CatchLateralFlow
+      CALL build_basin_network ()
 #endif
 
       CALL adj2end(sdate)
@@ -283,8 +295,10 @@ PROGRAM CoLM
       CALL READ_TimeVariables (jdate, lc_year, casename, dir_restart)
 
       ! Read in SNICAR optical and aging parameters
-      CALL SnowOptics_init( DEF_file_snowoptics ) ! SNICAR optical parameters
-      CALL SnowAge_init( DEF_file_snowaging )     ! SNICAR aging   parameters
+      IF (DEF_USE_SNICAR) THEN
+         CALL SnowOptics_init( DEF_file_snowoptics ) ! SNICAR optical parameters
+         CALL SnowAge_init( DEF_file_snowaging )     ! SNICAR aging   parameters
+      ENDIF
 
       ! ----------------------------------------------------------------------
       doalb = .true.
@@ -426,7 +440,7 @@ PROGRAM CoLM
 #endif
 
 
-         ! Call colm driver
+         ! Call CoLM driver
          ! ----------------------------------------------------------------------
          IF (p_is_worker) THEN
             CALL CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oroflag)
@@ -448,10 +462,10 @@ PROGRAM CoLM
          ! Write out the model variables for restart run and the histroy file
          ! ----------------------------------------------------------------------
          CALL hist_out (idate, deltim, itstamp, etstamp, ptstamp, dir_hist, casename)
-         
+
          CALL CheckEquilibrium (idate, deltim, itstamp, dir_hist, casename)
 
-         ! DO land USE and land cover change simulation
+         ! DO land use and land cover change simulation
          ! ----------------------------------------------------------------------
 #ifdef LULCC
          IF ( isendofyear(idate, deltim) ) THEN
@@ -463,8 +477,7 @@ PROGRAM CoLM
             CALL hist_final    ()
 
             ! Call LULCC driver
-            CALL LulccDriver (casename,dir_landdata,dir_restart,&
-                              idate,greenwich)
+            CALL LulccDriver (casename,dir_landdata,dir_restart,idate,greenwich)
 
             ! Allocate Forcing and Fluxes variable of next year
             CALL allocate_1D_Forcing
@@ -493,8 +506,8 @@ PROGRAM CoLM
          ! Hua Yuan, 06/2023: change namelist DEF_LAI_CLIM to DEF_LAI_MONTHLY
          ! and add DEF_LAI_CHANGE_YEARLY for monthly LAI data
          !
-         ! NOTES: Should be caution for setting DEF_LAI_CHANGE_YEARLY to ture in non-LULCC
-         ! case, that means the LAI changes without condisderation of land cover change.
+         ! NOTES: Should be caution for setting DEF_LAI_CHANGE_YEARLY to true in non-LULCC
+         ! case, that means the LAI changes without consideration of land cover change.
 
          IF (DEF_LAI_CHANGE_YEARLY) THEN
             lai_year = jdate(1)
@@ -514,7 +527,7 @@ PROGRAM CoLM
             Julian_8day = int(calendarday(jdate)-1)/8*8 + 1
             IF ((itstamp < etstamp) .and. (Julian_8day /= Julian_8day_p)) THEN
                CALL LAI_readin (jdate(1), Julian_8day, dir_landdata)
-               ! 06/2023, yuan: or depend on DEF_LAI_CHANGE_YEARLY nanemlist
+               ! 06/2023, yuan: or depend on DEF_LAI_CHANGE_YEARLY namelist
                !CALL LAI_readin (lai_year, Julian_8day, dir_landdata)
             ENDIF
          ENDIF
@@ -532,17 +545,20 @@ PROGRAM CoLM
             ENDIF
 #endif
          ENDIF
+
 #ifdef RangeCheck
          CALL check_TimeVariables ()
 #endif
+
 #ifdef USEMPI
          CALL mpi_barrier (p_comm_glb, p_err)
 #endif
 
 #ifdef CoLMDEBUG
-         CALL print_VSF_iteration_stat_info ()
+         IF (DEF_USE_VariablySaturatedFlow) THEN
+            CALL print_VSF_iteration_stat_info ()
+         ENDIF
 #endif
-
 
          IF (p_is_master) THEN
             CALL system_clock (end_time, count_rate = c_per_sec)

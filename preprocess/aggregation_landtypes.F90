@@ -7,18 +7,18 @@ SUBROUTINE aggregation_landtypes ( dir_rawdata,dir_model_landdata, &
                                    nx_fine_gridcell,ny_fine_gridcell,area_fine_gridcell,&
                                    sinn,sins,lonw_rad,lone_rad,sinn_i,sins_i,lonw_rad_i,lone_rad_i,&
                                    READ_row_UB,READ_row_LB,READ_col_UB,READ_col_LB)
-! ----------------------------------------------------------------------
-! Creates land model surface dataset from original "raw" data files -
+!-----------------------------------------------------------------------
+!  Creates land model surface dataset from original "raw" data files -
 !     data with 30 arc seconds resolution
 !
-! Created by Yongjiu Dai, 02/2014
-! ________________
-! REVISION HISTORY:
-!   /07/2014, Siguang Zhu & Xiangxiang Zhang: weight average considering
-!               partial overlap between fine grid and model grid for a user
-!               defined domain file.
+!  Created by Yongjiu Dai, 02/2014
 !
-! ----------------------------------------------------------------------
+! !REVISIONS:
+!  /07/2014, Siguang Zhu & Xiangxiang Zhang: weight average considering
+!            partial overlap between fine grid and model grid for a user
+!            defined domain file.
+!
+!-----------------------------------------------------------------------
 use MOD_Precision
 use MOD_SPMD_Task
 
@@ -265,7 +265,7 @@ print *, 'OPENMP enabled, threads num = ', OPENMP
                fraction_patches(15,i,j) = f_glacier_patches  ! MODIS IGBP GLACIER/ICE SHEET (15)
 #endif
                Loca = maxloc(fraction_patches(:,i,j))    ! maxloc get the Loca: 1 - N_land_classification + 1
-               nn = Loca(1) - 1                          ! the definition of demension of fraction_patches: 0 - N_land_classification
+               nn = Loca(1) - 1                          ! the definition of dimension of fraction_patches: 0 - N_land_classification
                fraction_patches(nn,i,j) = err_f_glacier + fraction_patches(nn,i,j)
             endif
 

@@ -3,12 +3,12 @@
 MODULE MOD_Namelist
 
 !-----------------------------------------------------------------------
-! DESCRIPTION:
+! !DESCRIPTION:
 !
-!    Variables in namelist files and subrroutines to read namelist files.
+!    Variables in namelist files and subroutines to read namelist files.
 !
-! Initial Authors: Shupeng Zhang, Zhongwang Wei, Xingjie Lu, Nan Wei,
-!                  Hua Yuan, Wenzong Dong et al., May 2023
+!  Initial Authors: Shupeng Zhang, Zhongwang Wei, Xingjie Lu, Nan Wei,
+!                   Hua Yuan, Wenzong Dong et al., May 2023
 !-----------------------------------------------------------------------
 
    USE MOD_Precision, only: r8
@@ -239,7 +239,7 @@ MODULE MOD_Namelist
    logical :: DEF_ROAD_RUN         = .false.
 
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-! ----- Part 11: parameteration schemes -----
+! ----- Part 11: parameterization schemes -----
 ! ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
    integer :: DEF_Interception_scheme = 1  !1:CoLM；2:CLM4.5; 3:CLM5; 4:Noah-MP; 5:MATSIRO; 6:VIC; 7:JULES
@@ -275,14 +275,14 @@ MODULE MOD_Namelist
    integer :: DEF_Runoff_SCHEME = 3
    character(len=256) :: DEF_file_VIC_para = 'null'
 
-   ! ----- Treat exposed soil and snow surface separatly -----
+   ! ----- Treat exposed soil and snow surface separately -----
    ! including solar absorption, sensible/latent heat, ground temperature,
-   ! ground heat flux and groud evp/dew/subl/fros. Corresponding vars are
+   ! ground heat flux and ground evp/dew/subl/fros. Corresponding vars are
    ! named as ***_soil, ***_snow.
    logical :: DEF_SPLIT_SOILSNOW = .false.
 
    ! ----- Account for vegetation snow process -----
-   ! NOTE: This option will be activated in the new release, accompained by
+   ! NOTE: This option will be activated in the new release, accompanied by
    !       a new set of canopy structure data, include the snow-free LAI.
    logical :: DEF_VEG_SNOW = .false.
 
@@ -414,8 +414,8 @@ MODULE MOD_Namelist
          'TBOT    ','QBOT    ','PSRF    ','PRECTmms', &
          'NULL    ','WIND    ','FSDS    ','FLDS    ' /)
       character(len=256) :: timelog(8)         = (/ &
-         'instant ','instant ','instant ','foreward', &
-         'NULL    ','instant ','forward ','foreward' /)
+         'instant ','instant ','instant ','forward ', &
+         'NULL    ','instant ','forward ','forward ' /)
       character(len=256) :: tintalgo(8)        = (/ &
          'linear ','linear ','linear ','nearest', &
          'NULL   ','linear ','coszen ','linear ' /)
@@ -610,6 +610,17 @@ MODULE MOD_Namelist
       logical :: hr                               = .true.
       logical :: fpg                              = .true.
       logical :: fpi                              = .true.
+      logical :: totvegc                          = .true.
+      logical :: totlitc                          = .true.
+      logical :: totcwdc                          = .true.
+      logical :: totsomc                          = .true.
+      logical :: totcolc                          = .true.
+      logical :: totvegn                          = .true.
+      logical :: totlitn                          = .true.
+      logical :: totcwdn                          = .true.
+      logical :: totsomn                          = .true.
+      logical :: totcoln                          = .true.
+      logical :: totsoiln_vr                      = .true.
       logical :: gpp_enftemp                      = .false. !1
       logical :: gpp_enfboreal                    = .false. !2
       logical :: gpp_dnfboreal                    = .false. !3
@@ -1116,10 +1127,11 @@ CONTAINS
          DEF_USE_PC   = .false.
          DEF_FAST_PC  = .false.
          DEF_SOLO_PFT = .false.
-
+#ifdef vanGenuchten_Mualem_SOIL_MODEL
          write(*,*) '                  *****                  '
-         write(*,*) 'Note: Soil resistance is automaticlly turned off for USGS|IGBP scheme.'
+         write(*,*) 'Note: Soil resistance is automaticlly turned off for VG soil + USGS|IGBP scheme.'
          DEF_RSS_SCHEME = 0
+#endif
 #endif
 
 #ifdef LULC_IGBP_PFT
@@ -1852,6 +1864,17 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%hr                 , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%fpg                , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%fpi                , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%totvegc            , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%totlitc            , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%totcwdc            , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%totsomc            , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%totcolc            , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%totvegn            , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%totlitn            , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%totcwdn            , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%totsomn            , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%totcoln            , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%totsoiln_vr        , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%gpp_enftemp        , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%gpp_enfboreal      , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%gpp_dnfboreal      , set_defaults)

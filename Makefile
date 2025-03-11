@@ -103,9 +103,10 @@ mksrfdata.x : mkdir_build ${HEADER} ${OBJS_SHARED} ${OBJS_MKSRFDATA}
 # ----- End of Target 1 mksrfdata ----
 
 OBJS_BASIC =    \
-				 MOD_Hydro_IO.o                 \
-				 MOD_Hydro_Vars_TimeVariables.o \
-				 MOD_Hydro_Vars_1DFluxes.o      \
+				 MOD_Catch_BasinNetwork.o       \
+				 MOD_Catch_IO.o                 \
+				 MOD_Catch_Vars_TimeVariables.o \
+				 MOD_Catch_Vars_1DFluxes.o      \
 				 MOD_BGC_Vars_1DFluxes.o        \
 				 MOD_BGC_Vars_1DPFTFluxes.o     \
 				 MOD_BGC_Vars_PFTimeVariables.o \
@@ -114,6 +115,7 @@ OBJS_BASIC =    \
 				 MOD_Urban_Vars_1DFluxes.o      \
 				 MOD_Urban_Vars_TimeVariables.o \
 				 MOD_Urban_Vars_TimeInvariants.o\
+				 MOD_Road_Vars_1DFluxes.o       \
 				 MOD_Road_Vars_TimeVariables.o  \
 				 MOD_Road_Vars_TimeInvariants.o \
 				 MOD_Const_PFT.o                \
@@ -142,7 +144,7 @@ OBJS_BASIC =    \
 				 MOD_Urban_LAIReadin.o          \
 				 MOD_Urban_Shortwave.o          \
 				 MOD_Urban_Albedo.o             \
-				 MOD_Road_Albedo.o             \
+				 MOD_Road_Albedo.o              \
 				 MOD_MonthlyinSituCO2MaunaLoa.o \
 				 MOD_PercentagesPFTReadin.o     \
 				 MOD_LakeDepthReadin.o          \
@@ -230,7 +232,7 @@ OBJS_MAIN = \
 				MOD_Catch_HillslopeFlow.o                 \
 				MOD_Catch_SubsurfaceFlow.o                \
 				MOD_Catch_RiverLakeFlow.o                 \
-				MOD_Hydro_Hist.o                          \
+				MOD_Catch_Hist.o                          \
 				MOD_BGC_CNCStateUpdate1.o                 \
 				MOD_BGC_CNCStateUpdate2.o                 \
 				MOD_BGC_CNCStateUpdate3.o                 \

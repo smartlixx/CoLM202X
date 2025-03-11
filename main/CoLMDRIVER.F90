@@ -5,11 +5,11 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 
 !=======================================================================
 !
-! CoLM MODEL DRIVER
+!  CoLM MODEL DRIVER
 !
-! Initial : Yongjiu Dai, 1999-2014
-! Revised : Hua Yuan, Shupeng Zhang, Nan Wei, Xingjie Lu, Zhongwang Wei, Yongjiu Dai
-!           2014-2024
+!  Initial : Yongjiu Dai, 1999-2014
+!  Revised : Hua Yuan, Shupeng Zhang, Nan Wei, Xingjie Lu, Zhongwang Wei, Yongjiu Dai
+!            2014-2024
 !
 !=======================================================================
 
@@ -23,13 +23,15 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
    USE MOD_Vars_1DFluxes
    USE MOD_LandPatch, only: numpatch
    USE MOD_LandUrban, only: patch2urban
+   USE MOD_LandRoad, only: patch2road
+   USE MOD_Road_Const_ThermalParameters
    USE MOD_Namelist, only: DEF_forcing, DEF_URBAN_RUN, DEF_ROAD_RUN
    USE MOD_Forcing, only: forcmask_pch
    USE omp_lib
 #ifdef CaMa_Flood
- ! get flood variables: inundation depth[mm], inundation fraction [0-1],
- ! inundation evaporation [mm/s], inundation re-infiltration[mm/s]
-   USE MOD_CaMa_Vars, only : flddepth_cama,fldfrc_cama,fevpg_fld,finfg_fld
+   ! get flood variables: inundation depth[mm], inundation fraction [0-1],
+   ! inundation evaporation [mm/s], inundation re-infiltration[mm/s]
+   USE MOD_CaMa_Vars, only: flddepth_cama,fldfrc_cama,fevpg_fld,finfg_fld
 #endif
 
    IMPLICIT NONE
@@ -37,7 +39,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
    integer,  intent(in) :: idate(3) ! model calendar for next time step (year, julian day, seconds)
    real(r8), intent(in) :: deltim   ! seconds in a time-step
 
-   logical,  intent(in) :: dolai    ! true if time for time-varying vegetation paramter
+   logical,  intent(in) :: dolai    ! true if time for time-varying vegetation parameter
    logical,  intent(in) :: doalb    ! true if time for surface albedo calculation
    logical,  intent(in) :: dosst    ! true if time for update sst/ice/snow
 
@@ -45,7 +47,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 
    real(r8) :: deltim_phy
    integer  :: steps_in_one_deltim
-   integer  :: i, m, u, k
+   integer  :: i, m, u, k, r
 
 ! ======================================================================
 
@@ -68,7 +70,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
          m = patchclass(i)
 
          steps_in_one_deltim = 1
-         ! deltim need to be within 1800s for waterbody with snow in order to avoid large
+         ! deltim need to be within 1800s for water body with snow in order to avoid large
          ! temperature fluctuations due to rapid snow heat conductance
          IF(m == WATERBODY .and. snowdp(i) > 0.0) steps_in_one_deltim = ceiling(deltim/1800.)
          deltim_phy = deltim/steps_in_one_deltim
@@ -79,7 +81,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
             DO k = 1, steps_in_one_deltim
                !                ***** Call CoLM main program *****
                !
-               CALL CoLMMAIN (i,idate,           coszen(i),       deltim_phy,      &
+               CALL CoLMMAIN (  i,idate,         coszen(i),       deltim_phy,      &
                patchlonr(i),    patchlatr(i),    patchclass(i),   patchtype(i),    &
                doalb,           dolai,           dosst,           oro(i),          &
 
@@ -87,7 +89,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
                soil_s_v_alb(i), soil_d_v_alb(i), soil_s_n_alb(i), soil_d_n_alb(i), &
                vf_quartz(1:,i), vf_gravels(1:,i),vf_om(1:,i),     vf_sand(1:,i),   &
                wf_gravels(1:,i),wf_sand(1:,i),   porsl(1:,i),     psi0(1:,i),      &
-               bsw(1:,i),       theta_r(1:,i),   fsatmax(i),      fsatdcf(:),      &
+               bsw(1:,i),       theta_r(1:,i),   fsatmax(i),      fsatdcf(i),      &
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
                alpha_vgm(1:,i), n_vgm(1:,i),     L_vgm(1:,i),                      &
                sc_vgm(1:,i),    fc_vgm(1:,i),                                      &
@@ -95,10 +97,10 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
                hksati(1:,i),    csol(1:,i),      k_solids(1:,i),  dksatu(1:,i),    &
                dksatf(1:,i),    dkdry(1:,i),     BA_alpha(1:,i),  BA_beta(1:,i),   &
                rootfr(1:,m),    lakedepth(i),    dz_lake(1:,i),   topostd(i),      &
-               BVIC(i),                                                          &
+               BVIC(i),                                                            &
 #if(defined CaMa_Flood)
              ! flood variables [mm, m2/m2, mm/s, mm/s]
-               flddepth_cama(i),fldfrc_cama(i),fevpg_fld(i),  finfg_fld(i),        &
+               flddepth_cama(i),fldfrc_cama(i),  fevpg_fld(i),    finfg_fld(i),    &
 #endif
 
              ! VEGETATION INFORMATION
@@ -106,10 +108,9 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
                effcon(m),       vmax25(m),                                         &
                kmax_sun(m),     kmax_sha(m),     kmax_xyl(m),     kmax_root(m),    &
                psi50_sun(m),    psi50_sha(m),    psi50_xyl(m),    psi50_root(m),   &
-               ck(m),                                                              &
-               slti(m),         hlti(m),                                           &
-               shti(m),         hhti(m),         trda(m),         trdm(m),         &
-               trop(m),         g1(m),           g0(m),gradm(m),  binter(m),       &
+               ck(m),           slti(m),         hlti(m),         shti(m),         &
+               hhti(m),         trda(m),         trdm(m),         trop(m),         &
+               g1(m),           g0(m),           gradm(m),        binter(m),       &
                extkn(m),        chil(m),         rho(1:,1:,m),    tau(1:,1:,m),    &
 
              ! ATMOSPHERIC FORCING
@@ -136,7 +137,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
                thermk(i),       extkb(i),        extkd(i),        vegwp(1:,i),     &
                gs0sun(i),       gs0sha(i),       &
              ! Ozone Stress Variables
-               lai_old(i),      o3uptakesun(i),  o3uptakesha(i)  ,forc_ozone(i),   &
+               lai_old(i),      o3uptakesun(i),  o3uptakesha(i),  forc_ozone(i),   &
              ! End ozone stress variables
              ! WUE stomata model parameter
                lambda(m),                                                          &
@@ -150,32 +151,31 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
                mss_dst1(:,i),   mss_dst2(:,i),   mss_dst3(:,i),   mss_dst4(:,i),   &
 
              ! additional diagnostic variables for output
-               laisun(i),       laisha(i),       rootr(1:,i),rootflux(1:,i),rss(i),&
+               laisun(i),       laisha(i),       rootr(1:,i),     rootflux(1:,i),  &
                rstfacsun_out(i),rstfacsha_out(i),gssun_out(i),    gssha_out(i),    &
                assimsun_out(i), etrsun_out(i),   assimsha_out(i), etrsha_out(i),   &
-               h2osoi(1:,i),    wat(i),          &
+               h2osoi(1:,i),    wat(i),          rss(i),          &
 
              ! FLUXES
                taux(i),         tauy(i),         fsena(i),        fevpa(i),        &
                lfevpa(i),       fsenl(i),        fevpl(i),        etr(i),          &
                fseng(i),        fevpg(i),        olrg(i),         fgrnd(i),        &
-               trad(i),         tref(i),         qref(i),                          &
-               rsur(i),         rsur_se(i),      rsur_ie(i),      rnof(i),         &
-               qintr(i),        qinfl(i),        qdrip(i),                         &
-               rst(i),          assim(i),        respc(i),        sabvsun(i),      &
-               sabvsha(i),      sabg(i),         sr(i),           solvd(i),        &
-               solvi(i),        solnd(i),        solni(i),        srvd(i),         &
-               srvi(i),         srnd(i),         srni(i),         solvdln(i),      &
-               solviln(i),      solndln(i),      solniln(i),      srvdln(i),       &
-               srviln(i),       srndln(i),       srniln(i),       qcharge(i),      &
-               xerr(i),         zerr(i),                                           &
+               trad(i),         tref(i),         qref(i),         rsur(i),         &
+               rsur_se(i),      rsur_ie(i),      rnof(i),         qintr(i),        &
+               qinfl(i),        qdrip(i),        rst(i),          assim(i),        &
+               respc(i),        sabvsun(i),      sabvsha(i),      sabg(i),         &
+               sr(i),           solvd(i),        solvi(i),        solnd(i),        &
+               solni(i),        srvd(i),         srvi(i),         srnd(i),         &
+               srni(i),         solvdln(i),      solviln(i),      solndln(i),      &
+               solniln(i),      srvdln(i),       srviln(i),       srndln(i),       &
+               srniln(i),       qcharge(i),      xerr(i),         zerr(i),         &
 
              ! TUNABLE modle constants
                zlnd,            zsno,            csoilc,          dewmx,           &
                ! 'wtfact' is updated to gridded 'fsatmax' data.
-               capr,            cnfac,           ssi,             &
-               wimp,            pondmx,          smpmax,          smpmin,          &
-               trsmx0,          tcrit,                                             &
+               capr,            cnfac,           ssi,             wimp,            &
+               pondmx,          smpmax,          smpmin,          trsmx0,          &
+               tcrit,           &
 
              ! additional variables required by coupling with WRF model
                emis(i),         z0m(i),          zol(i),          rib(i),          &
@@ -189,7 +189,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 #if(defined BGC)
          IF(patchtype(i) .eq. 0)THEN
             !
-            !                ***** Call CoLM BGC model *****
+            !               ***** Call CoLM BGC model *****
             !
             CALL bgc_driver (i,idate(1:3),deltim, patchlatr(i)*180/PI,patchlonr(i)*180/PI)
          ENDIF
@@ -197,25 +197,27 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 
 #ifdef ROAD_MODEL
          IF (DEF_ROAD_RUN .and. m.eq.URBAN) THEN
-           CALL RoadCoLMMAIN ( &
-            ! model running information
+           r = patch2road(i)
+           CALL CoLMMAIN_Road ( &
+         ! model running information
            i               ,idate           ,coszen(i)       ,deltim           ,&
            patchlonr(i)    ,patchlatr(i)    ,patchclass(i)   ,patchtype(i)     ,&
 
          ! road information
-           em_road         ,cv_road(1:nl_soil)         ,tk_road(1:nl_soil)     ,&
-    !       z_road       ,dz_road                                  ,&
+           emroad_apt(1,1)      ,cvroad_apt(1:,1)    ,tkroad_apt(1:,1)    ,albroad_apt(:,:)  ,&
+         ! z_road       ,dz_road                                  ,&
+
          ! soil information
            vf_quartz(1:,i) ,vf_gravels(1:,i),vf_om(1:,i)    ,vf_sand(1:,i)     ,&
            wf_gravels(1:,i),wf_sand(1:,i)   ,porsl(1:,i)    ,psi0(1:,i)        ,&
-           bsw(1:,i)       ,theta_r(1:,i)   ,&
+           bsw(1:,i)       ,theta_r(1:,i)   ,fsatmax(i)     ,fsatdcf(i)        ,&
 !#ifdef vanGenuchten_Mualem_SOIL_MODEL
 !           alpha_vgm    ,n_vgm        ,L_vgm        ,&
 !           sc_vgm       ,fc_vgm       ,&
 !#endif
            hksati(1:,i)    ,csol(1:,i)      ,k_solids(1:,i) ,dksatu(1:,i)      ,&
            dksatf(1:,i)    ,dkdry(1:,i)     ,BA_alpha(1:,i) ,BA_beta(1:,i)     ,&
-     
+
          ! vegetation information
 !           sqrtdi       ,chil         ,&
 !           effcon       ,vmax25       ,slti         ,hlti         ,&
@@ -237,8 +239,8 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
          !  forc_aerdep,  &
 
          ! land surface variables required for restart
-           z_sno_road  (maxsnl+1:,i) ,dz_sno_road (maxsnl+1:,i) ,t_roadsno(maxsnl+1:,i),&
-           wliq_roadsno(maxsnl+1:,i) ,wice_roadsno(maxsnl+1:,i) ,&
+           z_sno_road  (maxsnl+1:,r) ,dz_sno_road (maxsnl+1:,r) ,t_roadsno(maxsnl+1:,r),&
+           wliq_roadsno(maxsnl+1:,r) ,wice_roadsno(maxsnl+1:,r) ,&
            z_sno       (maxsnl+1:,i) ,dz_sno      (maxsnl+1:,i) ,&
 !           wliq_soisno  ,wice_soisno  ,t_soisno     ,&
            smp         (1:,i)        ,hk          (1:,i)        ,t_grnd(i)       ,&
@@ -249,13 +251,13 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 !           green,        lai,          &
 !           sai,          
            alb(1:,1:,i),  & !ssun,         ssha,         &
-           ssoi(i),         ssno(i),       & !  thermk,       extkb,        &
+           ssoi(:,:,i)     ,ssno(:,:,i),       & !  thermk,       extkb,        &
           ! extkd,        vegwp,        gs0sun,       gs0sha,       &
            zwt(i),          & !wdsrf,
-           wa(i),           wetwat(i),       &
-           sag_road(i)     ,scv_road(i)     ,&
-           snowdp_road(i)  ,fsno_road(i)    ,&
-           sroad(1:,1:,i)  ,lroad(i)        ,&
+           wa(i),           & !wetwat(i),       &
+           sag_road(r)     ,scv_road(r)     ,&
+           snowdp_road(r)  ,fsno_road(r)    ,&
+           sroad(1:,1:,r)  ,lroad(r)        ,&
 
 !         ! SNICAR snow model related
 !           snw_rds,      ssno_lyr,                                 &
@@ -265,14 +267,14 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
          ! additional diagnostic variables for output
 !           laisun       ,laisha       ,&
            rss(i)                        ,&
-           rstfac(i)       ,h2osoi(1:,i)       ,wat(i)                        ,&
+           rstfacsun_out(i)       ,h2osoi(1:,i)       ,wat(i)                        ,&
 
          ! FLUXES
            taux(i)         ,tauy(i)         ,fsena(i)        ,fevpa(i)        ,&
            lfevpa(i)       ,& !fsenl(i)        ,fevpl(i)        ,
            etr(i)          ,&
            fseng(i)        ,fevpg(i)        ,olrg(i)         ,fgrnd(i)        ,&
-           fsen_road(i)    ,lfevp_road(i)   ,&
+           fsen_road(r)    ,lfevp_road(r)   ,&
            trad(i)         ,tref(i)         ,&!tmax       ,tmin         ,&
            qref(i)         ,rsur(i)         ,rnof(i)         ,qintr(i)        ,&
            qinfl(i)        ,qdrip(i)        ,rst(i)          ,assim(i)        ,&
@@ -286,7 +288,8 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 
          ! TUNABLE modle constants
            zlnd         ,zsno         ,csoilc       ,dewmx        ,&
-           wtfact       ,capr         ,cnfac        ,ssi          ,&
+         !  wtfact       ,
+           capr         ,cnfac        ,ssi          ,&
            wimp         ,pondmx       ,smpmax       ,smpmin       ,&
            trsmx0       ,tcrit                                    ,&
 
@@ -302,8 +305,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
          IF (DEF_URBAN_RUN .and. m.eq.URBAN) THEN
 
             u = patch2urban(i)
-            !print *, "patch:", i, "urban:", u  !fortest only
-
+            !
             !              ***** Call CoLM urban model *****
             !
             CALL CoLMMAIN_Urban ( &
@@ -316,8 +318,8 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
             fgper(u)        ,em_roof(u)      ,em_wall(u)      ,em_gimp(u)      ,&
             em_gper(u)      ,cv_roof(:,u)    ,cv_wall(:,u)    ,cv_gimp(:,u)    ,&
             tk_roof(:,u)    ,tk_wall(:,u)    ,tk_gimp(:,u)    ,z_roof(:,u)     ,&
-            z_wall(:,u)     ,dz_roof(:,u)    ,dz_wall(:,u)                     ,&
-            lakedepth(i)    ,dz_lake(1:,i)   ,topostd(i)      ,BVIC(i)       ,&
+            z_wall(:,u)     ,dz_roof(:,u)    ,dz_wall(:,u)    ,lakedepth(i)    ,&
+            dz_lake(1:,i)   ,topostd(i)      ,BVIC(i)                          ,&
 
           ! LUCY INPUT PARAMETERS
             fix_holiday(:,u),week_holiday(:,u),hum_prof(:,u)  ,pop_den(u)      ,&
@@ -329,9 +331,9 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
             bsw(1:,i)       ,theta_r(1:,i)   ,fsatmax(i)      ,fsatdcf(i)      ,&
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
             alpha_vgm(1:,i) ,n_vgm(1:,i)     ,L_vgm(1:,i)                      ,&
-            sc_vgm (1:,i)   ,fc_vgm   (1:,i)                                   ,&
+            sc_vgm(1:,i)    ,fc_vgm(1:,i)                                      ,&
 #endif
-            hksati(1:,i)    ,csol(1:,i)      ,k_solids(1:,i),  dksatu(1:,i)    ,&
+            hksati(1:,i)    ,csol(1:,i)      ,k_solids(1:,i)  ,dksatu(1:,i)    ,&
             dksatf(1:,i)    ,dkdry(1:,i)     ,BA_alpha(1:,i)  ,BA_beta(1:,i)   ,&
             alb_roof(:,:,u) ,alb_wall(:,:,u) ,alb_gimp(:,:,u) ,alb_gper(:,:,u) ,&
 
@@ -339,8 +341,9 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
             htop(i)         ,hbot(i)         ,sqrtdi(m)       ,chil(m)         ,&
             effcon(m)       ,vmax25(m)       ,slti(m)         ,hlti(m)         ,&
             shti(m)         ,hhti(m)         ,trda(m)         ,trdm(m)         ,&
-            trop(m)         ,g1(m)           ,g0(m),gradm(m)  ,binter(m)       ,&
-            extkn(m)        ,rho(1:,1:,m)    ,tau(1:,1:,m)    ,rootfr(1:,m)    ,&
+            trop(m)         ,g1(m)           ,g0(m)           ,gradm(m)        ,&
+            binter(m)       ,extkn(m)        ,rho(1:,1:,m)    ,tau(1:,1:,m)    ,&
+            rootfr(1:,m)    ,&
           ! WUE model parameter
             lambda(m)                                                          ,&
           ! END WUE model parameter
@@ -391,7 +394,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
             t_lake(1:,i)    ,lake_icefrac(1:,i),               savedtke1(i)    ,&
 
           ! SNICAR snow model related
-            snw_rds(:,i)    ,ssno_lyr(:,:,:,i),&
+            snw_rds(:,i)    ,ssno_lyr(:,:,:,i)                                 ,&
             mss_bcpho(:,i)  ,mss_bcphi(:,i)  ,mss_ocpho(:,i)  ,mss_ocphi(:,i)  ,&
             mss_dst1(:,i)   ,mss_dst2(:,i)   ,mss_dst3(:,i)   ,mss_dst4(:,i)   ,&
 
@@ -421,12 +424,12 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
             solniln(i)      ,srvdln(i)       ,srviln(i)       ,srndln(i)       ,&
             srniln(i)       ,qcharge(i)      ,xerr(i)         ,zerr(i)         ,&
 
-          ! TUNABLE modle constants
+          ! TUNABLE model constants
             zlnd            ,zsno            ,csoilc          ,dewmx           ,&
             ! 'wtfact' is updated to gridded 'fsatmax' data.
-            capr            ,cnfac           ,ssi             ,&
-            wimp            ,pondmx          ,smpmax          ,smpmin          ,&
-            trsmx0          ,tcrit                                             ,&
+            capr            ,cnfac           ,ssi             ,wimp            ,&
+            pondmx          ,smpmax          ,smpmin          ,trsmx0          ,&
+            tcrit                                                              ,&
 
           ! additional variables required by coupling with WRF model
             emis(i)         ,z0m(i)          ,zol(i)          ,rib(i)          ,&

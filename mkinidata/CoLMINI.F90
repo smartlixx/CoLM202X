@@ -2,19 +2,20 @@
 
 PROGRAM CoLMINI
 
-! ======================================================================
-! Initialization of Land Characteristic Parameters and Initial State Variables
+!=======================================================================
+!  Initialization of Land Characteristic Parameters and Initial State
+!  Variables
 !
-! Reference:
+! !REFERENCES:
 !     [1] Dai et al., 2003: The Common Land Model (CoLM).
 !         Bull. of Amer. Meter. Soc., 84: 1013-1023
 !     [2] Dai et al., 2004: A two-big-leaf model for canopy temperature,
 !         photosynthesis and stomatal conductance. Journal of Climate
 !     [3] Dai et al., 2014: The Terrestrial Modeling System (TMS).
 !
-!     Created by Yongjiu Dai Februay 2004
-!     Revised by Yongjiu Dai Februay 2014
-! ======================================================================
+!  Created by Yongjiu Dai Februay 2004
+!  Revised by Yongjiu Dai Februay 2014
+!=======================================================================
 
    USE MOD_Precision
    USE MOD_Namelist
@@ -55,7 +56,7 @@ PROGRAM CoLMINI
    USE MOD_SnowSnicar, only: SnowAge_init, SnowOptics_init
    IMPLICIT NONE
 
-   ! ----------------local variables ---------------------------------
+!-------------------------- Local Variables ----------------------------
    character(len=256) :: nlfile
    character(len=256) :: casename ! case name
    character(len=256) :: dir_landdata
@@ -83,6 +84,8 @@ PROGRAM CoLMINI
       ! ----------------------------------------------------------------------
       CALL getarg (1, nlfile)
       CALL read_namelist (nlfile)
+
+      DEF_PIO_groupsize = 2
 
       casename     = DEF_CASE_NAME
       dir_landdata = DEF_dir_landdata
@@ -129,8 +132,15 @@ PROGRAM CoLMINI
       CALL pixelset_load_from_file (dir_landdata, 'landpatch', landpatch, numpatch, lc_year)
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
+#ifdef SinglePoint
+      IF (patchtypes(SITE_landtype) == 0) THEN
+         CALL pixelset_load_from_file (dir_landdata, 'landpft', landpft, numpft, lc_year)
+         CALL map_patch_to_pft
+      ENDIF
+#else
       CALL pixelset_load_from_file (dir_landdata, 'landpft', landpft, numpft, lc_year)
       CALL map_patch_to_pft
+#endif
 #endif
 
 #ifdef URBAN_MODEL

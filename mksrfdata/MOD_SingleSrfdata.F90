@@ -2,13 +2,14 @@
 
 #ifdef SinglePoint
 MODULE MOD_SingleSrfdata
-!-----------------------------------------------------------------------------------------
-! DESCRIPTION:
+!-----------------------------------------------------------------------
+! !DESCRIPTION:
 !
-!    This module includes subroutines to read or write surface data for "SinglePoint".
+!    This module includes subroutines to read or write surface data for
+!    "SinglePoint".
 !
-! Created by Shupeng Zhang, May 2023
-!-----------------------------------------------------------------------------------------
+!  Created by Shupeng Zhang, May 2023
+!-----------------------------------------------------------------------
 
    USE MOD_Precision, only: r8
    USE MOD_Vars_Global
@@ -53,6 +54,7 @@ MODULE MOD_SingleSrfdata
    real(r8), allocatable :: SITE_soil_vf_quartz_mineral (:)
    real(r8), allocatable :: SITE_soil_vf_gravels        (:)
    real(r8), allocatable :: SITE_soil_vf_sand           (:)
+   real(r8), allocatable :: SITE_soil_vf_clay           (:)
    real(r8), allocatable :: SITE_soil_vf_om             (:)
    real(r8), allocatable :: SITE_soil_wf_gravels        (:)
    real(r8), allocatable :: SITE_soil_wf_sand           (:)
@@ -137,7 +139,7 @@ CONTAINS
    USE MOD_NetCDFSerial
    USE MOD_Namelist
    USE MOD_Utils
-   USE MOD_Vars_Global, only : PI
+   USE MOD_Vars_Global, only: PI
    IMPLICIT NONE
 
    character(len=*), intent(in) :: fsrfdata
@@ -167,7 +169,7 @@ CONTAINS
 
       CALL normalize_longitude (SITE_lon_location)
 
-      IF (USE_SITE_landtype) THEN
+      IF (USE_SITE_landtype .or. .not.mksrfdata) THEN
          IF (trim(fsrfdata) /= 'null') THEN
 #ifdef LULC_USGS
             CALL ncio_read_serial (fsrfdata, 'USGS_classification', SITE_landtype)
@@ -257,6 +259,7 @@ CONTAINS
          CALL ncio_read_serial (fsrfdata, 'soil_vf_quartz_mineral', SITE_soil_vf_quartz_mineral)
          CALL ncio_read_serial (fsrfdata, 'soil_vf_gravels       ', SITE_soil_vf_gravels       )
          CALL ncio_read_serial (fsrfdata, 'soil_vf_sand          ', SITE_soil_vf_sand          )
+         CALL ncio_read_serial (fsrfdata, 'soil_vf_clay          ', SITE_soil_vf_clay          )
          CALL ncio_read_serial (fsrfdata, 'soil_vf_om            ', SITE_soil_vf_om            )
          CALL ncio_read_serial (fsrfdata, 'soil_wf_gravels       ', SITE_soil_wf_gravels       )
          CALL ncio_read_serial (fsrfdata, 'soil_wf_sand          ', SITE_soil_wf_sand          )
@@ -281,7 +284,8 @@ CONTAINS
          CALL ncio_read_serial (fsrfdata, 'soil_BA_beta          ', SITE_soil_BA_beta          )
 
          IF (DEF_Runoff_SCHEME == 3) THEN ! for Simple VIC
-            CALL ncio_read_serial (fsrfdata, 'soil_texture       ', SITE_soil_texture          )
+            ! reading from global dataset currently
+            !CALL ncio_read_serial (fsrfdata, 'soil_texture       ', SITE_soil_texture          )
          ENDIF
       ENDIF
 
@@ -440,6 +444,7 @@ ENDIF
          CALL ncio_read_serial (fsrfdata, 'soil_vf_quartz_mineral', SITE_soil_vf_quartz_mineral)
          CALL ncio_read_serial (fsrfdata, 'soil_vf_gravels       ', SITE_soil_vf_gravels       )
          CALL ncio_read_serial (fsrfdata, 'soil_vf_sand          ', SITE_soil_vf_sand          )
+         CALL ncio_read_serial (fsrfdata, 'soil_vf_clay          ', SITE_soil_vf_clay          )
          CALL ncio_read_serial (fsrfdata, 'soil_vf_om            ', SITE_soil_vf_om            )
          CALL ncio_read_serial (fsrfdata, 'soil_wf_gravels       ', SITE_soil_wf_gravels       )
          CALL ncio_read_serial (fsrfdata, 'soil_wf_sand          ', SITE_soil_wf_sand          )
@@ -464,7 +469,7 @@ ENDIF
 #endif
          CALL ncio_read_serial (fsrfdata, 'soil_BA_alpha         ', SITE_soil_BA_alpha         )
          CALL ncio_read_serial (fsrfdata, 'soil_BA_beta          ', SITE_soil_BA_beta          )
-         
+
          IF (DEF_Runoff_SCHEME == 3) THEN ! for Simple VIC
             CALL ncio_read_serial (fsrfdata, 'soil_texture       ', SITE_soil_texture          )
          ENDIF
@@ -602,6 +607,7 @@ ENDIF
       CALL ncio_write_serial (fsrfdata, 'soil_vf_quartz_mineral', SITE_soil_vf_quartz_mineral, 'soil')
       CALL ncio_write_serial (fsrfdata, 'soil_vf_gravels       ', SITE_soil_vf_gravels       , 'soil')
       CALL ncio_write_serial (fsrfdata, 'soil_vf_sand          ', SITE_soil_vf_sand          , 'soil')
+      CALL ncio_write_serial (fsrfdata, 'soil_vf_clay          ', SITE_soil_vf_clay          , 'soil')
       CALL ncio_write_serial (fsrfdata, 'soil_vf_om            ', SITE_soil_vf_om            , 'soil')
       CALL ncio_write_serial (fsrfdata, 'soil_wf_gravels       ', SITE_soil_wf_gravels       , 'soil')
       CALL ncio_write_serial (fsrfdata, 'soil_wf_sand          ', SITE_soil_wf_sand          , 'soil')
@@ -617,6 +623,7 @@ ENDIF
       CALL ncio_put_attr     (fsrfdata, 'soil_vf_quartz_mineral', 'source', source)
       CALL ncio_put_attr     (fsrfdata, 'soil_vf_gravels       ', 'source', source)
       CALL ncio_put_attr     (fsrfdata, 'soil_vf_sand          ', 'source', source)
+      CALL ncio_put_attr     (fsrfdata, 'soil_vf_clay          ', 'source', source)
       CALL ncio_put_attr     (fsrfdata, 'soil_vf_om            ', 'source', source)
       CALL ncio_put_attr     (fsrfdata, 'soil_wf_gravels       ', 'source', source)
       CALL ncio_put_attr     (fsrfdata, 'soil_wf_sand          ', 'source', source)
@@ -647,7 +654,7 @@ ENDIF
       CALL ncio_write_serial (fsrfdata, 'soil_BA_beta ', SITE_soil_BA_beta , 'soil')
       CALL ncio_put_attr     (fsrfdata, 'soil_BA_alpha', 'source', source)
       CALL ncio_put_attr     (fsrfdata, 'soil_BA_beta ', 'source', source)
-      
+
       IF (DEF_Runoff_SCHEME == 3) THEN ! for Simple VIC
          CALL ncio_write_serial (fsrfdata, 'soil_texture ', SITE_soil_texture)
          CALL ncio_put_attr     (fsrfdata, 'soil_texture ', 'source', source)
@@ -802,6 +809,7 @@ ENDIF
       CALL ncio_write_serial (fsrfdata, 'soil_vf_quartz_mineral', SITE_soil_vf_quartz_mineral, 'soil')
       CALL ncio_write_serial (fsrfdata, 'soil_vf_gravels       ', SITE_soil_vf_gravels       , 'soil')
       CALL ncio_write_serial (fsrfdata, 'soil_vf_sand          ', SITE_soil_vf_sand          , 'soil')
+      CALL ncio_write_serial (fsrfdata, 'soil_vf_clay          ', SITE_soil_vf_clay          , 'soil')
       CALL ncio_write_serial (fsrfdata, 'soil_vf_om            ', SITE_soil_vf_om            , 'soil')
       CALL ncio_write_serial (fsrfdata, 'soil_wf_gravels       ', SITE_soil_wf_gravels       , 'soil')
       CALL ncio_write_serial (fsrfdata, 'soil_wf_sand          ', SITE_soil_wf_sand          , 'soil')
@@ -817,6 +825,7 @@ ENDIF
       CALL ncio_put_attr     (fsrfdata, 'soil_vf_quartz_mineral', 'source', source)
       CALL ncio_put_attr     (fsrfdata, 'soil_vf_gravels       ', 'source', source)
       CALL ncio_put_attr     (fsrfdata, 'soil_vf_sand          ', 'source', source)
+      CALL ncio_put_attr     (fsrfdata, 'soil_vf_clay          ', 'source', source)
       CALL ncio_put_attr     (fsrfdata, 'soil_vf_om            ', 'source', source)
       CALL ncio_put_attr     (fsrfdata, 'soil_wf_gravels       ', 'source', source)
       CALL ncio_put_attr     (fsrfdata, 'soil_wf_sand          ', 'source', source)
@@ -932,6 +941,7 @@ ENDIF
       IF (allocated(SITE_soil_vf_quartz_mineral)) deallocate(SITE_soil_vf_quartz_mineral)
       IF (allocated(SITE_soil_vf_gravels       )) deallocate(SITE_soil_vf_gravels       )
       IF (allocated(SITE_soil_vf_sand          )) deallocate(SITE_soil_vf_sand          )
+      IF (allocated(SITE_soil_vf_clay          )) deallocate(SITE_soil_vf_clay          )
       IF (allocated(SITE_soil_vf_om            )) deallocate(SITE_soil_vf_om            )
       IF (allocated(SITE_soil_wf_gravels       )) deallocate(SITE_soil_wf_gravels       )
       IF (allocated(SITE_soil_wf_sand          )) deallocate(SITE_soil_wf_sand          )

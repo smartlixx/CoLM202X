@@ -94,6 +94,7 @@ PROGRAM MKSRFDATA
 
    type (grid_type) :: gsoil, gridlai, gtopo, grid_topo_factor
    type (grid_type) :: grid_urban_5km, grid_urban_500m
+   type (grid_type) :: grid_road_5km, grid_road_500m
 
    integer   :: lc_year
    character(len=4) :: cyear
@@ -229,6 +230,8 @@ PROGRAM MKSRFDATA
 
 #ifdef ROAD_MODEL
    CALL groad%define_by_name          ('colm_500m')
+   CALL grid_road_500m%define_by_name ('colm_500m')
+   CALL grid_road_5km%define_by_name  ('colm_5km' )
 #endif
 
    ! assimilate grids to build pixels
@@ -252,6 +255,8 @@ PROGRAM MKSRFDATA
 #endif
 #ifdef ROAD_MODEL
    CALL pixel%assimilate_grid (groad         )
+   CALL pixel%assimilate_grid (grid_road_500m)
+   CALL pixel%assimilate_grid (grid_road_5km )
 #endif
 #if (defined CROP)
    CALL pixel%assimilate_grid (gcrop )
@@ -284,6 +289,8 @@ PROGRAM MKSRFDATA
 #endif
 #ifdef ROAD_MODEL
    CALL pixel%map_to_grid (groad         )
+   CALL pixel%map_to_grid (grid_road_500m)
+   CALL pixel%map_to_grid (grid_road_5km )
 #endif
 #if (defined CROP)
    CALL pixel%map_to_grid (gcrop )
@@ -364,6 +371,10 @@ PROGRAM MKSRFDATA
 
 #ifdef URBAN_MODEL
    CALL pixelset_save_to_file  (dir_landdata, 'landurban', landurban, lc_year)
+#endif
+
+#ifdef Road_MODEL
+   CALL pixelset_save_to_file  (dir_landdata, 'landroad', landroad, lc_year)
 #endif
 
 ! ................................................................

@@ -243,6 +243,11 @@ PROGRAM CoLM
       CALL map_patch_to_urban
 #endif
 
+#ifdef ROAD_MODEL
+      CALL pixelset_load_from_file (dir_landdata, 'landroad', landroad, numroad, lc_year)
+      CALL map_patch_to_road
+#endif
+
 #if (defined UNSTRUCTURED || defined CATCHMENT)
       CALL elm_vector_init ()
 #ifdef CATCHMENT

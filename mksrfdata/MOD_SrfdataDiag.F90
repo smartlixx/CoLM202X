@@ -37,6 +37,9 @@ MODULE MOD_SrfdataDiag
 #ifdef URBAN_MODEL
    type(spatial_mapping_type) :: m_urb2diag
 #endif
+#ifdef ROAD_MODEL
+   type(spatial_mapping_type) :: m_road2diag
+#endif
 
    PUBLIC :: srfdata_diag_init
    PUBLIC :: srfdata_map_and_write
@@ -61,6 +64,9 @@ CONTAINS
 #endif
 #ifdef URBAN_MODEL
    USE MOD_LandUrban
+#endif
+#ifdef ROAD_MODEL
+   USE MOD_LandRoad
 #endif
 
    IMPLICIT NONE
@@ -90,6 +96,9 @@ CONTAINS
 
 #ifdef URBAN_MODEL
       CALL m_urb2diag%build_arealweighted (gdiag, landurban)
+#endif
+#ifdef ROAD_MODEL
+      CALL m_road2diag%build_arealweighted (gdiag, landroad)
 #endif
 
       srf_data_id = 666

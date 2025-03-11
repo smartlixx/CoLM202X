@@ -34,6 +34,10 @@ CONTAINS
    USE MOD_Urban_LAIReadin
    USE MOD_Urban_Albedo
 #endif
+#ifdef ROAD_MODEL
+   USE MOD_LandRoad
+   USE MOD_RoadReadin
+#endif
    USE MOD_Const_Physical
    USE MOD_Vars_TimeInvariants
    USE MOD_Vars_TimeVariables
@@ -368,6 +372,9 @@ CONTAINS
       CALL HTOP_readin (dir_landdata, lc_year)
 #ifdef URBAN_MODEL
       CALL Urban_readin (dir_landdata, lc_year)
+#endif
+#ifdef ROAD_MODEL
+      CALL Road_readin (dir_landdata, lc_year)
 #endif
 ! ................................
 ! 1.5 Initialize topography data

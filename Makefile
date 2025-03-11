@@ -115,6 +115,7 @@ OBJS_BASIC =    \
 				 MOD_Urban_Vars_TimeVariables.o \
 				 MOD_Urban_Vars_TimeInvariants.o\
 				 MOD_Road_Vars_TimeVariables.o  \
+				 MOD_Road_Vars_TimeInvariants.o \
 				 MOD_Const_PFT.o                \
 				 MOD_Vars_TimeInvariants.o      \
 				 MOD_Vars_TimeVariables.o       \
@@ -151,6 +152,7 @@ OBJS_BASIC =    \
 				 MOD_SoilTextureReadin.o        \
 				 MOD_HtopReadin.o               \
 				 MOD_UrbanReadin.o              \
+				 MOD_RoadReadin.o               \
 				 MOD_BGC_CNSummary.o            \
 				 MOD_IniTimeVariable.o          \
 				 MOD_UrbanIniTimeVariable.o     \

@@ -178,11 +178,7 @@ CONTAINS
                   ! so the these points are assigned
                   IF (all(buff_count==0)) THEN
                      ! If none of the urban pixels have an URBAN ID, they are assigned directly
-                     IF (DEF_URBAN_type_scheme == 1) THEN
-                        ibuff = 3
-                     ELSEIF (DEF_URBAN_type_scheme == 2) THEN
                         ibuff = 9
-                     ENDIF
                   ELSE
                      ! Otherwise, URBAN ID are assigned based on the previously calculated number
                      DO ib = 1, size(ibuff)

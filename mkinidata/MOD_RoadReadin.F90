@@ -48,7 +48,6 @@ CONTAINS
 
          DO u = 1, numroad
 
-IF (DEF_URBAN_type_scheme == 2) THEN
          ! temporary setup
 
             alb_road(:,:,u) = albroad_apt

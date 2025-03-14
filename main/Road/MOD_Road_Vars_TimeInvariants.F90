@@ -56,18 +56,18 @@ CONTAINS
 ! ------------------------------------------------------
 ! Allocates memory for CoLM 1d [numroad] variants
 ! ------------------------------------------------------
-   !USE MOD_Precision
+   USE MOD_Precision
    USE MOD_SPMD_Task
    USE MOD_LandRoad
    USE MOD_Vars_Global
    IMPLICIT NONE
 
       IF (p_is_worker) THEN
-         IF (numurban > 0) THEN
+         IF (numroad > 0) THEN
 
-            allocate (alb_rood          (2,2,numroad))
-
-            allocate (em_road              (numurban))
+            allocate (alb_road          (2,2,numroad))
+            
+            allocate (em_road               (numroad))
 
             allocate (z_road      (1:nl_road,numroad))
             allocate (dz_road     (1:nl_road,numroad))
@@ -88,21 +88,24 @@ CONTAINS
 
    IMPLICIT NONE
 
+   integer, parameter :: ns = 2
+   integer, parameter :: nr = 2
+   integer, parameter :: ulev = 10
    character(len=*), intent(in) :: file_restart
 
       ! morphological paras
  
-      CALL ncio_read_vector (file_restart, 'EM_ROOF'       , landurban, em_roof  )
+      CALL ncio_read_vector (file_restart, 'EM_ROAD'       , landroad, em_road  )
 
-      CALL ncio_read_vector (file_restart, 'ROOF_DEPTH_L'  , ulev, landurban, z_roof   )
-      CALL ncio_read_vector (file_restart, 'ROOF_THICK_L'  , ulev, landurban, dz_roof  )
+      CALL ncio_read_vector (file_restart, 'ROAD_DEPTH_L'  , ulev, landroad, z_road   )
+      CALL ncio_read_vector (file_restart, 'ROAD_THICK_L'  , ulev, landroad, dz_road  )
 
       ! thermal paras
-      CALL ncio_read_vector (file_restart, 'CV_ROOF'   , ulev, landurban, cv_roof)
+      CALL ncio_read_vector (file_restart, 'CV_ROAD'   , ulev, landroad, cv_road)
 
-      CALL ncio_read_vector (file_restart, 'TK_ROOF'   , ulev, landurban, tk_roof)
+      CALL ncio_read_vector (file_restart, 'TK_ROAD'   , ulev, landroad, tk_road)
 
-      CALL ncio_read_vector (file_restart, 'ALB_ROOF'   , ns, nr, landurban, alb_roof  )
+      CALL ncio_read_vector (file_restart, 'ALB_ROAD'   , ns, nr, landroad, alb_road  )
 
    END SUBROUTINE READ_RoadTimeInvariants
 
@@ -115,6 +118,13 @@ CONTAINS
 
    IMPLICIT NONE
 
+   integer, parameter :: ns    = 2
+   integer, parameter :: nr    = 2
+   integer, parameter :: ulev  = 10
+   integer, parameter :: ityp  = 3
+   integer, parameter :: ihour = 24
+   integer, parameter :: iweek = 7
+   integer, parameter :: iday  = 365
    ! Local variables
    character(len=*), intent(in) :: file_restart
    integer :: compress
@@ -133,7 +143,7 @@ CONTAINS
       CALL ncio_define_dimension_vector (file_restart, landroad, 'ihour'   , 24  )
       CALL ncio_define_dimension_vector (file_restart, landroad, 'iday'    , 365 )
 
-      CALL ncio_write_vector (file_restart, 'EM_ROAD'       , 'urban', landurban, em_road  , DEF_REST_CompressLevel)
+      CALL ncio_write_vector (file_restart, 'EM_ROAD'       , 'urban', landroad, em_road  , DEF_REST_CompressLevel)
  
       CALL ncio_write_vector (file_restart, 'ROAD_DEPTH_L', 'ulev', ulev, 'urban', landroad, z_road , DEF_REST_CompressLevel)
       CALL ncio_write_vector (file_restart, 'ROAD_THICK_L', 'ulev', ulev, 'urban', landroad, dz_road, DEF_REST_CompressLevel)
@@ -148,12 +158,12 @@ CONTAINS
    SUBROUTINE deallocate_RoadTimeInvariants
 
    USE MOD_SPMD_Task
-   USE MOD_LandUrban
+   USE MOD_LandRoad
 
       ! deallocate (urbclass  )
 
       IF (p_is_worker) THEN
-         IF (numurban > 0) THEN
+         IF (numroad > 0) THEN
 
             deallocate (alb_road  )
 

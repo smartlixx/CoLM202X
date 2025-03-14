@@ -55,6 +55,7 @@ MODULE MOD_Vars_Global
    integer, parameter :: nl_lake   = 10
    integer, parameter :: nl_roof   = 10
    integer, parameter :: nl_wall   = 10
+   integer, parameter :: nl_road   = 10
    integer, parameter :: nvegwcs   = 4  ! number of vegetation water potential nodes
 
    ! used for downscaling

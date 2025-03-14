@@ -173,6 +173,9 @@ MODULE MOD_Vars_TimeInvariants
 #ifdef URBAN_MODEL
    USE MOD_Urban_Vars_TimeInvariants
 #endif
+#ifdef ROAD_MODEL
+   USE MOD_Road_Vars_TimeInvariants
+#endif
    IMPLICIT NONE
    SAVE
 
@@ -392,6 +395,10 @@ CONTAINS
 
 #ifdef URBAN_MODEL
       CALL allocate_UrbanTimeInvariants
+#endif
+
+#ifdef ROAD_MODEL
+      CALL allocate_RoadTimeInvariants
 #endif
 
    END SUBROUTINE allocate_TimeInvariants
@@ -858,6 +865,11 @@ CONTAINS
 #ifdef URBAN_MODEL
       CALL deallocate_UrbanTimeInvariants
 #endif
+
+#ifdef ROAD_MODEL
+      CALL deallocate_RoadTimeInvariants
+#endif
+
    END SUBROUTINE deallocate_TimeInvariants
 
 #ifdef RangeCheck

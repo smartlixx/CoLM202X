@@ -97,6 +97,7 @@ PROGRAM MKSRFDATA
 
    type (grid_type) :: gsoil, gridlai, gtopo, grid_topo_factor
    type (grid_type) :: grid_urban_5km, grid_urban_500m
+   type (grid_type) :: grid_road_5km, grid_road_500m
 
    integer   :: lc_year
    character(len=4) :: cyear
@@ -116,10 +117,12 @@ PROGRAM MKSRFDATA
    CALL read_namelist (nlfile)
 
 #ifdef SinglePoint
-#ifndef URBAN_MODEL
-   CALL read_surface_data_single (SITE_fsitedata, mksrfdata=.true.)
-#else
+#ifdef URBAN_MODEL
    CALL read_urban_surface_data_single (SITE_fsitedata, mksrfdata=.true.)
+#elif defined(ROAD_MODEL)
+   CALL read_road_surface_data_single (SITE_fsitedata, mksrfdata=.true.)
+#else
+   CALL read_surface_data_single (SITE_fsitedata, mksrfdata=.true.)
 #endif
 #endif
 
@@ -232,6 +235,8 @@ PROGRAM MKSRFDATA
 
 #ifdef ROAD_MODEL
    CALL groad%define_by_name          ('colm_500m')
+   CALL grid_road_500m%define_by_name ('colm_500m')
+   CALL grid_road_5km%define_by_name  ('colm_5km' )
 #endif
 
    ! assimilate grids to build pixels
@@ -255,6 +260,8 @@ PROGRAM MKSRFDATA
 #endif
 #ifdef ROAD_MODEL
    CALL pixel%assimilate_grid (groad         )
+   CALL pixel%assimilate_grid (grid_road_500m)
+   CALL pixel%assimilate_grid (grid_road_5km )
 #endif
 #if (defined CROP)
    CALL pixel%assimilate_grid (gcrop )
@@ -287,6 +294,8 @@ PROGRAM MKSRFDATA
 #endif
 #ifdef ROAD_MODEL
    CALL pixel%map_to_grid (groad         )
+   CALL pixel%map_to_grid (grid_road_500m)
+   CALL pixel%map_to_grid (grid_road_5km )
 #endif
 #if (defined CROP)
    CALL pixel%map_to_grid (gcrop )
@@ -369,6 +378,10 @@ PROGRAM MKSRFDATA
    CALL pixelset_save_to_file  (dir_landdata, 'landurban', landurban, lc_year)
 #endif
 
+#ifdef ROAD_MODEL
+   CALL pixelset_save_to_file  (dir_landdata, 'landroad', landroad, lc_year)
+#endif
+
 ! ................................................................
 ! 3. Mapping land characteristic parameters to the model grids
 ! ................................................................
@@ -423,10 +436,12 @@ PROGRAM MKSRFDATA
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
    CALL write_surface_data_single (numpatch, numpft)
 #else
-#ifndef URBAN_MODEL
-   CALL write_surface_data_single (numpatch)
-#else
+#ifdef URBAN_MODEL
    CALL write_urban_surface_data_single (numurban)
+#elif defined(ROAD_MODEL)
+   CALL write_road_surface_data_single (numroad)
+#else
+   CALL write_surface_data_single (numpatch)
 #endif
 #endif
    CALL single_srfdata_final ()

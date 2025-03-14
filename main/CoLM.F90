@@ -45,6 +45,9 @@ PROGRAM CoLM
    USE MOD_LandUrban
    USE MOD_Urban_LAIReadin
 #endif
+#ifdef ROAD_MODEL
+   USE MOD_LandRoad
+#endif
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
    USE MOD_LandPFT
 #endif
@@ -186,10 +189,12 @@ PROGRAM CoLM
 
 #ifdef SinglePoint
       fsrfdata = trim(dir_landdata) // '/srfdata.nc'
-#ifndef URBAN_MODEL
-      CALL read_surface_data_single (fsrfdata, mksrfdata=.false.)
-#else
+#ifdef URBAN_MODEL
       CALL read_urban_surface_data_single (fsrfdata, mksrfdata=.false., mkrun=.true.)
+#elif defined(ROAD_MODEL)
+      CALL read_road_surface_data_single (fsrfdata, mksrfdata=.false., mkrun=.true.)
+#else     
+      CALL read_surface_data_single (fsrfdata, mksrfdata=.false.)
 #endif
 #endif
 
@@ -257,6 +262,11 @@ PROGRAM CoLM
 #ifdef URBAN_MODEL
       CALL pixelset_load_from_file (dir_landdata, 'landurban', landurban, numurban, lc_year)
       CALL map_patch_to_urban
+#endif
+
+#ifdef ROAD_MODEL
+      CALL pixelset_load_from_file (dir_landdata, 'landroad', landroad, numroad, lc_year)
+      CALL map_patch_to_road
 #endif
 
 #if (defined UNSTRUCTURED || defined CATCHMENT)

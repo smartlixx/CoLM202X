@@ -117,10 +117,12 @@ PROGRAM MKSRFDATA
    CALL read_namelist (nlfile)
 
 #ifdef SinglePoint
-#ifndef URBAN_MODEL
-   CALL read_surface_data_single (SITE_fsitedata, mksrfdata=.true.)
-#else
+#ifdef URBAN_MODEL
    CALL read_urban_surface_data_single (SITE_fsitedata, mksrfdata=.true.)
+#elif defined(ROAD_MODEL)
+   CALL read_road_surface_data_single (SITE_fsitedata, mksrfdata=.true.)
+#else
+   CALL read_surface_data_single (SITE_fsitedata, mksrfdata=.true.)
 #endif
 #endif
 
@@ -376,7 +378,7 @@ PROGRAM MKSRFDATA
    CALL pixelset_save_to_file  (dir_landdata, 'landurban', landurban, lc_year)
 #endif
 
-#ifdef Road_MODEL
+#ifdef ROAD_MODEL
    CALL pixelset_save_to_file  (dir_landdata, 'landroad', landroad, lc_year)
 #endif
 
@@ -434,10 +436,12 @@ PROGRAM MKSRFDATA
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
    CALL write_surface_data_single (numpatch, numpft)
 #else
-#ifndef URBAN_MODEL
-   CALL write_surface_data_single (numpatch)
-#else
+#ifdef URBAN_MODEL
    CALL write_urban_surface_data_single (numurban)
+#elif defined(ROAD_MODEL)
+   CALL write_road_surface_data_single (numroad)
+#else
+   CALL write_surface_data_single (numpatch)
 #endif
 #endif
    CALL single_srfdata_final ()

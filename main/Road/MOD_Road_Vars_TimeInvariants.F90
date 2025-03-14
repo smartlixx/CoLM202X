@@ -56,7 +56,7 @@ CONTAINS
 ! ------------------------------------------------------
 ! Allocates memory for CoLM 1d [numroad] variants
 ! ------------------------------------------------------
-   !USE MOD_Precision
+   USE MOD_Precision
    USE MOD_SPMD_Task
    USE MOD_LandRoad
    USE MOD_Vars_Global
@@ -66,7 +66,7 @@ CONTAINS
          IF (numroad > 0) THEN
 
             allocate (alb_road          (2,2,numroad))
-
+            
             allocate (em_road               (numroad))
 
             allocate (z_road      (1:nl_road,numroad))

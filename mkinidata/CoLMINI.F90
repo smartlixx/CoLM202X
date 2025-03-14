@@ -98,10 +98,12 @@ PROGRAM CoLMINI
 
 #ifdef SinglePoint
       fsrfdata = trim(dir_landdata) // '/srfdata.nc'
-#ifndef URBAN_MODEL
-      CALL read_surface_data_single (fsrfdata, mksrfdata=.false.)
-#else
+#ifdef URBAN_MODEL
       CALL read_urban_surface_data_single (fsrfdata, mksrfdata=.false., mkrun=.true.)
+#elif defined(ROAD_MODEL)
+      CALL read_road_surface_data_single (fsrfdata, mksrfdata=.false., mkrun=.true.)
+#else     
+      CALL read_surface_data_single (fsrfdata, mksrfdata=.false.)
 #endif
 #endif
 

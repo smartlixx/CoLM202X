@@ -40,7 +40,7 @@ CONTAINS
    character(len=256) :: lndname
    character(len=256) :: cyear
 
-   integer ::  u
+   integer ::  u, ns, nr, ulev
 
       write(cyear,'(i4.4)') lc_year
 
@@ -49,15 +49,19 @@ CONTAINS
          DO u = 1, numroad
 
          ! temporary setup
-
-            alb_road(:,:,u) = albroad_apt
+            
+            DO ns = 1,2
+               DO nr = 1,2
+                  alb_road(ns,nr,u) = albroad_apt(ns,nr)
+               ENDDO
+            ENDDO
 
             em_road(u)      = emroad_apt(1,1)
             
-            cv_road(:,u)    = cvroad_apt(:,1)
-            tk_road(:,u)    = tkroad_apt(:,1)
-
-ENDIF
+            DO ulev = 1, nl_road
+               cv_road(ulev,u)    = cvroad_apt(ulev,1)
+               tk_road(ulev,u)    = tkroad_apt(ulev,1)
+            ENDDO
 
          ENDDO
       ENDIF

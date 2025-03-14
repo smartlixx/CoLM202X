@@ -68,7 +68,7 @@ CONTAINS
       landdir = trim(dir_landdata) // '/LAI'
 
 #ifdef SinglePoint
-#ifndef URBAN_MODEL
+#if (!defined(URBAN_MODEL) && !defined(ROAD_MODEL))
       IF (USE_SITE_LAI) THEN
          iyear = findloc_ud(SITE_LAI_year == year)
       ELSE
@@ -85,7 +85,8 @@ CONTAINS
 
 !TODO-done: need to consider single point for urban model
 #ifdef SinglePoint
-#ifndef URBAN_MODEL
+#if (!defined(URBAN_MODEL) && !defined(ROAD_MODEL))
+
       IF (DEF_LAI_MONTHLY) THEN
          tlai(:) = SITE_LAI_monthly(time,iyear)
          tsai(:) = SITE_SAI_monthly(time,iyear)

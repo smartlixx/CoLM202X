@@ -59,7 +59,9 @@
 
 !    Conflicts :  only used when LULC_IGBP_PFT is defined.
 #ifndef LULC_IGBP_PFT
+#ifndef LULC_IGBP_PC
 #undef BGC
+#endif
 #endif
 ! 7.1 If defined, CROP model is used
 #define CROP
@@ -86,3 +88,6 @@
 #endif
 
 #undef USESplitAI
+
+! 11. External lake models.
+#undef EXTERNAL_LAKE 

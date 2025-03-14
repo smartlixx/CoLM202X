@@ -398,6 +398,9 @@ MODULE MOD_Vars_TimeVariables
 #ifdef ROAD_MODEL
    USE MOD_Road_Vars_TimeVariables
 #endif
+#ifdef EXTERNAL_LAKE
+   USE MOD_Lake_TimeVars
+#endif
 
    IMPLICIT NONE
    SAVE
@@ -695,9 +698,6 @@ CONTAINS
 #ifdef URBAN_MODEL
       CALL allocate_UrbanTimeVariables
 #endif
-#ifdef ROAD_MODEL
-      CALL allocate_RoadTimeVariables
-#endif
 
    END SUBROUTINE allocate_TimeVariables
 
@@ -855,9 +855,6 @@ CONTAINS
 
 #if (defined URBAN_MODEL)
       CALL deallocate_UrbanTimeVariables
-#endif
-#ifdef ROAD_MODEL
-      CALL deallocate_RoadTimeVariables
 #endif
 
    END SUBROUTINE deallocate_TimeVariables
@@ -1093,11 +1090,6 @@ ENDIF
       file_restart = trim(dir_restart)// '/'//trim(cdate)//'/' // trim(site) //'_restart_urban_'//trim(cdate)//'_lc'//trim(cyear)//'.nc'
       CALL WRITE_UrbanTimeVariables (file_restart)
 #endif
-
-#if (defined ROAD_MODEL)
-      file_restart = trim(dir_restart)// '/'//trim(cdate)//'/' // trim(site) //'_restart_road_'//trim(cdate)//'_lc'//trim(cyear)//'.nc'
-      CALL WRITE_RoadTimeVariables (file_restart)
-#endif
    END SUBROUTINE WRITE_TimeVariables
 
 
@@ -1278,11 +1270,6 @@ ENDIF
       CALL READ_UrbanTimeVariables (file_restart)
 #endif
 
-#if (defined ROAD_MODEL)
-      file_restart = trim(dir_restart)// '/'//trim(cdate)//'/' // trim(site) //'_restart_road_'//trim(cdate)//'_lc'//trim(cyear)//'.nc'
-      CALL READ_RoadTimeVariables (file_restart)
-#endif
-
 #ifdef RangeCheck
       CALL check_TimeVariables
 #endif
@@ -1414,6 +1401,10 @@ ENDIF
 
 #if (defined BGC)
       CALL check_BGCTimeVariables
+#endif
+
+#ifdef EXTERNAL_LAKE
+      CALL CHECK_LakeTimeVars
 #endif
 
 #ifdef USEMPI

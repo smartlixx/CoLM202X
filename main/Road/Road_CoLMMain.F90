@@ -12,10 +12,10 @@ SUBROUTINE CoLMMain_Road ( &
            vf_quartz    ,vf_gravels   ,vf_om        ,vf_sand      ,&
            wf_gravels   ,wf_sand      ,porsl        ,psi0         ,&
            bsw          ,theta_r      ,fsatmax      ,fsatdcf      ,&
-!#ifdef vanGenuchten_Mualem_SOIL_MODEL
-!           alpha_vgm    ,n_vgm        ,L_vgm        ,&
-!           sc_vgm       ,fc_vgm       ,&
-!#endif
+#ifdef vanGenuchten_Mualem_SOIL_MODEL
+           alpha_vgm    ,n_vgm        ,L_vgm        ,&
+           sc_vgm       ,fc_vgm       ,&
+#endif
            hksati       ,csol         ,k_solids     ,dksatu       ,&
            dksatf       ,dkdry        ,BA_alpha     ,BA_beta      ,&
      
@@ -162,13 +162,13 @@ SUBROUTINE CoLMMain_Road ( &
       fsatmax            ,&! maximum saturated area fraction [-]
       fsatdcf            ,&! decay factor in calucation of saturated area fraction [1/m]
 
-!#ifdef vanGenuchten_Mualem_SOIL_MODEL
-!      alpha_vgm(1:nl_soil),&! the parameter corresponding approximately to the inverse of the air-entry value
-!      n_vgm    (1:nl_soil),&! a shape parameter
-!      L_vgm    (1:nl_soil),&! pore-connectivity parameter
-!      sc_vgm   (1:nl_soil),&! saturation at the air entry value in the classical vanGenuchten model [-]
-!      fc_vgm   (1:nl_soil),&! a scaling factor by using air entry value in the Mualem model [-]
-!#endif
+#ifdef vanGenuchten_Mualem_SOIL_MODEL
+      alpha_vgm(1:nl_soil),&! the parameter corresponding approximately to the inverse of the air-entry value
+      n_vgm    (1:nl_soil),&! a shape parameter
+      L_vgm    (1:nl_soil),&! pore-connectivity parameter
+      sc_vgm   (1:nl_soil),&! saturation at the air entry value in the classical vanGenuchten model [-]
+      fc_vgm   (1:nl_soil),&! a scaling factor by using air entry value in the Mualem model [-]
+#endif
       hksati    (nl_soil),&! hydraulic conductivity at saturation [mm h2o/s]
       csol      (nl_soil),&! heat capacity of soil solids [J/(m3 K)]
       k_solids  (nl_soil),&! thermal conductivity of minerals soil [W/m-K]
@@ -685,20 +685,20 @@ SUBROUTINE CoLMMain_Road ( &
   !  par              ,&
     ! GROUND PARAMETERS
   !  flake            ,
-    pondmx           ,em_road               ,trsmx0            ,zlnd   ,&
+    pondmx           ,trsmx0                ,zlnd                                          ,&
     zsno             ,capr                  ,cnfac             ,vf_quartz                  ,&
     vf_gravels       ,vf_om                 ,vf_sand           ,wf_gravels                 ,&
     wf_sand          ,csol                  ,porsl             ,psi0                       ,&
-!#ifdef Campbell_SOIL_MODEL
-!    bsw                  ,&
-!#endif
-!#ifdef vanGenuchten_Mualem_SOIL_MODEL
-!    theta_r          ,alpha_vgm             ,n_vgm             ,L_vgm                      ,&
-!    sc_vgm           ,fc_vgm                ,&
-!#endif
+#ifdef Campbell_SOIL_MODEL
+    bsw                  ,&
+#endif
+#ifdef vanGenuchten_Mualem_SOIL_MODEL
+    theta_r          ,alpha_vgm             ,n_vgm             ,L_vgm                      ,&
+    sc_vgm           ,fc_vgm                ,&
+#endif
     k_solids         ,dksatu                ,dksatf            ,dkdry                      ,&
     BA_alpha         ,BA_beta                                                              ,&
-    cv_road          ,tk_road                                                              ,&
+    em_road          ,cv_road               ,tk_road                                       ,&
     dz_roadsno(lbroad:)                     ,&
     z_roadsno(lbroad:)                      ,&
     zi_roadsno(lbroad-1:)                   ,&
@@ -810,12 +810,12 @@ SUBROUTINE CoLMMain_Road ( &
 ! water balance check
 ! ----------------------------------------
 ! LIXX TODO: Check these statements  
-  wliq_roadsno(:) = 0.
-  wliq_roadsno(:1) = wliq_roadsno(:1) + wliq_roadsno(:1)
+!  wliq_roadsno(:) = 0.
+!  wliq_roadsno(:1) = wliq_roadsno(:1) + wliq_roadsno(:1)
   !wliq_soisno(:) = wliq_soisno(:)*(1-flake) + wliq_lakesno(:)*flake
   
-  wice_roadsno(:) = 0.
-  wice_roadsno(:1) = wice_roadsno(:1) + wice_roadsno(:1)
+!  wice_roadsno(:) = 0.
+!  wice_roadsno(:1) = wice_roadsno(:1) + wice_roadsno(:1)
   !wice_soisno(:) = wice_soisno(:)*(1-flake) + wice_lakesno(:)*flake
   
   scv = scv_road

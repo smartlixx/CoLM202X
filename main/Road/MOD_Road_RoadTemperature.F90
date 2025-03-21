@@ -17,11 +17,12 @@ CONTAINS
                               BA_alpha, BA_beta,&
                               cv_road,tk_road,&
                               dz_roadsno,z_roadsno,zi_roadsno,&
-                              t_roadsno,wice_roadsno,wliq_roadsno,&
+                              t_roadsno,t_road,wice_roadsno,wliq_roadsno,&
                               scv_road,snowdp_road,&
-                              lroad,clroad,sab_road,&
+                              frl,dlrad,&!clroad,
+                              sab_road,&
                               fseng_road,fseng_snow,fevpg_road,fevpg_snow,&
-                              croad,htvp,& !emg,&
+                              croad,htvp,em_road,&
                               imelt,sm,xmf,fact)
 
 !=======================================================================
@@ -89,12 +90,13 @@ CONTAINS
    real(r8), intent(in) :: z_roadsno (lbroad  :nl_soil)    !node depth [m]
    real(r8), intent(in) :: zi_roadsno(lbroad-1:nl_soil)    !interface depth [m]
 
-   real(r8), intent(in) :: sab_road                     !solar radiation absorbed by ground [W/m2]
-!   real(r8), intent(in) :: frl                         !atmospheric infrared (longwave) radiation [W/m2]
+   real(r8), intent(in) :: t_road                      !road surface temperature [K]
+   real(r8), intent(in) :: sab_road                    !solar radiation absorbed by ground [W/m2]
+   real(r8), intent(in) :: frl                         !atmospheric infrared (longwave) radiation [W/m2]
 !   real(r8), intent(in) :: clgimp                      !deriv. of longwave wrt to soil temp [w/m2/k]
-!   real(r8), intent(in) :: dlrad                       !downward longwave radiation blow the canopy [W/m2]
-   real(r8), intent(in) :: lroad                       !atmospheric infrared (longwave) radiation [W/m2]
-   real(r8), intent(in) :: clroad                      !deriv. of longwave wrt to soil temp [w/m2/k]
+   real(r8), intent(in) :: dlrad                       !downward longwave radiation blow the canopy [W/m2]
+!   real(r8), intent(in) :: lroad                       !atmospheric infrared (longwave) radiation [W/m2]
+!   real(r8), intent(in) :: clroad                      !deriv. of longwave wrt to soil temp [w/m2/k]
    real(r8), intent(in) :: croad                       !deriv. of soil energy flux wrt to soil temp [w/m2/k]
      
    real(r8), intent(in) :: fseng_road                  !sensible heat flux from ground [W/m2]
@@ -103,7 +105,8 @@ CONTAINS
    real(r8), intent(in) :: fevpg_snow                  !evaporation heat flux from ground snow [mm/s]
    !   real(r8), intent(in) :: cgimp                   !deriv. of soil energy flux wrt to soil temp [w/m2/k]
    real(r8), intent(in) :: htvp                        !latent heat of vapor of water (or sublimation) [j/kg]
-
+   real(r8), intent(in) :: em_road                     !road emissivity
+  
    real(r8), intent(inout) :: t_roadsno   (lbroad:nl_soil) !soil temperature [K]
    real(r8), intent(inout) :: wice_roadsno(lbroad:nl_soil) !ice lens [kg/m2]
    real(r8), intent(inout) :: wliq_roadsno(lbroad:nl_soil) !liqui water [kg/m2]
@@ -219,8 +222,10 @@ CONTAINS
    cv(1) = cv(1) + cpliq*wliq_roadsno(1) + cpice*wice_roadsno(1)
 
    ! net ground heat flux into the surface and its temperature derivative
-   hs = sab_road + lroad - (fseng_road+fevpg_road*htvp)
-   dhsdT = - croad + clroad
+   hs = sab_road + dlrad*em_road &
+      - (fseng_road+fevpg_road*htvp) &
+      - em_road*stefnc*t_road**4.
+   dhsdT = - croad -4.*em_road*stefnc*t_road**3.
 
    t_roadsno_bef(lbroad:) = t_roadsno(lbroad:)
 

@@ -23,8 +23,10 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
    USE MOD_Vars_1DFluxes
    USE MOD_LandPatch, only: numpatch
    USE MOD_LandUrban, only: patch2urban
+#ifdef ROAD_MODEL
    USE MOD_LandRoad, only: patch2road
    USE MOD_Road_Const_ThermalParameters
+#endif
    USE MOD_Namelist, only: DEF_forcing, DEF_URBAN_RUN, DEF_ROAD_RUN
    USE MOD_Forcing, only: forcmask_pch
    USE omp_lib
@@ -76,7 +78,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
          deltim_phy = deltim/steps_in_one_deltim
 
          ! For non urban patch or slab urban
-         IF (.not.DEF_URBAN_RUN .or. m.ne.URBAN) THEN
+         IF (.not.(DEF_URBAN_RUN .or. DEF_ROAD_RUN) .or. m.ne.URBAN) THEN
 
             DO k = 1, steps_in_one_deltim
                !                ***** Call CoLM main program *****
@@ -211,10 +213,10 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
            vf_quartz(1:,i) ,vf_gravels(1:,i),vf_om(1:,i)    ,vf_sand(1:,i)     ,&
            wf_gravels(1:,i),wf_sand(1:,i)   ,porsl(1:,i)    ,psi0(1:,i)        ,&
            bsw(1:,i)       ,theta_r(1:,i)   ,fsatmax(i)     ,fsatdcf(i)        ,&
-!#ifdef vanGenuchten_Mualem_SOIL_MODEL
-!           alpha_vgm    ,n_vgm        ,L_vgm        ,&
-!           sc_vgm       ,fc_vgm       ,&
-!#endif
+#ifdef vanGenuchten_Mualem_SOIL_MODEL
+           alpha_vgm    ,n_vgm        ,L_vgm        ,&
+           sc_vgm       ,fc_vgm       ,&
+#endif
            hksati(1:,i)    ,csol(1:,i)      ,k_solids(1:,i) ,dksatu(1:,i)      ,&
            dksatf(1:,i)    ,dkdry(1:,i)     ,BA_alpha(1:,i) ,BA_beta(1:,i)     ,&
 

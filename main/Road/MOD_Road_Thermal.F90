@@ -26,21 +26,21 @@ CONTAINS
 !        par            ,&
         ! surface parameters
 !        flake          ,
-        pondmx         ,eroad          ,trsmx0         ,&
+        pondmx         ,trsmx0                                         ,&
         zlnd           ,zsno           ,capr           ,cnfac          ,&
         vf_quartz      ,vf_gravels     ,vf_om          ,vf_sand        ,&
         wf_gravels     ,wf_sand        ,csol           ,porsl          ,&
         psi0           ,&
-!#ifdef Campbell_SOIL_MODEL
-!        bsw            ,&
-!#endif
-!#ifdef vanGenuchten_Mualem_SOIL_MODEL
-!        theta_r        ,alpha_vgm      ,n_vgm          ,L_vgm          ,&
-!        sc_vgm         ,fc_vgm         ,&
-!#endif
+#ifdef Campbell_SOIL_MODEL
+        bsw            ,&
+#endif
+#ifdef vanGenuchten_Mualem_SOIL_MODEL
+        theta_r        ,alpha_vgm      ,n_vgm          ,L_vgm          ,&
+        sc_vgm         ,fc_vgm         ,&
+#endif
         k_solids       ,dksatu         ,dksatf         ,dkdry          ,&
         BA_alpha       ,BA_beta                                        ,&
-        cv_road        ,tk_road                                        ,&
+        em_road        ,cv_road        ,tk_road                        ,&
         dz_roadsno     ,&
         z_roadsno      ,&
         zi_roadsno     ,&
@@ -147,7 +147,6 @@ CONTAINS
    real(r8), intent(in) :: &
 !        flake      ,&! urban lake fractional cover [-]
         pondmx     ,&! maximum ponding for soil [mm]
-        eroad      ,&! emissivity of road
         trsmx0     ,&! max transpiration for moist soil+100% veg.  [mm/s]
         zlnd       ,&! roughness length for soil [m]
         zsno       ,&! roughness length for snow [m]
@@ -164,6 +163,17 @@ CONTAINS
         csol      (1:nl_soil), &! heat capacity of soil solids [J/(m3 K)]
         porsl     (1:nl_soil), &! soil porosity [-]
         psi0      (1:nl_soil), &! soil water suction, negative potential [mm]
+#ifdef Campbell_SOIL_MODEL
+        bsw       (1:nl_soil)          ,&! clapp and hornberger "b" parameter [-]
+#endif
+#ifdef vanGenuchten_Mualem_SOIL_MODEL
+        theta_r   (1:nl_soil)          ,&! residual water content (cm3/cm3)
+        alpha_vgm (1:nl_soil)          ,&! the parameter corresponding approximately to the inverse of the air-entry value
+        n_vgm     (1:nl_soil)          ,&! a shape parameter
+        L_vgm     (1:nl_soil)          ,&! pore-connectivity parameter
+        sc_vgm    (1:nl_soil)          ,&! saturation at the air entry value in the classical vanGenuchten model [-]
+        fc_vgm    (1:nl_soil)          ,&! a scaling factor by using air entry value in the Mualem model [-]
+#endif
         k_solids  (1:nl_soil), &! thermal conductivity of minerals soil [W/m-K]
         dkdry     (1:nl_soil), &! thermal conductivity of dry soil [W/m-K]
         dksatu    (1:nl_soil), &! thermal conductivity of saturated unfrozen soil [W/m-K]
@@ -171,6 +181,7 @@ CONTAINS
 
         BA_alpha  (1:nl_soil), &! alpha in Balland and Arp(2005) thermal conductivity scheme
         BA_beta   (1:nl_soil), &! beta in Balland and Arp(2005) thermal conductivity scheme
+        em_road              , &! emissivity of road
         cv_road   (1:nl_soil) ,&! heat capacity of road [J/(m2 K)]
         tk_road   (1:nl_soil) ,&! thermal conductivity of road [W/m-K]
 
@@ -310,10 +321,11 @@ CONTAINS
         dqroaddT   ,&! d(qroad)/dT
 
         degdT      ,&! d(eg)/dT
+        dlrad      ,&! downward longwave radiation blow the canopy [W/m2]
         eg         ,&! water vapor pressure at temperature T [pa]
         egsmax     ,&! max. evaporation which soil can provide at one time step
         egidif     ,&! the excess of evaporation over "egsmax"
-        emg        ,&! ground emissivity (0.97 for snow,
+!        emg        ,&! ground emissivity (0.97 for snow,
                      ! glaciers and water surface; 0.96 for soil and wetland)
 !        etrc       ,&! maximum possible transpiration rate [mm/s]
         fac        ,&! soil wetness of surface layer
@@ -340,13 +352,14 @@ CONTAINS
 !        t_soisno_bef(lbroad:nl_soil), &! soil/snow temperature before update 
         tinc       ,&! temperature difference of two time step
 !        ev         ,&! emissivity of vegetation [-]
-        lout       ,&! out-going longwave radiation
+!        lout       ,&! out-going longwave radiation
         lnet       ,&! overall net longwave radiation
-        lroad_bef  ,&! net longwave radiation of road at previous time step
+!        lroad_bef  ,&! net longwave radiation of road at previous time step
         dlout      ,&! changed out-going radiation due to temp change
-        clroad     ,&! deriv of lroad wrt gimp temp [w/m**2/k]
+!        clroad     ,&! deriv of lroad wrt gimp temp [w/m**2/k]
         
         ur         ,&! wind speed at reference height [m/s]
+        ulrad      ,&! upward longwave radiation above the canopy [W/m2]
         wx         ,&! patitial volume of ice and water of surface layer
         xmf          ! total latent heat of phase change of ground water
 
@@ -354,7 +367,7 @@ CONTAINS
    real(r8) :: z0m_g,z0h_g,zol_g,obu_g,ustar_g,qstar_g,tstar_g
    real(r8) :: fm10m,fm_g,fh_g,fq_g,fh2m,fq2m,um,obu,eb
 
-   real(r8) :: dT      !temperature change between two time steps
+!   real(r8) :: dT      !temperature change between two time steps
 
 !=======================================================================
 ! [1] Initial set and propositional variables
@@ -396,12 +409,15 @@ CONTAINS
 
       ! temperature and water mass from previous time step
       troad = t_roadsno(lbroad)
+      
+      dlrad = forc_frl
+      ulrad = forc_frl*(1.-em_road) + em_road*stefnc*troad**4.
 
       ! SAVE temperature
       troad_bef = troad
 
       ! SAVE longwave for the last time
-      lroad_bef = lroad
+ !     lroad_bef = lroad
 
 !=======================================================================
 ! [2] specific humidity and its derivative at ground surface
@@ -589,27 +605,28 @@ CONTAINS
            BA_alpha,BA_beta,&
            cv_road,tk_road,&
            dz_roadsno,z_roadsno,zi_roadsno,&
-           t_roadsno,wice_roadsno,wliq_roadsno,&
+           t_roadsno,troad,wice_roadsno,wliq_roadsno,&
            scv_road,snowdp_road,&
-           lroad,clroad,sabroad,&
+           forc_frl,dlrad,&!clroad,
+           sabroad,&
            fsenroad,fsensnow,fevproad,fevpsnow,&
-           croad,htvp_road,&
+           croad,htvp_road,em_road,&
            imelt_road,sm_road,xmf,fact_road)
 
       ! update temperature
       troad = t_roadsno(lbroad)
-
+      lroad = forc_frl*em_road - em_road*stefnc*troad**4.
 !=======================================================================
 ! [7] Correct fluxes for temperature change
 !=======================================================================
 
       ! calculate temperature change
-      dT = troad - troad_bef
+      tinc = troad - troad_bef
 
       ! flux change due to temperture change
-      fsenroad = fsenroad + dT*croads
+      fsenroad = fsenroad + tinc*croads
     
-      fevproad = fevproad + dT*croadl
+      fevproad = fevproad + tinc*croadl
 
 ! calculation of evaporative potential; flux in kg m-2 s-1.
 ! egidif holds the excess energy IF all water is evaporated
@@ -666,6 +683,26 @@ CONTAINS
 
       ! ground heat flux
       fgrnd = sabg + lnet - (fsena+lfevpa)
+
+      !outgoing long-wave radiation from canopy + ground
+      olrg = ulrad &
+! for conservation we put the increase of ground longwave to outgoing
+           + 4.*em_road*stefnc*troad_bef**3*tinc
+
+      ! averaged bulk surface emissivity
+      olrb = stefnc*troad_bef**3*(4.*tinc)
+      olru = ulrad + em_road*olrb
+      olrb = ulrad + olrb
+      emis = olru / olrb
+     
+     ! radiative temperature
+      IF (olrg < 0) THEN
+         print *, "MOD_Road_Thermal.F90: Error! Negative outgoing longwave radiation flux: "
+         write(6,*) ipatch, olrg, tinc, ulrad
+         write(6,*) ipatch,errore,sabg,forc_frl,olrg,fseng,htvp_road*fevpg,xmf,fgrnd
+      ENDIF
+     
+      trad = (olrg/stefnc)**0.25     
 
       ! effective ground temperature, simple average
       ! 12/01/2021, yuan: !TODO Bugs. temperature cannot be weighted like below.

@@ -53,11 +53,11 @@ OBJS_SHARED =    \
 				  MOD_LandElm.o                \
 				  MOD_LandHRU.o                \
 				  MOD_LandPatch.o              \
-				  MOD_LandRoad.o               \
 				  MOD_LandCrop.o               \
 				  MOD_LandPFT.o                \
 				  MOD_SingleSrfdata.o          \
 				  MOD_LandUrban.o              \
+				  MOD_LandRoad.o               \
 				  MOD_SrfdataDiag.o            \
 				  MOD_SrfdataRestart.o         \
 				  MOD_ElmVector.o              \
@@ -115,7 +115,9 @@ OBJS_BASIC =    \
 				 MOD_Urban_Vars_1DFluxes.o      \
 				 MOD_Urban_Vars_TimeVariables.o \
 				 MOD_Urban_Vars_TimeInvariants.o\
-				 MOD_Const_PFT.o                \
+				 MOD_Road_Vars_1DFluxes.o       \
+				 MOD_Road_Vars_TimeVariables.o  \
+				 MOD_Road_Vars_TimeInvariants.o \
 				 MOD_Vars_TimeInvariants.o      \
 				 MOD_Vars_TimeVariables.o       \
 				 MOD_Vars_1DPFTFluxes.o         \

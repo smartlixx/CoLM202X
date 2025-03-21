@@ -121,6 +121,8 @@ PROGRAM CoLMINI
       CALL Init_LC_Const
       CALL Init_PFT_Const
 
+#ifndef SinglePoint
+
       CALL pixel%load_from_file  (dir_landdata)
       CALL gblock%load_from_file (dir_landdata)
       CALL mesh_load_from_file   (dir_landdata, lc_year)
@@ -134,15 +136,8 @@ PROGRAM CoLMINI
       CALL pixelset_load_from_file (dir_landdata, 'landpatch', landpatch, numpatch, lc_year)
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
-#ifdef SinglePoint
-      IF (patchtypes(SITE_landtype) == 0) THEN
-         CALL pixelset_load_from_file (dir_landdata, 'landpft', landpft, numpft, lc_year)
-         CALL map_patch_to_pft
-      ENDIF
-#else
       CALL pixelset_load_from_file (dir_landdata, 'landpft', landpft, numpft, lc_year)
       CALL map_patch_to_pft
-#endif
 #endif
 
 #ifdef URBAN_MODEL
@@ -160,9 +155,13 @@ PROGRAM CoLMINI
 #endif
 #endif
 
+#endif
+
       ! Read in SNICAR optical and aging parameters
-      CALL SnowOptics_init( DEF_file_snowoptics ) ! SNICAR optical parameters
-      CALL SnowAge_init( DEF_file_snowaging )     ! SNICAR aging   parameters
+      IF (DEF_USE_SNICAR) THEN
+         CALL SnowOptics_init( DEF_file_snowoptics ) ! SNICAR optical parameters
+         CALL SnowAge_init( DEF_file_snowaging )     ! SNICAR aging   parameters
+      ENDIF
 
       CALL initialize (casename, dir_landdata, dir_restart, idate, lc_year, greenwich)
 

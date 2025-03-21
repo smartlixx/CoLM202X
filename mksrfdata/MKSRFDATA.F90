@@ -120,7 +120,7 @@ PROGRAM MKSRFDATA
    CALL read_namelist (nlfile)
 
 #ifdef SinglePoint
-#ifndef URBAN_MODEL
+#if !defined(URBAN_MODEL) && !defined(ROAD_MODEL)
 
    CALL read_surface_data_single (SITE_fsitedata, mksrfdata = .true.)
 
@@ -134,13 +134,11 @@ PROGRAM MKSRFDATA
    write(*,*)  'Successful in surface data making.'
    RETURN
 
-#else
+#elif defined(URBAN_MODEL)
    CALL read_urban_surface_data_single (SITE_fsitedata, mksrfdata=.true.)
+
 #elif defined(ROAD_MODEL)
    CALL read_road_surface_data_single (SITE_fsitedata, mksrfdata=.true.)
-#else
-   CALL read_surface_data_single (SITE_fsitedata, mksrfdata=.true.)
-#endif
 #endif
 
    IF (USE_srfdata_from_larger_region) THEN
@@ -458,7 +456,7 @@ PROGRAM MKSRFDATA
 #else
    CALL write_surface_data_single (numpatch)
 #endif
-#endif
+
    CALL single_srfdata_final ()
 #endif
 #endif

@@ -554,6 +554,11 @@ CONTAINS
       CALL READ_UrbanTimeInvariants (file_restart)
 #endif
 
+#if (defined ROAD_MODEL)
+      file_restart = trim(dir_restart) // '/const/' // trim(casename) //'_restart_road_const' // '_lc' // trim(cyear) // '.nc'
+      CALL READ_RoadTimeInvariants (file_restart)
+#endif
+
 #ifdef RangeCheck
       CALL check_TimeInvariants ()
 #endif
@@ -752,6 +757,11 @@ CONTAINS
 #if (defined URBAN_MODEL)
       file_restart = trim(dir_restart) // '/const/' // trim(casename) //'_restart_urb_const' //'_lc'// trim(cyear) // '.nc'
       CALL WRITE_UrbanTimeInvariants (file_restart)
+#endif
+
+#if (defined ROAD_MODEL)
+      file_restart = trim(dir_restart) // '/const/' // trim(casename) //'_restart_road_const' //'_lc'// trim(cyear) // '.nc'
+      CALL WRITE_RoadTimeInvariants (file_restart)
 #endif
 
    END SUBROUTINE WRITE_TimeInvariants

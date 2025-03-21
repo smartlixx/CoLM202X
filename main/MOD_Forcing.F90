@@ -93,6 +93,11 @@ MODULE MOD_Forcing
    type(block_data_real8_2d) :: snowf
 #endif
 
+#ifdef ROAD_MODEL
+   type(block_data_real8_2d) :: rainf
+   type(block_data_real8_2d) :: snowf
+#endif
+
    type(block_data_real8_2d), allocatable :: forcn    (:)  ! forcing data
    type(block_data_real8_2d), allocatable :: forcn_LB (:)  ! forcing data at lower boundary
    type(block_data_real8_2d), allocatable :: forcn_UB (:)  ! forcing data at upper boundary
@@ -181,6 +186,10 @@ CONTAINS
          CALL allocate_block_data (gforc, metdata)  ! forcing data
          CALL allocate_block_data (gforc, avgcos )  ! time-average of cos(zenith)
 #if(defined URBAN_MODEL && defined SinglePoint)
+         CALL allocate_block_data (gforc, rainf)
+         CALL allocate_block_data (gforc, snowf)
+#endif
+#if(defined ROAD_MODEL && defined SinglePoint)
          CALL allocate_block_data (gforc, rainf)
          CALL allocate_block_data (gforc, snowf)
 #endif
@@ -295,7 +304,7 @@ CONTAINS
 
          filename = trim(dir_forcing)//trim(fprefix(1))
 
-#ifndef URBAN_MODEL
+#if (!defined(URBAN_MODEL) && !defined(ROAD_MODEL))
          IF (ncio_var_exist(filename,'reference_height_v')) THEN
             CALL ncio_read_serial (filename, 'reference_height_v', Height_V)
          ENDIF
@@ -986,7 +995,7 @@ CONTAINS
                IF (forcing_read_ahead) THEN
                   metdata%blk(gblock%xblkme(1),gblock%yblkme(1))%val = forc_disk(time_i,ivar)
                ELSE
-#ifndef URBAN_MODEL
+#if (!defined(URBAN_MODEL) && !defined(ROAD_MODEL))
                   CALL ncio_read_site_time (filename, vname(ivar), time_i, metdata)
 #else
                   IF (trim(vname(ivar)) == 'Rainf') THEN
@@ -1026,7 +1035,7 @@ CONTAINS
                   IF (forcing_read_ahead) THEN
                      metdata%blk(gblock%xblkme(1),gblock%yblkme(1))%val = forc_disk(time_i,ivar)
                   ELSE
-#ifndef URBAN_MODEL
+#if (!defined(URBAN_MODEL) && !defined(ROAD_MODEL))
                      CALL ncio_read_site_time (filename, vname(ivar), time_i, metdata)
 #else
                      IF (trim(vname(ivar)) == 'Rainf') THEN
@@ -1236,7 +1245,7 @@ CONTAINS
          filename = trim(dir_forcing)//trim(metfilename(-1,-1,-1,-1))
          DO ivar = 1, NVAR
             IF (trim(vname(ivar)) /= 'NULL') THEN
-#ifndef URBAN_MODEL
+#if (!defined(URBAN_MODEL) && !defined(ROAD_MODEL))
                CALL ncio_read_period_serial (filename, vname(ivar), its, ite, metcache)
                forc_disk(:,ivar) = metcache(1,1,:)
 #else

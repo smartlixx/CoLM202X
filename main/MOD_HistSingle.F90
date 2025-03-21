@@ -118,6 +118,9 @@ CONTAINS
 #ifdef URBAN_MODEL
       USE MOD_Landurban, only: numurban
 #endif
+#ifdef ROAD_MODEL
+      USE MOD_Landroad, only: numroad
+#endif
       IMPLICIT NONE
 
       character (len=*), intent(in) :: filename
@@ -136,6 +139,9 @@ CONTAINS
          CALL ncio_define_dimension(filename, 'patch', numpatch)
 #ifdef URBAN_MODEL
          CALL ncio_define_dimension(filename, 'urban', numurban)
+#endif
+#ifdef ROAD_MODEL
+         CALL ncio_define_dimension(filename, 'road', numroad)
 #endif
 
          CALL ncio_write_serial (filename, 'lat', SITE_lat_location)

@@ -158,6 +158,7 @@ OBJS_BASIC =    \
 				 MOD_BGC_CNSummary.o            \
 				 MOD_IniTimeVariable.o          \
 				 MOD_UrbanIniTimeVariable.o     \
+				 MOD_RoadIniTimeVariable.o     \
 				 MOD_ElementNeighbour.o         \
 				 MOD_Catch_HillslopeNetwork.o   \
 				 MOD_Catch_RiverLakeNetwork.o   \
@@ -326,7 +327,7 @@ OBJS_MAIN = \
 				MOD_Road_RoadTemperature.o                \
 				MOD_Road_Thermal.o                        \
 				MOD_Road_Hydrology.o                      \
-				Road_CoLMMain.o                           \
+				COLMMAIN_Road.o                           \
 				MOD_Lulcc_Vars_TimeInvariants.o           \
 				MOD_Lulcc_Vars_TimeVariables.o            \
 				MOD_Lulcc_Initialize.o                    \

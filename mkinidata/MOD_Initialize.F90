@@ -36,7 +36,9 @@ CONTAINS
 #endif
 #ifdef ROAD_MODEL
    USE MOD_LandRoad
+   USE MOD_RoadIniTimeVariable
    USE MOD_RoadReadin
+   USE MOD_Road_Albedo
 #endif
    USE MOD_Const_Physical
    USE MOD_Vars_TimeInvariants
@@ -1391,6 +1393,30 @@ CONTAINS
 
             ENDIF
 #endif
+
+#ifdef ROAD_MODEL
+            IF (m == URBAN) THEN
+
+               u = patch2road(i)
+
+               t_roadsno   (:,u) = 283. !temperatures of road layers
+
+               wice_roadsno(:,u) = 0.   !ice lens [kg/m2]
+               wliq_roadsno(:,u) = 0.   !liquid water [kg/m2]
+               
+               snowdp_road   (u) = 0.   !snow depth [m]
+
+               z_sno_road  (:,u) = 0.   !node depth of road [m]
+
+               dz_sno_road (:,u) = 0.   !interface depth of roof [m]
+
+
+               CALL RoadIniTimeVar(i,alb_road(:,:,u),coszen(i),fsno_road(u),scv_road(u),&
+                                   sag_road(u),alb(:,:,i),sroad(:,:,u))
+
+            ENDIF
+#endif
+
          ENDDO
 
          DO i = 1, numpatch

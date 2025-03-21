@@ -644,12 +644,12 @@ SUBROUTINE CoLMMain_Road ( &
 !----------------------------------------------------------------------
   lbroad = snlroad + 1           !lower bound of array
   troad = t_roadsno(lbroad)
-
+  
   CALL newsnow (patchtype,maxsnl,deltim,troad,pgroad_rain,pgroad_snow,bifall,      &
                 t_precip,zi_roadsno(:0),z_roadsno(:0),dz_roadsno(:0),t_roadsno(:0),&
                 wliq_roadsno(:0),wice_roadsno(:0),fioldroad(:0),                   &
                 snlroad,sag_road,scv_road,snowdp_road,fsno_road                    )
-
+  
 !  CALL newsnow_lake ( &
 !                ! "in" arguments
 !                ! ---------------

@@ -301,6 +301,8 @@ CONTAINS
       write(*,'(A,I12,A)') 'Total: ', numpatch, ' patches.'
 #endif
 
+! #if (!defined(ROAD_MODEL) && !defined(CROP))
+
       CALL elm_patch%build (landelm, landpatch, use_frac = .true.)
 #ifdef CATCHMENT
       CALL hru_patch%build (landhru, landpatch, use_frac = .true.)

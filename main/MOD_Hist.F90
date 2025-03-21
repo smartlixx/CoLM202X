@@ -122,6 +122,9 @@ CONTAINS
 #ifdef URBAN_MODEL
    USE MOD_LandUrban
 #endif
+#ifdef ROAD_MODEL
+   USE MOD_LandRoad
+#endif
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
    USE MOD_Vars_PFTimeInvariants, only: pftclass
    USE MOD_LandPFT, only: patch_pft_s
@@ -159,12 +162,16 @@ CONTAINS
 
    type(block_data_real8_2d) :: sumarea
    type(block_data_real8_2d) :: sumarea_urb
+   type(block_data_real8_2d) :: sumarea_road
    real(r8), allocatable ::  vecacc (:)
    logical,  allocatable ::  filter (:)
 
    integer i, u
 #ifdef URBAN_MODEL
    logical,  allocatable ::  filter_urb (:)
+#endif
+#ifdef ROAD_MODEL
+   logical,  allocatable ::  filter_road (:)
 #endif
 
       IF (itstamp <= ptstamp) THEN
@@ -247,6 +254,11 @@ CONTAINS
                allocate (filter_urb (numurban))
             ENDIF
 #endif
+#ifdef ROAD_MODEL
+            IF (numroad > 0) THEN
+               allocate (filter_road (numroad))
+            ENDIF
+#endif
          ENDIF
 
          IF (HistForm == 'Gridded') THEN
@@ -254,6 +266,9 @@ CONTAINS
                CALL allocate_block_data (ghist, sumarea)
 #ifdef URBAN_MODEL
                CALL allocate_block_data (ghist, sumarea_urb)
+#endif
+#ifdef ROAD_MODEL
+               CALL allocate_block_data (ghist, sumarea_road)
 #endif
             ENDIF
          ENDIF
@@ -794,6 +809,24 @@ CONTAINS
          CALL write_history_variable_urb_2d ( DEF_hist_vars%t_wall, &
             a_twall, file_hist, 'f_t_wall', itime_in_file, sumarea_urb, filter_urb, &
             'temperature of urban wall [K]','kelvin')
+#endif
+
+#ifdef ROAD_MODEL
+         IF (p_is_worker) THEN
+            IF (numpatch > 0) THEN
+               DO i = 1, numpatch
+                  IF (patchtype(i) == 1) THEN
+                     u = patch2road(i)
+
+                     filter_road(u) = .true.
+
+                     IF (DEF_forcing%has_missing_value) THEN
+                        filter_road(u) = filter_road(u) .and. forcmask_pch(i)
+                     ENDIF
+                  ENDIF
+               ENDDO
+            ENDIF
+         ENDIF
 #endif
 
          ! ------------------------------------------------------------------------------------------
@@ -3942,6 +3975,10 @@ CONTAINS
          IF (allocated(filter)) deallocate (filter)
 #ifdef URBAN_MODEL
          IF (allocated(filter_urb)) deallocate(filter_urb)
+#endif
+
+#ifdef ROAD_MODEL
+         IF (allocated(filter_road)) deallocate(filter_road)
 #endif
 
          CALL FLUSH_acc_fluxes ()

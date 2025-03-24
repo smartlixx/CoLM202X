@@ -57,8 +57,9 @@ OBJS_SHARED =    \
 				  MOD_LandPFT.o                \
 				  MOD_LandUrban.o              \
 				  MOD_Urban_Const_LCZ.o        \
-				  MOD_SingleSrfdata.o          \
 				  MOD_LandRoad.o               \
+				  MOD_Road_Const_ThermalParameters.o \
+				  MOD_SingleSrfdata.o          \
 				  MOD_SrfdataDiag.o            \
 				  MOD_SrfdataRestart.o         \
 				  MOD_ElmVector.o              \

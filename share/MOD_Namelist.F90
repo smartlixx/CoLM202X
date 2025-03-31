@@ -556,6 +556,9 @@ MODULE MOD_Namelist
       logical :: t_roof                           = .true.
       logical :: t_wall                           = .true.
 
+      logical :: fsen_road                        = .true.
+      logical :: lfevp_road                       = .true.
+
       logical :: assimsun                         = .true.
       logical :: assimsha                         = .true.
       logical :: etrsun                           = .true.
@@ -1816,6 +1819,10 @@ CONTAINS
       CALL sync_hist_vars_one (DEF_hist_vars%tafu        , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%t_roof      , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%t_wall      , set_defaults)
+#endif
+#ifdef ROAD_MODEL
+      CALL sync_hist_vars_one (DEF_hist_vars%fsen_road   , set_defaults)
+      CALL sync_hist_vars_one (DEF_hist_vars%lfevp_road  , set_defaults)
 #endif
       CALL sync_hist_vars_one (DEF_hist_vars%assimsun    , set_defaults)
       CALL sync_hist_vars_one (DEF_hist_vars%assimsha    , set_defaults)

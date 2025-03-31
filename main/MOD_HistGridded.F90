@@ -30,6 +30,7 @@ MODULE MOD_HistGridded
    type(grid_type), target :: ghist
    type(spatial_mapping_type) :: mp2g_hist
    type(spatial_mapping_type) :: mp2g_hist_urb
+   type(spatial_mapping_type) :: mp2g_hist_road
 
    type(block_data_real8_2d) :: landfraction
 
@@ -230,6 +231,65 @@ CONTAINS
          compress, longname, units)
 
    END SUBROUTINE flux_map_and_write_urb_2d
+
+SUBROUTINE flux_map_and_write_road_2d ( &
+         acc_vec, file_hist, varname, itime_in_file, sumarea, filter, &
+         longname, units)
+
+   USE MOD_Block
+   USE MOD_Vars_1DAccFluxes,  only: nac
+   USE MOD_Vars_Global, only: spval
+   IMPLICIT NONE
+
+   real(r8), intent(inout) :: acc_vec(:)
+   character(len=*), intent(in) :: file_hist
+   character(len=*), intent(in) :: varname
+   integer,          intent(in) :: itime_in_file
+   character(len=*), intent(in) :: longname
+   character(len=*), intent(in) :: units
+
+   type(block_data_real8_2d), intent(in) :: sumarea
+   logical, intent(in) :: filter(:)
+
+   ! Local variables
+   type(block_data_real8_2d) :: flux_xy_2d
+   integer :: iblkme, xblk, yblk, xloc, yloc
+   integer :: compress
+
+      IF (p_is_worker)  WHERE (acc_vec /= spval)  acc_vec = acc_vec / nac
+      IF (p_is_io)      CALL allocate_block_data (ghist, flux_xy_2d)
+
+      CALL mp2g_hist_road%pset2grid (acc_vec, flux_xy_2d, spv = spval, msk = filter)
+
+      IF (p_is_io) THEN
+         DO iblkme = 1, gblock%nblkme
+            xblk = gblock%xblkme(iblkme)
+            yblk = gblock%yblkme(iblkme)
+
+            DO yloc = 1, ghist%ycnt(yblk)
+               DO xloc = 1, ghist%xcnt(xblk)
+
+                  IF (sumarea%blk(xblk,yblk)%val(xloc,yloc) > 0.00001) THEN
+                     IF (flux_xy_2d%blk(xblk,yblk)%val(xloc,yloc) /= spval) THEN
+                        flux_xy_2d%blk(xblk,yblk)%val(xloc,yloc) &
+                           = flux_xy_2d%blk(xblk,yblk)%val(xloc,yloc) &
+                           / sumarea%blk(xblk,yblk)%val(xloc,yloc)
+                     ENDIF
+                  ELSE
+                     flux_xy_2d%blk(xblk,yblk)%val(xloc,yloc) = spval
+                  ENDIF
+
+               ENDDO
+            ENDDO
+
+         ENDDO
+      ENDIF
+
+      compress = DEF_HIST_CompressLevel
+      CALL hist_write_var_real8_2d (file_hist, varname, ghist, itime_in_file, flux_xy_2d, &
+         compress, longname, units)
+
+   END SUBROUTINE flux_map_and_write_road_2d
 
 
    SUBROUTINE flux_map_and_write_3d ( &

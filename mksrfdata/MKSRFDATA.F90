@@ -263,7 +263,7 @@ PROGRAM MKSRFDATA
 #endif
 
 #ifdef ROAD_MODEL
-   CALL groad%define_by_name          ('colm_500m')
+   CALL grid_road%define_by_name      ('colm_500m')
    CALL grid_road_500m%define_by_name ('colm_500m')
    CALL grid_road_5km%define_by_name  ('colm_5km' )
 #endif
@@ -298,6 +298,12 @@ PROGRAM MKSRFDATA
    CALL pixel%assimilate_grid (grid_urban_5km )
 #endif
 
+#ifdef ROAD_MODEL
+   CALL pixel%assimilate_grid (grid_road     )
+   CALL pixel%assimilate_grid (grid_road_500m)
+   CALL pixel%assimilate_grid (grid_road_5km )
+#endif
+
    ! map pixels to grid coordinates
 #ifndef SinglePoint
    CALL pixel%map_to_grid (gridmesh)
@@ -326,6 +332,12 @@ PROGRAM MKSRFDATA
    CALL pixel%map_to_grid (grid_urban     )
    CALL pixel%map_to_grid (grid_urban_500m)
    CALL pixel%map_to_grid (grid_urban_5km )
+#endif
+
+#ifdef ROAD_MODEL
+   CALL pixel%map_to_grid (grid_road     )
+   CALL pixel%map_to_grid (grid_road_500m)
+   CALL pixel%map_to_grid (grid_road_5km )
 #endif
 
 

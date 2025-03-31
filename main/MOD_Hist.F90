@@ -836,6 +836,18 @@ CONTAINS
                ENDDO
             ENDIF
          ENDIF
+
+         ! sensible heat from road [W/m2]
+         CALL write_history_variable_road_2d ( DEF_hist_vars%fsen_road, &
+            a_senroad, file_hist, 'f_fsenroad', itime_in_file, sumarea_road, filter_road, &
+            'sensible heat from road [W/m2]','W/m2')
+
+         ! latent heat flux from road [W/m2]
+         CALL write_history_variable_road_2d ( DEF_hist_vars%lfevp_road, &
+            a_lfevproad, file_hist, 'f_lfevproad', itime_in_file, sumarea_road, filter_road, &
+            'latent heat from road [W/m2]','W/m2')
+
+
 #endif
 
          ! ------------------------------------------------------------------------------------------
@@ -4084,6 +4096,45 @@ CONTAINS
    END SUBROUTINE write_history_variable_urb_2d
 #endif
 
+#ifdef ROAD_MODEL
+   SUBROUTINE write_history_variable_road_2d ( is_hist, &
+         acc_vec, file_hist, varname, itime_in_file, sumarea, filter, &
+         longname, units)
+
+   IMPLICIT NONE
+
+   logical, intent(in) :: is_hist
+
+   real(r8), intent(inout) :: acc_vec(:)
+   character(len=*), intent(in) :: file_hist
+   character(len=*), intent(in) :: varname
+   integer,          intent(in) :: itime_in_file
+   character(len=*), intent(in) :: longname
+   character(len=*), intent(in) :: units
+
+   type(block_data_real8_2d), intent(in) :: sumarea
+   logical, intent(in) :: filter(:)
+
+      IF (.not. is_hist) RETURN
+
+      select CASE (HistForm)
+      CASE ('Gridded')
+         CALL flux_map_and_write_road_2d ( &
+            acc_vec, file_hist, varname, itime_in_file, sumarea, filter, longname, units)
+#if (defined UNSTRUCTURED || defined CATCHMENT)
+      CASE ('Vector')
+         CALL aggregate_to_vector_and_write_2d ( &
+            acc_vec, file_hist, varname, itime_in_file, filter, longname, units)
+#endif
+#ifdef SinglePoint
+      CASE ('Single')
+         CALL single_write_road_2d ( &
+            acc_vec, file_hist, varname, itime_in_file, longname, units)
+#endif
+      END select
+
+   END SUBROUTINE write_history_variable_road_2d
+#endif
 
    SUBROUTINE write_history_variable_3d ( is_hist, &
          acc_vec, file_hist, varname, itime_in_file, dim1name, lb1, ndim1, &

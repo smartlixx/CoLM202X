@@ -122,6 +122,11 @@ MODULE MOD_Vars_1DAccFluxes
    real(r8), allocatable :: a_twall     (:) !temperature of wall [K]
 #endif
 
+#ifdef ROAD_MODEL
+   real(r8), allocatable :: a_senroad   (:) !sensible heat flux from road [W/m2]
+   real(r8), allocatable :: a_lfevproad (:) !latent heat flux from road [W/m2]
+#endif
+
 
 #ifdef BGC
    real(r8), allocatable :: a_leafc              (:)
@@ -404,6 +409,7 @@ CONTAINS
    USE MOD_LandElm
    USE MOD_LandPatch
    USE MOD_LandUrban, only: numurban
+   USE MOD_LandRoad,  only: numroad
    USE MOD_Vars_1DFluxes, only: nsensor
 #ifdef CROP
    USE MOD_LandCrop
@@ -527,6 +533,13 @@ CONTAINS
                allocate (a_troof     (numurban))
                allocate (a_twall     (numurban))
             ENDIF
+#endif
+#ifdef ROAD_MODEL
+            IF (numroad > 0) THEN
+               allocate (a_senroad   (numroad))
+               allocate (a_lfevproad (numroad))
+            ENDIF
+
 #endif
 #ifdef BGC
             allocate (a_leafc              (numpatch))
@@ -819,6 +832,7 @@ CONTAINS
    USE MOD_SPMD_Task
    USE MOD_LandPatch, only: numpatch
    USE MOD_LandUrban, only: numurban
+   USE MOD_LandRoad,  only: numroad
    IMPLICIT NONE
 
       IF (p_is_worker) THEN
@@ -936,6 +950,13 @@ CONTAINS
 
                deallocate (a_troof     )
                deallocate (a_twall     )
+            ENDIF
+#endif
+
+#ifdef ROAD_MODEL
+            IF (numroad > 0) THEN
+               deallocate (a_senroad   )
+               deallocate (a_lfevproad )
             ENDIF
 #endif
 
@@ -1226,6 +1247,7 @@ CONTAINS
       USE MOD_SPMD_Task
       USE MOD_LandPatch, only: numpatch
       USE MOD_LandUrban, only: numurban
+      USE MOD_LandRoad,  only: numroad
       USE MOD_Vars_Global, only: spval
       IMPLICIT NONE
 
@@ -1348,6 +1370,13 @@ CONTAINS
 
                a_troof    (:) = spval
                a_twall    (:) = spval
+            ENDIF
+#endif
+
+#ifdef ROAD_MODEL
+            IF (numroad > 0) THEN
+               a_senroad  (:) = spval
+               a_lfevproad(:) = spval
             ENDIF
 #endif
 
@@ -1645,6 +1674,7 @@ CONTAINS
    USE MOD_LandElm
    USE MOD_LandPatch,      only: numpatch, elm_patch
    USE MOD_LandUrban,      only: numurban
+   USE MOD_LandRoad,       only: numroad
    USE MOD_Const_Physical, only: vonkar, stefnc, cpair, rgas, grav
    USE MOD_Vars_TimeInvariants
    USE MOD_Vars_TimeVariables
@@ -1848,6 +1878,13 @@ CONTAINS
 
                CALL acc1d(t_roof    , a_troof     )
                CALL acc1d(t_wall    , a_twall     )
+            ENDIF
+#endif
+
+#ifdef ROAD_MODEL
+            IF (numroad > 0) THEN
+               CALL acc1d(fsen_road , a_senroad   )
+               CALL acc1d(lfevp_road, a_lfevproad )
             ENDIF
 #endif
 

@@ -14,14 +14,11 @@ MODULE MOD_LandRoad
    USE MOD_Grid
    USE MOD_Pixelset
    USE MOD_Vars_Global, only: N_URB, URBAN
-#ifdef SinglePoint
-   USE MOD_SingleSrfdata
-#endif
 
    IMPLICIT NONE
 
    ! ---- Instance ----
-   type(grid_type) :: groad
+   type(grid_type) :: grid_road
 
    integer :: numroad
    type(pixelset_type) :: landroad
@@ -102,15 +99,15 @@ CONTAINS
 
          dir_road = trim(DEF_dir_rawdata) // '/urban_type'
 
-         CALL allocate_block_data (groad, data_road_class)
+         CALL allocate_block_data (grid_road, data_road_class)
          CALL flush_block_data (data_road_class, 0)
 
          !read LCZ data
          suffix = 'URBTYP'
-         CALL read_5x5_data (dir_road, suffix, groad, 'LCZ_DOM', data_road_class)
+         CALL read_5x5_data (dir_road, suffix, grid_road, 'LCZ_DOM', data_road_class)
 
 #ifdef USEMPI
-         CALL aggregation_data_daemon (groad, data_i4_2d_in1 = data_road_class)
+         CALL aggregation_data_daemon (grid_road, data_i4_2d_in1 = data_road_class)
 #endif
       ENDIF
 
@@ -144,7 +141,7 @@ CONTAINS
                ipxstt = landpatch%ipxstt(ipatch)
                ipxend = landpatch%ipxend(ipatch)
 
-               CALL aggregation_request_data (landpatch, ipatch, groad, zip = .false., area = area_one, &
+               CALL aggregation_request_data (landpatch, ipatch, grid_road, zip = .false., area = area_one, &
                   data_i4_2d_in1 = data_road_class, data_i4_2d_out1 = ibuff)
 
                ! when there is missing urban types

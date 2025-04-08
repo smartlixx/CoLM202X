@@ -26,7 +26,7 @@ MODULE MOD_Road_Const_ThermalParameters
 
    
 
-   ! volumetric heat capacity of asphalt pavement [J/kg*K]
+   ! volumetric heat capacity of asphalt pavement [J/m3*K]
    real(r8), parameter, dimension(10,5)  :: cvroad_apt &
       = reshape([2.29E6 , 2.29E6 ,  1.96E6 , 1.45E6 , 2.06E6 ,   2.06E6 , 2.05E6 , 0. , 0. , 0. , &
                  2.29E6 , 2.29E6 ,  1.96E6 , 1.45E6 , 2.06E6 ,   2.06E6 , 2.05E6 , 0. , 0. , 0. , &
@@ -35,7 +35,7 @@ MODULE MOD_Road_Const_ThermalParameters
                  2.29E6 , 2.29E6 ,  2.29E6 , 2.06E6 , 2.06E6 ,   2.05E6 ,     0. , 0. , 0. , 0.], &
                 shape(cvroad_apt))
 
-   ! volumetric heat capacity of concrete pavement [J/kg*K]
+   ! volumetric heat capacity of concrete pavement [J/m3*K]
    real(r8), parameter, dimension(10,5)  :: cvroad_cct &
       = reshape([ 2.15E6 ,  2.15E6 ,  2.15E6 ,  2.15E6 ,  2.15E6 ,    2.11E6 ,  2.05E6 ,  0. ,  0. ,  0. , &
                   2.15E6 ,  2.15E6 ,  2.15E6 ,  2.15E6 ,  2.11E6 ,    2.05E6 ,      0. ,  0. ,  0. ,  0. , &

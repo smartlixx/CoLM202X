@@ -23,10 +23,6 @@ MODULE MOD_Road_Vars_TimeInvariants
    !integer , allocatable :: patch2road   (:)  !projection from patch to road
    !integer , allocatable :: road2patch   (:)  !projection from road to patch
 
-   ! Road depth
-   real(r8), allocatable :: z_road    (:,:)  !depth of each road layer [m]
-   real(r8), allocatable :: dz_road   (:,:)  !thickness of each road layer [m]
-
    ! albedo
    real(r8), allocatable :: alb_road(:,:,:)  !albedo of road [-]
 
@@ -69,9 +65,6 @@ CONTAINS
             
             allocate (em_road               (numroad))
 
-            allocate (z_road      (1:nl_road,numroad))
-            allocate (dz_road     (1:nl_road,numroad))
-
             allocate (cv_road     (1:nl_road,numroad))
 
             allocate (tk_road     (1:nl_road,numroad))
@@ -96,9 +89,6 @@ CONTAINS
       ! morphological paras
  
       CALL ncio_read_vector (file_restart, 'EM_ROAD'       , landroad, em_road  )
-
-      CALL ncio_read_vector (file_restart, 'ROAD_DEPTH_L'  , ulev, landroad, z_road   )
-      CALL ncio_read_vector (file_restart, 'ROAD_THICK_L'  , ulev, landroad, dz_road  )
 
       ! thermal paras
       CALL ncio_read_vector (file_restart, 'CV_ROAD'   , ulev, landroad, cv_road)
@@ -145,8 +135,6 @@ CONTAINS
 
       CALL ncio_write_vector (file_restart, 'EM_ROAD'       , 'urban', landroad, em_road  , DEF_REST_CompressLevel)
  
-      CALL ncio_write_vector (file_restart, 'ROAD_DEPTH_L', 'ulev', ulev, 'urban', landroad, z_road , DEF_REST_CompressLevel)
-      CALL ncio_write_vector (file_restart, 'ROAD_THICK_L', 'ulev', ulev, 'urban', landroad, dz_road, DEF_REST_CompressLevel)
      ! thermal paras
       CALL ncio_write_vector (file_restart, 'CV_ROAD'   , 'ulev', ulev, 'urban', landroad, cv_road, DEF_REST_CompressLevel)
       CALL ncio_write_vector (file_restart, 'TK_ROAD'   , 'ulev', ulev, 'urban', landroad, tk_road, DEF_REST_CompressLevel)
@@ -168,9 +156,6 @@ CONTAINS
             deallocate (alb_road  )
 
             deallocate (em_road   )
-
-            deallocate (z_road    )
-            deallocate (dz_road   )
 
             deallocate (cv_road   )
  

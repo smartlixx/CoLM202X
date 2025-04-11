@@ -13,10 +13,12 @@ CONTAINS
    SUBROUTINE RoadGroundFlux (hu, ht, hq, us, vs, tm, qm, rhoair, psrf, hpbl, &
                                ur, thm, th, thv, zlnd, zsno, fsno_road, lbroad, &
                               ! fcover, &
-                               rss, dqroaddT, htvp, cgrnd, cgrndl, cgrnds, &
+                              ! rss, &
+                               wliq_roadsno, wice_roadsno, &
+                               dqroaddT, htvp, croad, croadl, croads, &
                                troad, qroad, t_snow, q_snow, &
-                               taux,tauy,fseng_road,fseng_snow, &
-                               fevpg_road,fevpg_snow,tref, qref, &
+                               taux,tauy,fsen_road,fsen_snow, &
+                               fevp_road,fevp_snow,tref, qref, &
                                z0m, z0hg, zol, rib, ustar, qstar, tstar, &
                                fm, fh, fq)
 
@@ -27,7 +29,7 @@ CONTAINS
 !=======================================================================
 
    USE MOD_Precision
-   USE MOD_Const_Physical, only: cpair,vonkar,grav
+   USE MOD_Const_Physical, only: cpair,vonkar,grav,cpliq,cpice
    USE MOD_FrictionVelocity
    USE mod_namelist, only: DEF_USE_CBL_HEIGHT,DEF_RSS_SCHEME
    USE MOD_TurbulenceLEddy
@@ -59,8 +61,8 @@ CONTAINS
         fsno_road,&! fraction of road covered by snow
 !        fcover(0:5),&! coverage of aboveground urban components [-]
 
-!        wliq_roadsno,&! liqui water [kg/m2]
-!        wice_roadsno,&! ice lens [kg/m2]
+        wliq_roadsno,&! liqui water [kg/m2]
+        wice_roadsno,&! ice lens [kg/m2]
 
         troad,     &! road temperature [K]
 !        tgper,    &! ground pervious temperature [K]
@@ -69,19 +71,19 @@ CONTAINS
 !        qgper     &! ground pervious specific humidity [kg/kg]
         q_snow,    &! ground snow specific humidity [kg/kg]
         dqroaddT,  &! d(qg)/dT
-        rss,       &! soil surface resistance for evaporation [s/m]
+!        rss,       &! soil surface resistance for evaporation [s/m]
         htvp        ! latent heat of vapor of water (or sublimation) [j/kg]
         
    real(r8), intent(out) :: &
         taux,        &! wind stress: E-W [kg/m/s**2]
         tauy,        &! wind stress: N-S [kg/m/s**2]
-        fseng_road,  &! sensible heat flux from road [W/m2]
-        fseng_snow,  &! sensible heat flux from ground snow [W/m2]
-        fevpg_road,  &! evaporation heat flux from road [mm/s]
-        fevpg_snow,  &! evaporation heat flux from ground snow [mm/s]
-        cgrnd,       &! deriv. of soil energy flux wrt to soil temp [w/m2/k]
-        cgrndl,      &! deriv, of soil latent heat flux wrt soil temp [w/m2/k]
-        cgrnds,      &! deriv of soil sensible heat flux wrt soil temp [w/m**2/k]
+        fsen_road,   &! sensible heat flux from road [W/m2]
+        fsen_snow,   &! sensible heat flux from ground snow [W/m2]
+        fevp_road,   &! evaporation heat flux from road [mm/s]
+        fevp_snow,   &! evaporation heat flux from ground snow [mm/s]
+        croad,       &! deriv. of road total energy flux wrt to road temp [w/m2/k]
+        croadl,      &! deriv, of road latent heat flux wrt road temp [w/m2/k]
+        croads,      &! deriv of road sensible heat flux wrt road temp [w/m**2/k]
         tref,        &! 2 m height air temperature [kelvin]
         qref          ! 2 m height air humidity
 
@@ -133,7 +135,7 @@ CONTAINS
         z0mg,     &! roughness length over ground, momentum [m]
         z0qg       ! roughness length over ground, latent heat [m]
 
-!   real(r8) fwet_road, fwetfac
+   real(r8) fwet_road  !, fwetfac
 
 !----------------------- Dummy argument --------------------------------
 ! initial roughness length
@@ -152,6 +154,20 @@ CONTAINS
       zii  = 1000.    !m  (pbl height)
       z0m  = z0mg
 
+      ! wet fraction impervious ground
+      !-------------------------------------------
+      IF (lbroad < 1) THEN
+         fwet_road = fsno_road !for snow layer exist
+      ELSE
+         ! surface wet fraction. assuming max ponding = 1 kg/m2
+         fwet_road = (max(0., wliq_roadsno+wice_roadsno))**(2/3.)
+         fwet_road = min(1., fwet_road)
+      ENDIF
+
+      ! dew case
+      IF (qm > qroad) THEN
+         fwet_road = 1.
+      ENDIF
 !-----------------------------------------------------------------------
 !     Compute sensible and latent fluxes and their derivatives with respect
 !     to ground temperature using ground temperatures from previous time step.
@@ -174,13 +190,13 @@ CONTAINS
       ITERATION : DO iter = 1, niters         !begin stability iteration
       !----------------------------------------------------------------
          displax = 0.
-         IF (DEF_USE_CBL_HEIGHT) THEN
-            CALL moninobuk_leddy(hu,ht,hq,displax,z0mg,z0hg,z0qg,obu,um, hpbl, &
-                                 ustar,fh2m,fq2m,fm10m,fm,fh,fq)
-         ELSE
+!         IF (DEF_USE_CBL_HEIGHT) THEN
+!            CALL moninobuk_leddy(hu,ht,hq,displax,z0mg,z0hg,z0qg,obu,um, hpbl, &
+!                                 ustar,fh2m,fq2m,fm10m,fm,fh,fq)
+!         ELSE
             CALL moninobuk(hu,ht,hq,displax,z0mg,z0hg,z0qg,obu,um,&
                            ustar,fh2m,fq2m,fm10m,fm,fh,fq)
-         ENDIF
+!         ENDIF
 
          tstar = vonkar/fh*dth
          qstar = vonkar/fq*dqh
@@ -200,12 +216,12 @@ CONTAINS
          IF (zeta >= 0.) THEN
            um = max(ur,0.1)
          ELSE
-           IF (DEF_USE_CBL_HEIGHT) THEN !//TODO: Shaofeng, 2023.05.18
-               zii = max(5.*hu,hpbl)
-           ENDIF !//TODO: Shaofeng, 2023.05.18
+!           IF (DEF_USE_CBL_HEIGHT) THEN !//TODO: Shaofeng, 2023.05.18
+!               zii = max(5.*hu,hpbl)
+!           ENDIF !//TODO: Shaofeng, 2023.05.18
            wc = (-grav*ustar*thvstar*zii/thv)**(1./3.)
            wc2 = beta*beta*(wc*wc)
-           um = sqrt(ur*ur+wc2)
+           um = sqrt(ur*ur + wc2)
          ENDIF
 
          IF (obuold*obu < 0.) nmozsgn = nmozsgn+1
@@ -227,30 +243,30 @@ CONTAINS
 
       raih = rhoair*cpair/rah
 
-   ! 08/23/2019, yuan: add soil surface resistance (rss)
-      IF (dqh > 0.) THEN
+!   ! 08/23/2019, yuan: add soil surface resistance (rss)
+!      IF (dqh > 0.) THEN
          raiw = rhoair/raw !dew case. assume no soil resistance
-      ELSE
-         IF (DEF_RSS_SCHEME .eq. 4) THEN
-            raiw = rss*rhoair/raw
-         ELSE
-            raiw = rhoair/(raw+rss)
-         ENDIF
-      ENDIF
+!      ELSE
+!         IF (DEF_RSS_SCHEME .eq. 4) THEN
+!            raiw = rss*rhoair/raw
+!         ELSE
+!            raiw = rhoair/(raw+rss)
+!         ENDIF
+!      ENDIF
 
-      cgrnds = raih
-      cgrndl = raiw*dqroaddT
-      cgrnd  = cgrnds + htvp*cgrndl
+      croads = raih
+      croadl = raiw*dqroaddT*fwet_road
+      croad  = croads + htvp*croadl
 
    ! surface fluxes of momentum, sensible and latent
    ! using ground temperatures from previous time step
       taux  = -rhoair*us/ram
       tauy  = -rhoair*vs/ram
-      fseng_road = -raih*dth
-      fevpg_road = -raiw*dqh
+      fsen_road = -raih*dth
+      fevp_road = -raiw*dqh*fwet_road
 
-      fseng_snow = -raih * (thm - t_snow)
-      fevpg_snow = -raiw * ( qm - q_snow)
+!      fsen_snow = -raih * (thm - t_snow)
+!      fevp_snow = -raiw * ( qm - q_snow)
 
 ! 2 m height air temperature
       tref   = thm + vonkar/fh*dth * (fh2m/vonkar - fh/vonkar)

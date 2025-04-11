@@ -73,8 +73,7 @@ SUBROUTINE CoLMMain_Road ( &
 
          ! FLUXES
            taux         ,tauy         ,fsena        ,fevpa        ,&
-           lfevpa       ,& !fsenl        ,fevpl        ,
-           etr          ,&
+           lfevpa       ,& !fsenl     ,fevpl        ,etr          ,&
            fseng        ,fevpg        ,olrg         ,fgrnd        ,&
            fsen_road    ,lfevp_road   ,&
            trad         ,tref         ,&!tmax       ,tmin         ,&
@@ -105,8 +104,6 @@ SUBROUTINE CoLMMain_Road ( &
   USE MOD_Const_Physical, only: tfrz, denh2o, denice
 
   USE MOD_SnowLayersCombineDivide
-!  USE MOD_LeafInterception
-!  USE MOD_Lake
   USE MOD_TimeManager  ! including isgreenwich
   USE MOD_RainSnowTemp, only: rain_snow_temp
   USE MOD_NewSnow, only: newsnow
@@ -114,9 +111,6 @@ SUBROUTINE CoLMMain_Road ( &
   USE MOD_SnowFraction, only: snowfraction
   USE MOD_ALBEDO, only: snowage
   USE MOD_Qsadv, only: qsadv
-
-!  USE MOD_Road_GroundFlux
-!  USE MOD_Road_GroundTemperature
   USE MOD_Road_Hydrology
   Use MOD_Road_Thermal
   USE MOD_Road_Albedo
@@ -142,7 +136,7 @@ SUBROUTINE CoLMMain_Road ( &
 ! Parameters
 ! ----------------------
   real(r8), intent(in) :: &
-      em_road           , &! emissivity of road [-]  
+      em_road           , &! emissivity of road [-]
       cv_road(1:nl_soil), &! heat capacity of road [J/(m2 K)] 
       tk_road(1:nl_soil), &! thermal conductivity of road [W/m-K]
       alb_road(2,2)        ! albedo of road [-]
@@ -345,7 +339,7 @@ SUBROUTINE CoLMMain_Road ( &
         lfevpa     ,&! latent heat flux from canopy height to atmosphere [W/2]
 !        fsenl      ,&! ensible heat from leaves [W/m2]
 !        fevpl      ,&! evaporation+transpiration from leaves [mm/s]
-        etr        ,&! transpiration rate [mm/s]
+!        etr        ,&! transpiration rate [mm/s]
         fseng      ,&! sensible heat flux from ground [W/m2]
         fevpg      ,&! evaporation heat flux from ground [mm/s]
         olrg       ,&! outgoing long-wave radiation from ground+canopy
@@ -443,9 +437,9 @@ SUBROUTINE CoLMMain_Road ( &
         sm_road    ,&! rate of snowmelt [kg/(m2 s)]
 !        sm_lake    ,&! rate of snowmelt [kg/(m2 s)]
         totwb      ,&! water mass at the begining of time step
-        totwb_road ,&! water mass at the begining of time step
 
         wt         ,&! fraction of vegetation buried (covered) by snow [-]
+        sigf       ,&! fraction of veg cover, excluding snow-covered veg [-], only used to call snowfraction
         rootr(1:nl_soil),&! root resistance of a layer, all layers add to 1.0
         rootflux(1:nl_soil),&! root flux of a layer, all layers add to 1.0
 
@@ -469,11 +463,9 @@ SUBROUTINE CoLMMain_Road ( &
         pgroad_snow   ! snowfall onto road including canopy runoff [kg/(m2 s)]
 !        pg_rain_lake,&!rainfall onto lake [kg/(m2 s)]
 !        pg_snow_lake,&!snowfall onto lake [kg/(m2 s)]
-!        etrgper       ! etr for pervious ground
-!        fveg_gimp    ! fraction of fveg/fgimp
 
-  real(r8) :: &
-        errw_rsub    ! the possible subsurface runoff deficit after PHS is included
+  !real(r8) :: &
+  !      errw_rsub    ! the possible subsurface runoff deficit after PHS is included
 
   !real(r8) :: &
   !      ei,         &! vapor pressure on leaf surface [pa]
@@ -592,7 +584,7 @@ SUBROUTINE CoLMMain_Road ( &
 
   zi_roadsno(1:nl_soil) = zi_soi(1:nl_soil)
 
-  totwb_road = scv_road + wice_roadsno(1) + wliq_roadsno(1)
+!  totwb = scv_road + wice_roadsno(1) + wliq_roadsno(1)
   fioldroad(:) = 0.0
   IF (snlroad < 0) THEN
      fioldroad(snlroad+1:0) = wice_roadsno(snlroad+1:0) / &
@@ -624,8 +616,8 @@ SUBROUTINE CoLMMain_Road ( &
 !  ENDIF
 
   !============================================================
-  totwb  = sum(wice_roadsno(1:) + wliq_roadsno(1:))
-!  totwb  = totwb + scv + ldew*fveg + wa*(1-froof)*fgper
+  totwb  = sum(wice_roadsno(:1) + wliq_roadsno(:1))
+  totwb  = totwb + scv_road !+ ldew*fveg + wa*(1-froof)*fgper
 
 !----------------------------------------------------------------------
 ! [2] Canopy interception and precipitation onto ground surface
@@ -690,7 +682,7 @@ SUBROUTINE CoLMMain_Road ( &
     vf_gravels       ,vf_om                 ,vf_sand           ,wf_gravels                 ,&
     wf_sand          ,csol                  ,porsl             ,psi0                       ,&
 #ifdef Campbell_SOIL_MODEL
-    bsw                  ,&
+    bsw              ,&
 #endif
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
     theta_r          ,alpha_vgm             ,n_vgm             ,L_vgm                      ,&
@@ -714,7 +706,7 @@ SUBROUTINE CoLMMain_Road ( &
 !    lai                  ,&
 !    sai                  ,htop                 ,hbot                 ,&
 !    extkd                ,
-    lroad                ,&
+    lroad                ,t_grnd               ,&
     troad                ,t_roadsno(lbroad:)   ,wliq_roadsno(lbroad:)                      ,&
     wice_roadsno(lbroad:),&
 !    lake_icefrac(:)      ,savedtke1            ,lveg                 ,tleaf                ,&
@@ -729,12 +721,13 @@ SUBROUTINE CoLMMain_Road ( &
     fsen_road            ,lfevp_road           ,qseva_road           ,&
     qsdew_road           ,qsubl_road           ,qfros_road           ,&
     imeltroad(lbroad:)   ,sm_road              ,&
-    sabg                 ,rstfac               ,rootr(:)             ,tref                 ,&
+    sabg              ,& !rstfac               ,rootr(:)             ,
+    tref                 ,&
     qref                 ,trad                 ,rst                  ,assim                ,&
     respc                ,errore               ,emis                 ,z0m                  ,&
     zol                  ,rib                  ,ustar                ,qstar                ,&
     tstar                ,fm                   ,fh                   ,fq                   ,&
-    hpbl                 &
+    hpbl                 ,pgroad_rain          ,pgroad_snow          ,t_precip              &
   )
 
 !----------------------------------------------------------------------
@@ -744,9 +737,10 @@ SUBROUTINE CoLMMain_Road ( &
         ! model running information
         ipatch                ,patchtype     ,lbroad    ,deltim ,&
         ! forcing
-        pg_rain               ,pgroad_rain   ,pg_snow           ,&
+      !  pg_rain               ,
+        pgroad_rain           ,&             !pg_snow           ,&
         ssi                   ,wimp                             ,&
-        fseng                 ,fgrnd                            ,&
+      !  fsen_road             ,fgrnd                            ,&
         dz_roadsno(lbroad:)   ,&
         wliq_roadsno(lbroad:) ,&
         wice_roadsno(lbroad:) ,&
@@ -754,7 +748,7 @@ SUBROUTINE CoLMMain_Road ( &
         qsubl_road            ,qfros_road                       ,&
         sm_road               ,forc_us       ,forc_vs           ,&
         ! output
-        rsur                  ,rnof          ,errw_rsub          )
+        rsur                  ,rnof) !          ,errw_rsub          )
 
 !============================================================
   IF (snlroad < 0) THEN
@@ -821,20 +815,18 @@ SUBROUTINE CoLMMain_Road ( &
   scv = scv_road
   !scv = scv*(1-flake) + scv_lake*flake
   
-  endwb  = sum(wice_roadsno(1:) + wliq_roadsno(1:))
+  endwb  = sum(wice_roadsno(:1) + wliq_roadsno(:1))
   endwb  = endwb + scv !+ ldew*fveg
-  errorw = (endwb - totwb) - (forc_prc + forc_prl - fevpa - rnof - errw_rsub)*deltim
+  errorw = (endwb - totwb) - (forc_prc + forc_prl - fevpa - rnof)*deltim !- errw_rsub)*deltim
   xerr   = errorw/deltim
   
 #if(defined CoLMDEBUG)
   IF(abs(errorw)>1.e-3) THEN
       write(6,*) 'Warning: water balance violation in Road ', errorw, ipatch, patchclass
+      write(6,*) endwb, totwb, forc_prc, forc_prl, fevpa, rnof, deltim
       !STOP
   ENDIF
   
-  IF(abs(errw_rsub*deltim)>1.e-3) THEN
-      write(6,*) 'Subsurface runoff deficit due to PHS in Road ', errw_rsub*deltim
-  ENDIF
 #endif
   
 !======================================================================
@@ -851,7 +843,7 @@ SUBROUTINE CoLMMain_Road ( &
 
   ! fraction of snow cover.
   ! TODO: this is for vegetation only? Or should I rewrite it?
-!  CALL snowfraction ( 0., 0.,z0m,zlnd,scv_road,snowdp_road,wt,sigf,fsno_road)
+  CALL snowfraction ( 0., 0.,z0m,zlnd,scv_road,snowdp_road,wt,sigf,fsno_road)
 
 !  lai = tlai(ipatch)
 !  sai = tsai(ipatch) * sigf
@@ -880,7 +872,7 @@ SUBROUTINE CoLMMain_Road ( &
 
   h2osoi = wliq_roadsno(1:)/(dz_soi(1:)*denh2o) + wice_roadsno(1:)/(dz_soi(1:)*denice)
   wat = sum(wice_roadsno(1:)+wliq_roadsno(1:))
-  wat = wat + scv !+ ldew*fveg
+  wat = wat + scv_road !+ ldew*fveg
 
   z_sno_road (maxsnl+1:0) = z_roadsno (maxsnl+1:0)
   dz_sno_road(maxsnl+1:0) = dz_roadsno(maxsnl+1:0)
@@ -899,4 +891,3 @@ SUBROUTINE CoLMMain_Road ( &
 END SUBROUTINE CoLMMain_Road
 ! ----------------------------------------------------------------------
 ! EOP
-    

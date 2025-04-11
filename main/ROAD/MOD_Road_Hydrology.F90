@@ -14,15 +14,17 @@ CONTAINS
         ! model running information
         ipatch         ,patchtype      ,lbroad         ,deltim     ,&
         ! forcing
-        pg_rain        ,pgroad_rain    ,pg_snow                    ,&
+      !  pg_rain        ,
+        pgroad_rain    ,& !pg_snow                    ,&
         ! surface parameters or status
         ssi            ,wimp           ,&
-        fseng          ,fgrnd          ,&
+   !     fseng          ,fgrnd          ,&
         dz_roadsno     ,wliq_roadsno   ,wice_roadsno               ,&
         qseva_road     ,qsdew_road     ,qsubl_road     ,qfros_road ,&
         sm_road        ,forc_us        ,forc_vs                    ,&
         ! output
-        rsur           ,rnof           ,errw_rsub                   &
+        rsur           ,rnof                                        &
+        !           ,errw_rsub                   &
    )
 
 !=======================================================================
@@ -46,8 +48,8 @@ CONTAINS
 
    real(r8), intent(in) :: &
         deltim           ,&! time step (s)
-        pg_rain          ,&! rainfall after removal of interception (mm h2o/s)
-        pg_snow          ,&! snowfall after removal of interception (mm h2o/s)
+   !     pg_rain          ,&! rainfall after removal of interception (mm h2o/s)
+   !     pg_snow          ,&! snowfall after removal of interception (mm h2o/s)
         pgroad_rain      ,&! rainfall after removal of interception (mm h2o/s)
         ssi              ,&! irreducible water saturation of snow
         wimp             ,&! water impremeable IF porosity less than wimp
@@ -64,16 +66,16 @@ CONTAINS
    real(r8), intent(inout) :: &
         dz_roadsno  (lbroad:nl_soil)  ,&! layer thickness (m)
         wliq_roadsno(lbroad:nl_soil)  ,&! liquid water (kg/m2)
-        wice_roadsno(lbroad:nl_soil)  ,&! ice lens (kg/m2)
-        fseng                         ,&! sensible heat from ground
-        fgrnd                           ! ground heat flux
+        wice_roadsno(lbroad:nl_soil)    !,&! ice lens (kg/m2)
+!        fseng                         ,&! sensible heat from ground
+!        fgrnd                           ! ground heat flux
 
    real(r8), intent(out) :: &
         rsur                          ,&! surface runoff (mm h2o/s)
         rnof                            ! total runoff (mm h2o/s)
 
-   real(r8), intent(out) :: &
-        errw_rsub                       ! the possible subsurface runoff deficit after PHS is included
+!   real(r8), intent(out) :: &
+!        errw_rsub                       ! the possible subsurface runoff deficit after PHS is included
 !
 !-----------------------Local Variables------------------------------
 !
@@ -89,6 +91,8 @@ CONTAINS
 !=======================================================================
       IF (lbroad >= 1) THEN
          gwat = pgroad_rain + sm_road - qseva_road
+         print *, 'pgroad_rain = ', pgroad_rain, ' sm_road = ', sm_road, ' qseva_road = ', qseva_road, &
+                  ' gwat = ', gwat
       ELSE
          CALL snowwater (lbroad,deltim,ssi,wimp,&
                          pgroad_rain,qseva_road,qsdew_road,qsubl_road,qfros_road,&
@@ -101,6 +105,9 @@ CONTAINS
       ! Renew the ice and liquid mass due to condensation
       IF (lbroad >= 1) THEN
          ! make consistent with how evap_grnd removed in infiltration
+         print *, 'qsdew_road = ', qsdew_road
+         print *, 'qfros_road = ', qfros_road
+         print *, 'qsubl_road = ', qsubl_road
          wliq_roadsno(1) = max(0., wliq_roadsno(1) + qsdew_road * deltim)
          wice_roadsno(1) = max(0., wice_roadsno(1) + (qfros_road-qsubl_road) * deltim)
       ENDIF

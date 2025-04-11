@@ -36,17 +36,13 @@ CONTAINS
 !     the calculations of Wiscombe and Warren (1980) and the snow model
 !     and data of Anderson(1976), and the function of snow age, grain size,
 !     solar zenith angle, pollution, the amount of the fresh snow
-! (2) lake and wetland albedos: as in BATS, which depend on cosine solar zenith angle,
-!     based on data in Henderson-Sellers (1986). The frozen lake and wetland albedos
-!     are set to constants (0.6 for visible beam, 0.4 for near-infrared)
-! (3) over the snow covered surface, the surface albedo is estimated by a linear
+! (2) over the snow covered surface, the surface albedo is estimated by a linear
 !     combination of albedos for snow, roof, impervious and pervious ground
 !
 !=======================================================================
 
    USE MOD_Precision
    USE MOD_Const_Physical, only: tfrz
-!   USE MOD_Urban_Shortwave
 
    IMPLICIT NONE
 
@@ -83,10 +79,11 @@ CONTAINS
       dralbs,    &! snow albedo for near infrared radiation [-]
       sl,        &! factor that helps control alb zenith dependence [-]
       snal0,     &! alb for visible,incident on new snow (zen ang<60) [-]
-      snal1       ! alb for NIR, incident on new snow (zen angle<60) [-]
+      snal1,     &! alb for NIR, incident on new snow (zen angle<60) [-]
+      tran(2,3)   ! canopy transmittances for solar radiation
 
    real(r8) :: &!
-      albsno(2,2),  &! snow albedo [-]
+      albsno(2,2),   &! snow albedo [-]
       albroad_(2,2)   ! albedo, ground
    
 ! ----------------------------------------------------------------------
@@ -101,6 +98,10 @@ CONTAINS
 ! set default soil and road albedos and solar absorption
       alb (:,:)  = 0. ! averaged
       sroad(:,:) = 0.
+ 
+      tran(:,1) = 0.       !incident direct  radiation diffuse transmittance
+      tran(:,2) = 1.       !incident diffuse radiation diffuse transmittance
+      tran(:,3) = 1.       !incident direct  radiation direct  transmittance
 
       IF(coszen <= 0.) THEN
          !print *, "coszen < 0, ipatch and coszen: ", ipatch, coszen
@@ -108,7 +109,7 @@ CONTAINS
       ENDIF
 
       czen = max(coszen,0.01)
-      albsno(:,:) = 0.      !set initial snow albedo
+      albsno(:,:) = 0.    !set initial snow albedo
       cons = 0.2          !parameter for snow albedo
       conn = 0.5          !parameter for snow albedo
       sl  = 2.0           !sl helps control albedo zenith dependence
@@ -148,7 +149,11 @@ CONTAINS
 
       alb(:,:) = albroad_(:,:)
 
-   ! TODO: how to calculate sroad? or just remove it? 
+      ! treat road absorption in direct and diffuse respectively
+      sroad(1,1) = tran(1,1)*(1.-albroad_(1,2)) + tran(1,3)*(1-albroad_(1,1))
+      sroad(2,1) = tran(2,1)*(1.-albroad_(2,2)) + tran(2,3)*(1-albroad_(2,1))
+      sroad(1,2) = tran(1,2)*(1.-albroad_(1,2))
+      sroad(2,2) = tran(2,2)*(1.-albroad_(2,2))
 
    END SUBROUTINE albroad
 

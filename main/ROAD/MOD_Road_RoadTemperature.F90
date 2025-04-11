@@ -19,11 +19,13 @@ CONTAINS
                               dz_roadsno,z_roadsno,zi_roadsno,&
                               t_roadsno,t_road,wice_roadsno,wliq_roadsno,&
                               scv_road,snowdp_road,&
-                              frl,dlrad,&!clroad,
+                           !   frl,
+                              dlrad,&!clroad,
                               sab_road,&
-                              fseng_road,fseng_snow,fevpg_road,fevpg_snow,&
+                              fsen_road,fsen_snow,fevp_road,fevp_snow,&
                               croad,htvp,em_road,&
-                              imelt,sm,xmf,fact)
+                              imelt,sm,xmf,fact,&
+                              pgroad_rain,pgroad_snow,t_precip)
 
 !=======================================================================
 ! Snow and road temperatures
@@ -92,17 +94,17 @@ CONTAINS
 
    real(r8), intent(in) :: t_road                      !road surface temperature [K]
    real(r8), intent(in) :: sab_road                    !solar radiation absorbed by ground [W/m2]
-   real(r8), intent(in) :: frl                         !atmospheric infrared (longwave) radiation [W/m2]
+!   real(r8), intent(in) :: frl                         !atmospheric infrared (longwave) radiation [W/m2]
 !   real(r8), intent(in) :: clgimp                      !deriv. of longwave wrt to soil temp [w/m2/k]
    real(r8), intent(in) :: dlrad                       !downward longwave radiation blow the canopy [W/m2]
 !   real(r8), intent(in) :: lroad                       !atmospheric infrared (longwave) radiation [W/m2]
 !   real(r8), intent(in) :: clroad                      !deriv. of longwave wrt to soil temp [w/m2/k]
    real(r8), intent(in) :: croad                       !deriv. of soil energy flux wrt to soil temp [w/m2/k]
      
-   real(r8), intent(in) :: fseng_road                  !sensible heat flux from ground [W/m2]
-   real(r8), intent(in) :: fseng_snow                  !sensible heat flux from ground snow [W/m2]
-   real(r8), intent(in) :: fevpg_road                  !evaporation heat flux from ground [mm/s]
-   real(r8), intent(in) :: fevpg_snow                  !evaporation heat flux from ground snow [mm/s]
+   real(r8), intent(in) :: fsen_road                   !sensible heat flux from ground [W/m2]
+   real(r8), intent(in) :: fsen_snow                   !sensible heat flux from ground snow [W/m2]
+   real(r8), intent(in) :: fevp_road                   !evaporation heat flux from ground [mm/s]
+   real(r8), intent(in) :: fevp_snow                   !evaporation heat flux from ground snow [mm/s]
    !   real(r8), intent(in) :: cgimp                   !deriv. of soil energy flux wrt to soil temp [w/m2/k]
    real(r8), intent(in) :: htvp                        !latent heat of vapor of water (or sublimation) [j/kg]
    real(r8), intent(in) :: em_road                     !road emissivity
@@ -117,6 +119,9 @@ CONTAINS
    real(r8), intent(out) :: xmf                        !total latent heat of phase change of ground water
    real(r8), intent(out) :: fact (lbroad:nl_soil)      !used in computing tridiagonal matrix
    integer,  intent(out) :: imelt(lbroad:nl_soil)      !flag for melting or freezing [-]
+   real(r8), intent(in)  :: pgroad_rain                ! rainfall onto road including canopy runoff [kg/(m2 s)]
+   real(r8), intent(in)  :: pgroad_snow                ! snowfall onto road including canopy runoff [kg/(m2 s)]
+   real(r8), intent(in)  :: t_precip                   ! snowfall/rainfall temperature [kelvin]
 
 !------------------------ local variables ------------------------------
    real(r8) cv (lbroad:nl_soil)           !heat capacity [J/(m2 K)]
@@ -223,9 +228,11 @@ CONTAINS
 
    ! net ground heat flux into the surface and its temperature derivative
    hs = sab_road + dlrad*em_road &
-      - (fseng_road+fevpg_road*htvp) &
+      - (fsen_road+fevp_road*htvp) &
+      + cpliq*pgroad_rain*(t_precip-t_road) &
+      + cpice*pgroad_snow*(t_precip-t_road) &
       - em_road*stefnc*t_road**4.
-   dhsdT = - croad -4.*em_road*stefnc*t_road**3.
+   dhsdT = - croad -4.*em_road*stefnc*t_road**3.- cpliq*pgroad_rain - cpice*pgroad_snow
 
    t_roadsno_bef(lbroad:) = t_roadsno(lbroad:)
 

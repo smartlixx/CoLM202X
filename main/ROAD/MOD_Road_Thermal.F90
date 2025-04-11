@@ -41,9 +41,7 @@ CONTAINS
         k_solids       ,dksatu         ,dksatf         ,dkdry          ,&
         BA_alpha       ,BA_beta                                        ,&
         em_road        ,cv_road        ,tk_road                        ,&
-        dz_roadsno     ,&
-        z_roadsno      ,&
-        zi_roadsno     ,&
+        dz_roadsno     ,z_roadsno      ,zi_roadsno                     ,&
 !        dz_lake        ,lakedepth      ,&
         ! vegetation parameters
 !        dewmx          ,sqrtdi         ,rootfr         ,effcon         ,&
@@ -53,12 +51,11 @@ CONTAINS
 !        extkn          ,&
         ! surface status
         fsno_road      ,scv_road       ,& !scv_lake       ,
-        snowdp_road    ,&
-!        snowdp_lake    ,&
+        snowdp_road    ,&!        snowdp_lake    ,&
    !     lai            ,&
    !     sai            ,htop           ,hbot           ,& !sigf           ,&
    !     extkd          ,
-        lroad          ,&
+        lroad          ,t_grnd         ,&
         t_road         ,t_roadsno      ,& !t_lakesno      ,
         wliq_roadsno   ,&
 !        wliq_lakesno   ,&
@@ -72,16 +69,18 @@ CONTAINS
         taux           ,tauy           ,fsena          ,fevpa          ,&
         lfevpa         ,& !fsenl       ,fevpl          ,etr            ,&
         fseng          ,fevpg          ,olrg           ,fgrnd          ,&
-        fseng_road     ,lfevp_road     ,qseva_road     ,&
+        fsen_road      ,lfevp_road     ,qseva_road     ,&
         qsdew_road     ,qsubl_road     ,qfros_road     ,&
         imelt_road     ,& !imelt_lake     ,&
         sm_road        ,& !sm_lake        ,&
-        sabg           ,rstfac         ,rootr          ,tref           ,&
+        sabg           ,& !rstfac         ,rootr          ,
+        tref           ,&
         qref           ,trad           ,rst            ,assim          ,&
         respc          ,errore         ,emis           ,z0m            ,&
         zol            ,rib            ,ustar          ,qstar          ,&
         tstar          ,fm             ,fh             ,fq             ,&
-        hpbl                                                            )
+        hpbl           ,pgroad_rain    ,pgroad_snow    ,t_precip        &
+   )
 
 !=======================================================================
 ! this is the main subroutine to execute the calculation
@@ -93,7 +92,7 @@ CONTAINS
    USE MOD_SPMD_Task
    USE MOD_Vars_Global
    USE MOD_Const_Physical, only: denh2o,roverg,hvap,hsub,rgas,cpair,&
-                                 stefnc,denice,tfrz,vonkar,grav
+                                 stefnc,denice,tfrz,vonkar,grav,cpliq,cpice
    USE MOD_Qsadv
    USE MOD_Road_GroundFlux
    USE MOD_Road_RoadTemperature
@@ -137,6 +136,10 @@ CONTAINS
         forc_solsd ,&! atm vis diffuse solar rad onto srf [W/m2]
         forc_solld ,&! atm nir diffuse solar rad onto srf [W/m2]
         theta      ,&! sun zenith angle
+        pgroad_rain,&! rainfall onto road including canopy runoff [kg/(m2 s)]
+        pgroad_snow,&! snowfall onto road including canopy runoff [kg/(m2 s)]
+        t_precip   ,&! snowfall/rainfall temperature [kelvin]
+
 !        par        ,&! vegetation PAR
 !        sabv       ,&! absorbed shortwave radiation by vegetation [W/m2]
 !        sabwsun    ,&! absorbed shortwave radiation by sunlit wall [W/m2]
@@ -227,9 +230,10 @@ CONTAINS
    real(r8), intent(in) :: hpbl       ! atmospheric boundary layer height [m]
 
    real(r8), intent(inout) :: &
-        lroad     ,&! net longwave radiation of road
+        lroad      ,&! net longwave radiation of road
+        t_grnd     ,&! ground surface temperature [k]
         t_road     ,&! ground temperature
-        t_roadsno   (lbroad:nl_soil) ,&! temperatures of roof layers
+        t_roadsno   (lbroad:nl_soil) ,&! temperatures of road, snow above and soil below
         wliq_roadsno(lbroad:nl_soil) ,&! liqui water [kg/m2]
         wice_roadsno(lbroad:nl_soil) ,&! ice lens [kg/m2]
 !        t_lake      (    nl_lake)    ,&! lake temperature [K]
@@ -261,7 +265,7 @@ CONTAINS
         olrg       ,&! outgoing long-wave radiation from ground+canopy
         fgrnd      ,&! ground heat flux [W/m2]
 
-        fseng_road  ,&! sensible heat from road [W/m2]
+        fsen_road  ,&! sensible heat from road [W/m2]
         lfevp_road ,&! latent heat flux from road [W/m2]
         
         qseva_road ,&! ground soil surface evaporation rate (mm h2o/s)
@@ -280,8 +284,8 @@ CONTAINS
         sm_road    ,&! rate of snowmelt [kg/(m2 s)]
 !        sm_lake    ,&! rate of snowmelt [kg/(m2 s)]
         sabg       ,&! overall ground solar radiation absorption
-        rstfac     ,&! factor of soil water stress
-        rootr(1:nl_soil) ,&! root resistance of a layer, all layers add to 1
+!        rstfac     ,&! factor of soil water stress
+!        rootr(1:nl_soil) ,&! root resistance of a layer, all layers add to 1
         tref       ,&! 2 m height air temperature [kelvin]
         qref       ,&! 2 m height air specific humidity
         trad       ,&! radiative temperature [K]
@@ -348,6 +352,8 @@ CONTAINS
 
         troad      ,&! temperature of road
         troad_bef  ,&! temperature of road at previous time step
+        t_roadsno_bef(lbroad:nl_soil) ,&! temperatures of road, snow above and soil below
+                     !   at previous time step
         t_snow     ,&! ground snow temperature
 !        t_soisno_bef(lbroad:nl_soil), &! soil/snow temperature before update 
         tinc       ,&! temperature difference of two time step
@@ -367,6 +373,7 @@ CONTAINS
    real(r8) :: z0m_g,z0h_g,zol_g,obu_g,ustar_g,qstar_g,tstar_g
    real(r8) :: fm10m,fm_g,fh_g,fq_g,fh2m,fq2m,um,obu,eb
 
+   integer :: j             ! loop variable
 !   real(r8) :: dT      !temperature change between two time steps
 
 !=======================================================================
@@ -383,15 +390,15 @@ CONTAINS
       rst   = 2.0e4
       assim = 0.;   respc = 0.
 
-!      cgrnds = 0.;  cgrndl = 0.
-!      cgrnd  = 0.;  
+      croads = 0.;  croadl = 0.
+      croad  = 0.;
       tref   = 0.
       qref   = 0. !;  hprl   = 0.
 
       emis  = 0.;  z0m   = 0.
       zol   = 0.;  rib   = 0.
       ustar = 0.;  qstar = 0.
-      tstar = 0.;  rootr = 0.
+      tstar = 0.;  !rootr = 0.
 
       ! Is this necessary
       t_snow = t_roadsno(lbroad)
@@ -404,8 +411,8 @@ CONTAINS
       thm = forc_t + 0.0098*forc_hgt_t                     !intermediate variable equivalent to
                                                            !forc_t*(pgcm/forc_psrf)**(rgas/cpair)
       th  = forc_t*(100000./forc_psrf)**(rgas/cpair)       !potential T
-      thv = th*(1.+0.61*forc_q)                            !virtual potential T
-      ur  = max(0.1,sqrt(forc_us*forc_us+forc_vs*forc_vs)) !limit set to 0.1
+      thv = th*(1. + 0.61*forc_q)                          !virtual potential T
+      ur  = max(0.1, sqrt(forc_us*forc_us+forc_vs*forc_vs)) !limit set to 0.1
 
       ! temperature and water mass from previous time step
       troad = t_roadsno(lbroad)
@@ -415,6 +422,7 @@ CONTAINS
 
       ! SAVE temperature
       troad_bef = troad
+      t_roadsno_bef = t_roadsno
 
       ! SAVE longwave for the last time
  !     lroad_bef = lroad
@@ -533,18 +541,22 @@ CONTAINS
 !=======================================================================
 
       ! bare ground case
+      !print *, 'Before RoadGroundFlux, fsen_road = ', fsenroad 
       CALL RoadGroundFlux (forc_hgt_u,forc_hgt_t,forc_hgt_q,forc_us, &
                            forc_vs,forc_t,forc_q,forc_rhoair,forc_psrf, hpbl, &
                            ur,thm,th,thv,zlnd,zsno,fsno_road, lbroad, &
-                           rsr, dqroaddT, htvp_road, croad, croadl, croads, &
+                           wliq_roadsno(1),wice_roadsno(1), &
+                           !rsr, 
+                           dqroaddT, htvp_road, croad, croadl, croads, &
                            troad,qroad,t_snow,q_snow, &
                            taux,tauy,fsenroad,fsensnow, &
                            fevproad,fevpsnow,tref,qref, &
-                           z0m_g,z0h_g,zol_g,rib,ustar_g,qstar_g,tstar_g,&
-                           fm_g,fh_g,fq_g)
+                           z0m,z0h_g,zol,rib,ustar,qstar,tstar,&
+                           fm,fh,fq)
 
+      print *, 'After RoadGroundFlux, fsen_road = ', fsenroad 
       ! SAVE variables for bareground case
-      obu_g = forc_hgt_u / zol_g
+!      obu_g = forc_hgt_u / zol_g
 
 !=======================================================================
 ! [4] Canopy temperature, fluxes from road
@@ -607,15 +619,17 @@ CONTAINS
            dz_roadsno,z_roadsno,zi_roadsno,&
            t_roadsno,troad,wice_roadsno,wliq_roadsno,&
            scv_road,snowdp_road,&
-           forc_frl,dlrad,&!clroad,
+        !   forc_frl,
+           dlrad,&!clroad,
            sabroad,&
            fsenroad,fsensnow,fevproad,fevpsnow,&
            croad,htvp_road,em_road,&
-           imelt_road,sm_road,xmf,fact_road)
+           imelt_road,sm_road,xmf,fact_road,&
+           pgroad_rain,pgroad_snow,t_precip)
 
       ! update temperature
       troad = t_roadsno(lbroad)
-      lroad = forc_frl*em_road - em_road*stefnc*troad**4.
+      lroad = forc_frl*em_road - em_road*stefnc*troad**4. ! net longwave from road
 !=======================================================================
 ! [7] Correct fluxes for temperature change
 !=======================================================================
@@ -625,7 +639,8 @@ CONTAINS
 
       ! flux change due to temperture change
       fsenroad = fsenroad + tinc*croads
-    
+      print *, 'After temperature change, fsen_road = ', fsenroad, ' tinc = ', tinc, 'croadl = ', croadl
+
       fevproad = fevproad + tinc*croadl
 
 ! calculation of evaporative potential; flux in kg m-2 s-1.
@@ -635,18 +650,24 @@ CONTAINS
 
       ! --- for impervious ground ---
       ! update of snow
-      IF (lbroad < 1) THEN
+!      IF (lbroad < 1) THEN
+      print *, 'fevp_road = ', fevproad
          egsmax = (wice_roadsno(lbroad)+wliq_roadsno(lbroad)) / deltim
          egidif = max( 0., fevproad - egsmax )
          fevproad = min ( fevproad, egsmax )
          fsenroad = fsenroad + htvp_road*egidif
-      ENDIF
+!         print *, 'After snow update, fsen_road = ', fsenroad
+!      ENDIF
 
-      ! update of soil
-      egsmax = (wice_roadsno(1)+wliq_roadsno(1)) / deltim
-      egidif = max( 0., fevproad - egsmax )
-      fevproad = min ( fevproad, egsmax )
-      fsenroad = fsenroad + htvp_road*egidif
+!      ! update of soil
+!      egsmax = (wice_roadsno(1)+wliq_roadsno(1)) / deltim
+!      egidif = max( 0., fevproad - egsmax )
+!      fevproad = min ( fevproad, egsmax )
+!      fsenroad = fsenroad + htvp_road*egidif
+
+      print *, 'egsmax = ', egsmax, 'egidif = ', egidif
+      print *, 'After road update, fsen_road = ', fsenroad, ' wice_roadsno(1) = ', wice_roadsno(1), &
+               ' wliq_roadsno(1) = ', wliq_roadsno(1)
 
 !=======================================================================
 ! [8] total fluxes to atmosphere
@@ -654,16 +675,16 @@ CONTAINS
 
       lnet  = lroad
 
-! LIXX TODO: Is this correct?       
+! LIXX TODO: Is this correct?
       sabg  = sabroad
 
       fseng = fsenroad
       
-      fseng_road = fsenroad
+      fsen_road = fsenroad
       
       fevpg = fevproad
 
-      lfevpa = htvp_road*fevproad     
+      lfevpa = htvp_road*fevproad
 
       lfevp_road = htvp_road*fevproad
 
@@ -682,7 +703,7 @@ CONTAINS
       !respc  = respc *(1-flake)
 
       ! ground heat flux
-      fgrnd = sabg + lnet - (fsena+lfevpa)
+      fgrnd = sabg + lnet - (fsena + lfevpa)
 
       !outgoing long-wave radiation from canopy + ground
       olrg = ulrad &
@@ -694,21 +715,22 @@ CONTAINS
       olru = ulrad + em_road*olrb
       olrb = ulrad + olrb
       emis = olru / olrb
-     
+
      ! radiative temperature
       IF (olrg < 0) THEN
          print *, "MOD_Road_Thermal.F90: Error! Negative outgoing longwave radiation flux: "
          write(6,*) ipatch, olrg, tinc, ulrad
          write(6,*) ipatch,errore,sabg,forc_frl,olrg,fseng,htvp_road*fevpg,xmf,fgrnd
       ENDIF
-     
-      trad = (olrg/stefnc)**0.25     
+
+      trad = (olrg/stefnc)**0.25
 
       ! effective ground temperature, simple average
       ! 12/01/2021, yuan: !TODO Bugs. temperature cannot be weighted like below.
       !t_grnd = troof*fcover(0) + twsun*fcover(1) + twsha*fcover(2) + &
       !t_grnd = tgper*fgper + tgimp*(1-fgper)
       t_road = troad
+      t_grnd = troad
 
       !==============================================
       qseva_road = 0.
@@ -716,18 +738,17 @@ CONTAINS
       qfros_road = 0.
       qsdew_road = 0.
 
-      IF (lfevp_road >= 0.) THEN
+      IF (fevproad >= 0.) THEN
 ! not allow for sublimation in melting (melting ==> evap. ==> sublimation)
-         qseva_road = min(wliq_roadsno(lbroad)/deltim, lfevp_road)
-         qsubl_road = lfevp_road - qseva_road
+         qseva_road = min(wliq_roadsno(lbroad)/deltim, fevproad)
+         qsubl_road = fevproad - qseva_road
       ELSE
          IF (troad < tfrz) THEN
-            qfros_road = abs(lfevp_road)
+            qfros_road = abs(fevproad)
          ELSE
-            qsdew_road = abs(lfevp_road)
+            qsdew_road = abs(fevproad)
          ENDIF
       ENDIF
-
 
 !=======================================================================
 ! [9] Calculate the change rate of long-wave radiation caused by temperature change
@@ -797,8 +818,19 @@ CONTAINS
 !      IF ( doveg ) THEN
 !         errore = sabv*fveg*(1-flake) + sabg + lnet - fsena - lfevpa - fgrnd
 !      ELSE
-      errore = sabg + lnet - fsena - lfevpa - fgrnd
+!       errore = sabg + lnet - fsena - lfevpa - fgrnd
 !      ENDIF
+! one way to check energy balance
+!      errore = sabg + forc_frl - olrg - fsena - lfevpa - fgrnd - dheatl + hprl &
+!             + cpliq*pg_rain*(t_precip-t_grnd) + cpice*pg_snow*(t_precip-t_grnd)
+
+! another way to check energy balance
+      errore = sabg + forc_frl - olrg - fsena - lfevpa - xmf  &
+             + cpliq*pgroad_rain*(t_precip-troad) + cpice*pgroad_snow*(t_precip-troad)
+
+      DO j = lbroad, nl_soil
+         errore = errore - (t_roadsno(j)-t_roadsno_bef(j))/fact_road(j)
+      ENDDO
 
 !      ! deallocate memory
 !      deallocate ( Ainv   )

@@ -273,8 +273,7 @@ SUBROUTINE CoLMDRIVER (idate,deltim,dolai,doalb,dosst,oro)
 
          ! FLUXES
            taux(i)         ,tauy(i)         ,fsena(i)        ,fevpa(i)        ,&
-           lfevpa(i)       ,& !fsenl(i)        ,fevpl(i)        ,
-           etr(i)          ,&
+           lfevpa(i)       ,& !fsenl(i)     ,fevpl(i)        ,etr(i)          ,&
            fseng(i)        ,fevpg(i)        ,olrg(i)         ,fgrnd(i)        ,&
            fsen_road(r)    ,lfevp_road(r)   ,&
            trad(i)         ,tref(i)         ,&!tmax       ,tmin         ,&

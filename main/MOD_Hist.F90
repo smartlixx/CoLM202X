@@ -837,6 +837,21 @@ CONTAINS
             ENDIF
          ENDIF
 
+         ! snow cover, water equivalent [mm]
+         CALL write_history_variable_2d ( DEF_hist_vars%scv_road, &
+            a_scvroad, file_hist, 'f_scvroad', itime_in_file, sumarea_road, filter_road, &
+            'snow cover, water equivalent','mm')
+
+         ! snow depth [meter]
+         CALL write_history_variable_2d ( DEF_hist_vars%snowdp_road, &
+            a_snowdproad, file_hist, 'f_snowdproad', itime_in_file, sumarea_road, filter_road, &
+            'snow depth','meter')
+
+         ! fraction of snow cover on road
+         CALL write_history_variable_2d ( DEF_hist_vars%fsno_road, &
+            a_fsnoroad, file_hist, 'f_fsnoroad', itime_in_file, sumarea_road, filter_road, &
+            'fraction of snow cover on road','-')
+
          ! sensible heat from road [W/m2]
          CALL write_history_variable_road_2d ( DEF_hist_vars%fsen_road, &
             a_senroad, file_hist, 'f_fsenroad', itime_in_file, sumarea_road, filter_road, &
@@ -846,6 +861,21 @@ CONTAINS
          CALL write_history_variable_road_2d ( DEF_hist_vars%lfevp_road, &
             a_lfevproad, file_hist, 'f_lfevproad', itime_in_file, sumarea_road, filter_road, &
             'latent heat from road [W/m2]','W/m2')
+
+         ! road temperature [K]
+         CALL write_history_variable_3d ( DEF_hist_vars%t_roadsno, &
+            a_t_roadsno, file_hist, 'f_t_roadsno', itime_in_file, 'soilsnow', maxsnl+1, nl_soil-maxsnl, &
+            sumarea_road, filter_road, 'soil + road + snow layer temperature','K')
+
+         ! liquid water in road layers [kg/m2]
+         CALL write_history_variable_3d ( DEF_hist_vars%wliq_roadsno, &
+            a_wliq_roadsno, file_hist, 'f_wliq_roadsno', itime_in_file, 'soilsnow', maxsnl+1, nl_soil-maxsnl, &
+            sumarea_road, filter_road,'liquid water in soil layers','kg/m2')
+
+         ! ice lens in road layers [kg/m2]
+         CALL write_history_variable_3d ( DEF_hist_vars%wice_roadsno, &
+            a_wice_roadsno, file_hist, 'f_wice_roadsno', itime_in_file, 'soilsnow', maxsnl+1, nl_soil-maxsnl, &
+            sumarea_road, filter_road, 'ice lens in soil layers', 'kg/m2')
 
 
 #endif

@@ -23,10 +23,6 @@ MODULE MOD_Road_Vars_TimeInvariants
    !integer , allocatable :: patch2road   (:)  !projection from patch to road
    !integer , allocatable :: road2patch   (:)  !projection from road to patch
 
-   ! Road depth
-   real(r8), allocatable :: z_road    (:,:)  !depth of each road layer [m]
-   real(r8), allocatable :: dz_road   (:,:)  !thickness of each road layer [m]
-
    ! albedo
    real(r8), allocatable :: alb_road(:,:,:)  !albedo of road [-]
 

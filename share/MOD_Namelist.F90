@@ -556,8 +556,14 @@ MODULE MOD_Namelist
       logical :: t_roof                           = .true.
       logical :: t_wall                           = .true.
 
+      logical :: scv_road                         = .true.
+      logical :: snowdp_road                      = .true.
+      logical :: fsno_road                        = .true.
       logical :: fsen_road                        = .true.
       logical :: lfevp_road                       = .true.
+      logical :: t_roadsno                        = .true.
+      logical :: wliq_roadsno                     = .true.
+      logical :: wice_roadsno                     = .true.
 
       logical :: assimsun                         = .true.
       logical :: assimsha                         = .true.

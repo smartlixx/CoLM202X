@@ -123,8 +123,18 @@ MODULE MOD_Vars_1DAccFluxes
 #endif
 
 #ifdef ROAD_MODEL
+
+   real(r8), allocatable :: a_scvroad   (:)
+   real(r8), allocatable :: a_snowdproad(:)
+   real(r8), allocatable :: a_fsnoroad  (:)
+
    real(r8), allocatable :: a_senroad   (:) !sensible heat flux from road [W/m2]
    real(r8), allocatable :: a_lfevproad (:) !latent heat flux from road [W/m2]
+
+   real(r8), allocatable :: a_t_roadsno    (:,:)
+   real(r8), allocatable :: a_wliq_roadsno (:,:)
+   real(r8), allocatable :: a_wice_roadsno (:,:)
+
 #endif
 
 
@@ -536,8 +546,18 @@ CONTAINS
 #endif
 #ifdef ROAD_MODEL
             IF (numroad > 0) THEN
-               allocate (a_senroad   (numroad))
-               allocate (a_lfevproad (numroad))
+
+               allocate (a_scvroad    (numroad))
+               allocate (a_snowdproad (numroad))
+               allocate (a_fsnoroad   (numroad))
+
+               allocate (a_senroad    (numroad))
+               allocate (a_lfevproad  (numroad))
+
+               allocate (a_t_roadsno    (maxsnl+1:nl_soil,numroad))
+               allocate (a_wliq_roadsno (maxsnl+1:nl_soil,numroad))
+               allocate (a_wice_roadsno (maxsnl+1:nl_soil,numroad))
+
             ENDIF
 
 #endif
@@ -955,8 +975,17 @@ CONTAINS
 
 #ifdef ROAD_MODEL
             IF (numroad > 0) THEN
-               deallocate (a_senroad   )
-               deallocate (a_lfevproad )
+               deallocate (a_scvroad      )
+               deallocate (a_snowdproad   )
+               deallocate (a_fsnoroad     )
+
+               deallocate (a_senroad      )
+               deallocate (a_lfevproad    )
+
+               deallocate (a_t_roadsno    )
+               deallocate (a_wliq_roadsno )
+               deallocate (a_wice_roadsno )
+
             ENDIF
 #endif
 
@@ -1375,8 +1404,17 @@ CONTAINS
 
 #ifdef ROAD_MODEL
             IF (numroad > 0) THEN
-               a_senroad  (:) = spval
-               a_lfevproad(:) = spval
+               a_scvroad   (:) = spval
+               a_snowdproad(:) = spval
+               a_fsnoroad  (:) = spval
+               
+               a_senroad   (:) = spval
+               a_lfevproad (:) = spval
+
+               a_t_roadsno     (:,:) = spval
+               a_wliq_roadsno  (:,:) = spval
+               a_wice_roadsno  (:,:) = spval
+
             ENDIF
 #endif
 
@@ -1883,8 +1921,18 @@ CONTAINS
 
 #ifdef ROAD_MODEL
             IF (numroad > 0) THEN
-               CALL acc1d(fsen_road , a_senroad   )
-               CALL acc1d(lfevp_road, a_lfevproad )
+
+               CALL acc1d (scv_road     , a_scvroad      )
+               CALL acc1d (snowdp_road  , a_snowdproad   )
+               CALL acc1d (fsno_road    , a_fsnoroad     )
+
+               CALL acc1d (fsen_road    , a_senroad      )
+               CALL acc1d (lfevp_road   , a_lfevproad    )
+
+               CALL acc2d (t_roadsno    , a_t_roadsno    )
+               CALL acc2d (wliq_roadsno , a_wliq_roadsno )
+               CALL acc2d (wice_roadsno , a_wice_roadsno )
+
             ENDIF
 #endif
 

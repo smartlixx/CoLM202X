@@ -28,7 +28,7 @@ CONTAINS
    )
 
 !=======================================================================
-! this is the main SUBROUTINE to execute the calculation of URBAN
+! this is the main SUBROUTINE to execute the calculation of ROAD
 ! hydrological processes
 !
 !=======================================================================

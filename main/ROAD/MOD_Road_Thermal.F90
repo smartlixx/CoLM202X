@@ -375,10 +375,13 @@ CONTAINS
 
    integer :: j             ! loop variable
 !   real(r8) :: dT      !temperature change between two time steps
-
+   real(r8) :: emroad_
 !=======================================================================
 ! [1] Initial set and propositional variables
 !=======================================================================
+      ! emissivity
+      emroad_ = em_road
+      IF (scv_road > 0.) emroad_ = 0.97
 
       ! fluxes
       taux   = 0.;  tauy   = 0.
@@ -418,7 +421,7 @@ CONTAINS
       troad = t_roadsno(lbroad)
       
       dlrad = forc_frl
-      ulrad = forc_frl*(1.-em_road) + em_road*stefnc*troad**4.
+      ulrad = forc_frl*(1.-emroad_) + emroad_*stefnc*troad**4.
 
       ! SAVE temperature
       troad_bef = troad
@@ -554,7 +557,7 @@ CONTAINS
                            z0m,z0h_g,zol,rib,ustar,qstar,tstar,&
                            fm,fh,fq)
 
-      print *, 'After RoadGroundFlux, fsen_road = ', fsenroad 
+!      print *, 'After RoadGroundFlux, fsen_road = ', fsenroad 
       ! SAVE variables for bareground case
 !      obu_g = forc_hgt_u / zol_g
 
@@ -623,13 +626,13 @@ CONTAINS
            dlrad,&!clroad,
            sabroad,&
            fsenroad,fsensnow,fevproad,fevpsnow,&
-           croad,htvp_road,em_road,&
+           croad,htvp_road,emroad_,&
            imelt_road,sm_road,xmf,fact_road,&
            pgroad_rain,pgroad_snow,t_precip)
 
       ! update temperature
       troad = t_roadsno(lbroad)
-      lroad = forc_frl*em_road - em_road*stefnc*troad**4. ! net longwave from road
+      lroad = forc_frl*emroad_ - emroad_*stefnc*troad**4. ! net longwave from road
 !=======================================================================
 ! [7] Correct fluxes for temperature change
 !=======================================================================
@@ -639,8 +642,9 @@ CONTAINS
 
       ! flux change due to temperture change
       fsenroad = fsenroad + tinc*croads
-      print *, 'After temperature change, fsen_road = ', fsenroad, ' tinc = ', tinc, 'croadl = ', croadl
-
+!      print *, 'After temperature change, fsen_road = ', fsenroad, ' tinc = ', tinc, 'croadl = ', croadl
+!      print *, 'lbroad = ', lbroad
+!      print *, 'dz_roadsno = ', dz_roadsno(lbroad:0)
       fevproad = fevproad + tinc*croadl
 
 ! calculation of evaporative potential; flux in kg m-2 s-1.
@@ -651,12 +655,10 @@ CONTAINS
       ! --- for impervious ground ---
       ! update of snow
 !      IF (lbroad < 1) THEN
-      print *, 'fevp_road = ', fevproad
-         egsmax = (wice_roadsno(lbroad)+wliq_roadsno(lbroad)) / deltim
-         egidif = max( 0., fevproad - egsmax )
-         fevproad = min ( fevproad, egsmax )
-         fsenroad = fsenroad + htvp_road*egidif
-!         print *, 'After snow update, fsen_road = ', fsenroad
+      egsmax = (wice_roadsno(lbroad)+wliq_roadsno(lbroad)) / deltim
+      egidif = max( 0., fevproad - egsmax )
+      fevproad = min ( fevproad, egsmax )
+      fsenroad = fsenroad + htvp_road*egidif
 !      ENDIF
 
 !      ! update of soil
@@ -665,9 +667,9 @@ CONTAINS
 !      fevproad = min ( fevproad, egsmax )
 !      fsenroad = fsenroad + htvp_road*egidif
 
-      print *, 'egsmax = ', egsmax, 'egidif = ', egidif
-      print *, 'After road update, fsen_road = ', fsenroad, ' wice_roadsno(1) = ', wice_roadsno(1), &
-               ' wliq_roadsno(1) = ', wliq_roadsno(1)
+!      print *, 'egsmax = ', egsmax, 'egidif = ', egidif
+!      print *, 'After road update, fsen_road = ', fsenroad, ' wice_roadsno(1) = ', wice_roadsno(1), &
+!               ' wliq_roadsno(1) = ', wliq_roadsno(1)
 
 !=======================================================================
 ! [8] total fluxes to atmosphere
@@ -695,24 +697,17 @@ CONTAINS
       ! because we don't consider water balance for lake currently.
       !fevpa  = fevpa *(1-flake) + fevpa_lake *flake
 
-      ! 07/11/2023, yuan: don't not consider lake fraction cover
-      !fsenl  = fsenl *(1-flake)
-      !fevpl  = fevpl *(1-flake)
-      !etr    = etr   *(1-flake)
-      !assim  = assim *(1-flake)
-      !respc  = respc *(1-flake)
-
       ! ground heat flux
       fgrnd = sabg + lnet - (fsena + lfevpa)
 
       !outgoing long-wave radiation from canopy + ground
       olrg = ulrad &
 ! for conservation we put the increase of ground longwave to outgoing
-           + 4.*em_road*stefnc*troad_bef**3*tinc
+           + 4.*emroad_*stefnc*troad_bef**3*tinc
 
       ! averaged bulk surface emissivity
       olrb = stefnc*troad_bef**3*(4.*tinc)
-      olru = ulrad + em_road*olrb
+      olru = ulrad + emroad_*olrb
       olrb = ulrad + olrb
       emis = olru / olrb
 
@@ -856,9 +851,7 @@ CONTAINS
 
 !      ! diagnostic sabg only for pervious and impervious ground
 !      sabg = sabgper*fgper + sabgimp*(1-fgper)
-!
-!
-!      deallocate ( fcover )
+
 
    END SUBROUTINE RoadTHERMAL
 

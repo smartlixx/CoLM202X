@@ -166,7 +166,7 @@ CONTAINS
                         t_roadsno(i),vf_water(i),vf_ice(i),hcap(i),thk(i))
       cv(i) = hcap(i)*dz_roadsno(i)
    ENDDO
-!   IF(lbroad==1 .and. scv_road>0.) cv(1) = cv(1) + cpice*scv_road
+   IF(lbroad==1 .and. scv_road>0.) cv(1) = cv(1) + cpice*scv_road
 
 ! Snow heat capacity
    IF(lbroad <= 0) THEN
@@ -232,7 +232,7 @@ CONTAINS
       + cpliq*pgroad_rain*(t_precip-t_road) &
       + cpice*pgroad_snow*(t_precip-t_road) &
       - em_road*stefnc*t_road**4.
-   dhsdT = - croad -4.*em_road*stefnc*t_road**3.- cpliq*pgroad_rain - cpice*pgroad_snow
+   dhsdT = - croad -4.*em_road*stefnc*t_road**3. - cpliq*pgroad_rain - cpice*pgroad_snow
 
    t_roadsno_bef(lbroad:) = t_roadsno(lbroad:)
 
@@ -274,6 +274,12 @@ CONTAINS
    ct(j) = 0.
    rt(j) = t_roadsno(j) - cnfac*fact(j)*fn(j-1)
 
+!   print *, 'Snow thermal properties, tk = ', tk(lbroad:1), 'cv =', cv(lbroad:1)
+!   print *, 'sabroad = ', sab_road, 'em_road = ', em_road, 'lnet = ', em_road*(dlrad - stefnc*t_road**4.)
+!   print *, 'fsenroad = ', fsen_road, 'fevp_road*htvp = ', fevp_road*htvp
+!   print *, 'snow and rain energy exchange = ', cpliq*pgroad_rain*(t_precip-t_road), cpice*pgroad_snow*(t_precip-t_road)
+!   print *, 'hs = ', hs, 'dhsdT = ', dhsdT
+
 ! solve for t_roadsno
    i = size(at)
    CALL tridia (i ,at ,bt ,ct ,rt ,t_roadsno)
@@ -294,7 +300,7 @@ CONTAINS
       brr(j) = cnfac*(fn(j)-fn(j-1)) + (1.-cnfac)*(fn1(j)-fn1(j-1))
    ENDDO
 
-!  can also call meltf_road directly
+!  can also call meltf_urban directly
    CALL meltf_road (lbroad,1,deltim, &
             fact(lbroad:1),brr(lbroad:1),hs,dhsdT, &
             t_roadsno_bef(lbroad:1),t_roadsno(lbroad:1), &

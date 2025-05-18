@@ -479,8 +479,6 @@ SUBROUTINE CoLMMain_Road ( &
         imeltroad(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happended=0
 !        imeltl(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happended=0
         lbroad     ,&! lower bound of arrays
-!        lbl        ,&! lower bound of arrays
-!        lbsn       ,&! lower bound of arrays
         j            ! DO looping index
 
 !  ! For SNICAR snow model
@@ -490,16 +488,14 @@ SUBROUTINE CoLMMain_Road ( &
 !  real(r8) sabg_lyr  (maxsnl+1:1)  !snow layer absorption [W/m-2]
 
   theta = acos(max(coszen,0.001))
-!  forc_aer(:) = 0.        !aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
 
 !======================================================================
 ! [1] Solar absorbed by ground
 !      and precipitation information (rain/snow fall and precip temperature)
 !======================================================================
   sabroad = 0.
-!  sablake = 0.
 !  sabv    = 0.
-!  par     = 0.
+
   
   IF (forc_sols+forc_soll+forc_solsd+forc_solld > 0.) THEN
 
@@ -509,7 +505,6 @@ SUBROUTINE CoLMMain_Road ( &
 !    sabv    = forc_sols * ssun (1,1) + forc_soll * ssun (2,1) &
 !            + forc_solsd * ssun (1,2) + fsorc_solld * ssun (2,2)
 
-!    par     = forc_sols * ssun (1,1) + forc_solsd * ssun (1,2)
   ENDIF
 
   solvd = forc_sols
@@ -592,31 +587,7 @@ SUBROUTINE CoLMMain_Road ( &
   ENDIF
 
   !============================================================
-!  scvold_lake = scv_lake        !snow mass at previous time step
-!
-!  snll = 0
-!  DO j = maxsnl+1, 0
-!     IF (wliq_lakesno(j) + wice_lakesno(j) > 0.) snll = snll - 1
-!  ENDDO
-!
-!  zi_lakesno(0) = 0.
-!  IF (snll < 0) THEN
-!     DO j = -1, snll, -1
-!        zi_lakesno(j) = zi_lakesno(j+1) - dz_lakesno(j+1)
-!     ENDDO
-!  ENDIF
-!
-!  zi_lakesno(1:nl_soil) = zi_soi(1:nl_soil)
-!
-!  w_old = sum(wliq_lakesno(snll+1:))
-!  fioldl(:) = 0.0
-!  IF (snll <0 ) THEN
-!     fioldl(snll+1:0) = wice_lakesno(snll+1:0) / &
-!        (wliq_lakesno(snll+1:0) + wice_lakesno(snll+1:0))
-!  ENDIF
-
-  !============================================================
-  totwb  = sum(wice_roadsno(:1) + wliq_roadsno(:1))
+  totwb  = sum(wice_roadsno(1:) + wliq_roadsno(1:))
   totwb  = totwb + scv_road !+ ldew*fveg + wa*(1-froof)*fgper
 
 !----------------------------------------------------------------------
@@ -642,25 +613,10 @@ SUBROUTINE CoLMMain_Road ( &
                 wliq_roadsno(:0),wice_roadsno(:0),fioldroad(:0),                   &
                 snlroad,sag_road,scv_road,snowdp_road,fsno_road                    )
  
-!  CALL newsnow_lake ( &
-!                ! "in" arguments
-!                ! ---------------
-!                maxsnl        ,nl_lake       ,deltim          ,dz_lake         ,&
-!                pg_rain_lake  ,pg_snow_lake  ,t_precip        ,bifall          ,&
-!     
-!                ! "inout" arguments
-!                ! ------------------
-!                t_lake        ,zi_lakesno(:0),z_lakesno(:0)                    ,&
-!                dz_lakesno(:0),t_lakesno(:0) ,wliq_lakesno(:0),wice_lakesno(:0),&
-!                fioldl(:0)    ,snll          ,sag_lake        ,scv_lake        ,&
-!                snowdp_lake   ,lake_icefrac                                     )
-     
 !----------------------------------------------------------------------
 ! [4] Energy and Water balance
 !----------------------------------------------------------------------
   lbroad = snlroad + 1           !lower bound of array
-!  lbl = snll + 1           !lower bound of array
-  !lbsn= min(lbp,0)
 
   ! Thermal process
   CALL RoadThermal ( &
@@ -755,24 +711,27 @@ SUBROUTINE CoLMMain_Road ( &
        ! Compaction rate for snow
        ! Natural compaction and metamorphosis. The compaction rate
        ! is recalculated for every new timestep
-       lbroad  = snlroad + 1   ! lower bound of array
+!       lbroad  = snlroad + 1   ! lower bound of array
+!       print *, 'Before snowcompation: snlroad = ', snlroad, t_roadsno(lbroad:1) 
        CALL snowcompaction (lbroad, deltim                                                ,&
                         imeltroad(lbroad:0), fioldroad(lbroad:0), t_roadsno(lbroad:0)     ,&
                         wliq_roadsno(lbroad:0), wice_roadsno(lbroad:0)                    ,&
                         forc_us, forc_vs, dz_roadsno(lbroad:0)                             )
- 
+       
        ! Combine thin snow elements
-       lbroad = maxsnl + 1
+!       lbroad = maxsnl + 1
        CALL snowlayerscombine (lbroad,snlroad,&
                         z_roadsno(lbroad:1), dz_roadsno(lbroad:1), zi_roadsno(lbroad-1:1)  ,&
                         wliq_roadsno(lbroad:1), wice_roadsno(lbroad:1), t_roadsno(lbroad:1),&
                         scv_road, snowdp_road)
- 
+!       print *, 'After snowlayerscombine: snlroad = ', snlroad, t_roadsno(lbroad:1)
+
        ! Divide thick snow elements
        IF (snlroad < 0)  &
           CALL snowlayersdivide (lbroad, snlroad                                           ,&
                         z_roadsno(lbroad:0), dz_roadsno(lbroad:0), zi_roadsno(lbroad-1:0)  ,&
                         wliq_roadsno(lbroad:0), wice_roadsno(lbroad:0), t_roadsno(lbroad:0) )
+!       print *, 'After snowlayersdivide, snlroad = ', snlroad, t_roadsno(lbroad:1)
   ENDIF
  
   ! Set zero to the empty node
@@ -815,7 +774,7 @@ SUBROUTINE CoLMMain_Road ( &
   scv = scv_road
   !scv = scv*(1-flake) + scv_lake*flake
   
-  endwb  = sum(wice_roadsno(:1) + wliq_roadsno(:1))
+  endwb  = sum(wice_roadsno(1:) + wliq_roadsno(1:))
   endwb  = endwb + scv !+ ldew*fveg
   errorw = (endwb - totwb) - (forc_prc + forc_prl - fevpa - rnof)*deltim !- errw_rsub)*deltim
   xerr   = errorw/deltim

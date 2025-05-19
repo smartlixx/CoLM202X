@@ -509,8 +509,8 @@ IF (MOD(idate(3), 3600) == 0) THEN
       scv_road     = 0
       snowdp_road  = 0
       fsno_road    = 0
-      wliq_roadsno = 0
-      wice_roadsno = 0
+      wliq_roadsno(:0) = 0
+      wice_roadsno(:0) = 0
    ENDIF
 ENDIF
 

@@ -323,6 +323,7 @@ OBJS_MAIN = \
 				MOD_Urban_LUCY.o                          \
 				MOD_Urban_Thermal.o                       \
 				CoLMMAIN_Urban.o                          \
+				MOD_Road_CDP_SnowClear.o                  \
 				MOD_Road_GroundFlux.o                     \
 				MOD_Road_RoadTemperature.o                \
 				MOD_Road_Thermal.o                        \

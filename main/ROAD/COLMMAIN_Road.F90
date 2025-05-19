@@ -114,6 +114,7 @@ SUBROUTINE CoLMMain_Road ( &
   USE MOD_Road_Hydrology
   Use MOD_Road_Thermal
   USE MOD_Road_Albedo
+  USE MOD_Road_CDP_SnowClear
 
   IMPLICIT NONE
 
@@ -479,7 +480,10 @@ SUBROUTINE CoLMMain_Road ( &
         imeltroad(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happended=0
 !        imeltl(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happended=0
         lbroad     ,&! lower bound of arrays
+        data_sc(4)   ,&! /year/month/day/hour
         j            ! DO looping index
+
+  logical :: snow_clear_flag     !true => start snow clear
 
 !  ! For SNICAR snow model
 !  !----------------------------------------------------------------------
@@ -488,6 +492,28 @@ SUBROUTINE CoLMMain_Road ( &
 !  real(r8) sabg_lyr  (maxsnl+1:1)  !snow layer absorption [W/m-2]
 
   theta = acos(max(coszen,0.001))
+
+
+!======================================================================
+! [0] Snow clear
+!======================================================================
+
+IF (MOD(idate(3), 3600) == 0) THEN
+   CALL julian2monthday(idate(1), idate(2), data_sc(2), data_sc(3))
+   data_sc(1) = idate(1)
+   data_sc(4) = idate(3) / 3600
+
+   CALL snow_clear_CDP(data_sc, snow_clear_flag)
+
+   IF (snow_clear_flag) THEN
+      scv_road     = 0
+      snowdp_road  = 0
+      fsno_road    = 0
+      wliq_roadsno(:0) = 0
+      wice_roadsno(:0) = 0
+   ENDIF
+ENDIF
+
 
 !======================================================================
 ! [1] Solar absorbed by ground
@@ -601,6 +627,8 @@ SUBROUTINE CoLMMain_Road ( &
 
   pgroad_rain = pg_rain
   pgroad_snow = pg_snow
+!  pgroad_rain = prc_rain + prl_rain + prc_snow + prl_snow
+!  pgroad_snow = 0
 
 !----------------------------------------------------------------------
 ! [3] Initilize new snow nodes for snowfall / sleet
@@ -711,7 +739,7 @@ SUBROUTINE CoLMMain_Road ( &
        ! Compaction rate for snow
        ! Natural compaction and metamorphosis. The compaction rate
        ! is recalculated for every new timestep
-!       lbroad  = snlroad + 1   ! lower bound of array
+       lbroad  = snlroad + 1   ! lower bound of array
 !       print *, 'Before snowcompation: snlroad = ', snlroad, t_roadsno(lbroad:1) 
        CALL snowcompaction (lbroad, deltim                                                ,&
                         imeltroad(lbroad:0), fioldroad(lbroad:0), t_roadsno(lbroad:0)     ,&
@@ -719,7 +747,7 @@ SUBROUTINE CoLMMain_Road ( &
                         forc_us, forc_vs, dz_roadsno(lbroad:0)                             )
        
        ! Combine thin snow elements
-!       lbroad = maxsnl + 1
+       lbroad = maxsnl + 1
        CALL snowlayerscombine (lbroad,snlroad,&
                         z_roadsno(lbroad:1), dz_roadsno(lbroad:1), zi_roadsno(lbroad-1:1)  ,&
                         wliq_roadsno(lbroad:1), wice_roadsno(lbroad:1), t_roadsno(lbroad:1),&

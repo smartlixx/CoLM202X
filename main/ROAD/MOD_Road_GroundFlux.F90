@@ -29,7 +29,7 @@ CONTAINS
 !=======================================================================
 
    USE MOD_Precision
-   USE MOD_Const_Physical, only: cpair,vonkar,grav,cpliq,cpice
+   USE MOD_Const_Physical, only: cpair,vonkar,grav
    USE MOD_FrictionVelocity
    USE mod_namelist, only: DEF_USE_CBL_HEIGHT,DEF_RSS_SCHEME
    USE MOD_TurbulenceLEddy

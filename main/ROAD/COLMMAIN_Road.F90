@@ -739,7 +739,7 @@ ENDIF
        ! Compaction rate for snow
        ! Natural compaction and metamorphosis. The compaction rate
        ! is recalculated for every new timestep
-!       lbroad  = snlroad + 1   ! lower bound of array
+       lbroad  = snlroad + 1   ! lower bound of array
 !       print *, 'Before snowcompation: snlroad = ', snlroad, t_roadsno(lbroad:1) 
        CALL snowcompaction (lbroad, deltim                                                ,&
                         imeltroad(lbroad:0), fioldroad(lbroad:0), t_roadsno(lbroad:0)     ,&
@@ -747,7 +747,7 @@ ENDIF
                         forc_us, forc_vs, dz_roadsno(lbroad:0)                             )
        
        ! Combine thin snow elements
-!       lbroad = maxsnl + 1
+       lbroad = maxsnl + 1
        CALL snowlayerscombine (lbroad,snlroad,&
                         z_roadsno(lbroad:1), dz_roadsno(lbroad:1), zi_roadsno(lbroad-1:1)  ,&
                         wliq_roadsno(lbroad:1), wice_roadsno(lbroad:1), t_roadsno(lbroad:1),&

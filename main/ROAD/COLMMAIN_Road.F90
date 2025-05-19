@@ -654,6 +654,8 @@ ENDIF
 !  pg_rain_lake = prc_rain + prl_rain
 !  pg_snow_lake = prc_snow + prl_snow
 
+  pgroad_rain = pg_rain
+  pgroad_snow = pg_snow
 !  pgroad_rain = prc_rain + prl_rain + prc_snow + prl_snow
 !  pgroad_snow = 0
 

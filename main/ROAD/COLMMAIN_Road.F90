@@ -480,8 +480,6 @@ SUBROUTINE CoLMMain_Road ( &
         imeltroad(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happended=0
 !        imeltl(maxsnl+1:nl_soil), &! flag for: melting=1, freezing=2, Nothing happended=0
         lbroad     ,&! lower bound of arrays
-!        lbl        ,&! lower bound of arrays
-!        lbsn       ,&! lower bound of arrays
         data_sc(4)   ,&! /year/month/day/hour
         j            ! DO looping index
 

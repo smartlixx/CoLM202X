@@ -17,7 +17,6 @@ MODULE MOD_Const_PFT
    USE MOD_Precision
    USE MOD_Vars_Global
    USE MOD_TimeManager, only: get_calday
-   USE MOD_Namelist, only: DEF_USE_IRRIGATION
 
    IMPLICIT NONE
    SAVE
@@ -247,7 +246,7 @@ MODULE MOD_Const_PFT
          /)
 
    ! reflectance of green leaf in visible band
-#if(defined LULC_IGBP_PC)
+#if (defined LULC_IGBP_PC)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    real(r8), parameter :: rhol_vis_p(0:N_PFT+N_CFT-1) &
       = (/0.110,  0.070,  0.070,  0.070,  0.100,  0.110,  0.100,  0.100&
@@ -286,7 +285,7 @@ MODULE MOD_Const_PFT
          /)
 
    ! reflectance of green leaf in near infrared band
-#if(defined LULC_IGBP_PC)
+#if (defined LULC_IGBP_PC)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    real(r8), parameter :: rhol_nir_p(0:N_PFT+N_CFT-1) &
       = (/0.350,  0.360,  0.370,  0.360,  0.450,  0.460,  0.450,  0.420&
@@ -325,7 +324,7 @@ MODULE MOD_Const_PFT
          /)
 
    ! transmittance of green leaf in visible band
-#if(defined LULC_IGBP_PC)
+#if (defined LULC_IGBP_PC)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    real(r8), parameter :: taul_vis_p(0:N_PFT+N_CFT-1) &
       = (/0.050,  0.050,  0.050,  0.050,  0.050,  0.060,  0.050,  0.060&
@@ -364,7 +363,7 @@ MODULE MOD_Const_PFT
          /)
 
    ! transmittance of green leaf in near infrared band
-#if(defined LULC_IGBP_PC)
+#if (defined LULC_IGBP_PC)
    ! Leaf optical properties adapted from measured data (Dong et al., 2021)
    real(r8), parameter :: taul_nir_p(0:N_PFT+N_CFT-1) &
       = (/0.340,  0.280,  0.290,  0.380,  0.250,  0.330,  0.250,  0.430&
@@ -411,8 +410,8 @@ MODULE MOD_Const_PFT
   ! Temporarilly tune Vegetation parameter to match VGM model (soil too wet)
 #ifdef vanGenuchten_Mualem_SOIL_MODEL
    real(r8), parameter :: vmax25_p(0:N_PFT+N_CFT-1) &
-      = (/ 52.0, 55.0, 42.0, 29.0, 41.0, 51.0, 36.0, 30.0&
-         , 40.0, 36.0, 30.0, 19.0, 21.0, 26.0, 25.0, 57.0&
+      = (/ 52.0, 16.1, 16.5, 22.5, 12.3, 10.7, 16.2, 15.1&
+         , 15.3, 21.4, 22.0, 26.6, 34.2, 20.6, 10.0, 57.0&
 #ifdef CROP
          , 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0&
          , 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0&
@@ -423,7 +422,7 @@ MODULE MOD_Const_PFT
          , 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0&
          , 57.0, 57.0, 57.0, 57.0, 57.0, 57.0, 57.0  &
 #endif
-         /) * 1.e-6 * 0.6
+         /) * 1.e-6
 #else
    real(r8), parameter :: vmax25_p(0:N_PFT+N_CFT-1) &
       = (/ 52.0, 55.0, 42.0, 29.0, 41.0, 51.0, 36.0, 30.0&
@@ -446,14 +445,30 @@ MODULE MOD_Const_PFT
       = (/0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08&
         , 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.05, 0.08&
 #ifdef CROP
+        , 0.08, 0.05, 0.05, 0.08, 0.08, 0.08, 0.08, 0.08&
         , 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08&
         , 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08&
         , 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08&
         , 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08&
         , 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08&
         , 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08&
-        , 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08&
-        , 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08  &
+        , 0.08, 0.08, 0.08, 0.05, 0.05, 0.08, 0.08  &
+#endif
+         /)
+
+      !C3C4 switch 1: C3, 0: C4
+   integer, parameter :: c3c4_p(0:N_PFT+N_CFT-1) &
+      = (/1, 1, 1, 1, 1, 1, 1, 1&
+        , 1, 1, 1, 1, 1, 1, 0, 1&
+#ifdef CROP
+        , 1, 0, 0, 1, 1, 1, 1, 1&
+        , 1, 1, 1, 1, 1, 1, 1, 1&
+        , 1, 1, 1, 1, 1, 1, 1, 1&
+        , 1, 1, 1, 1, 1, 1, 1, 1&
+        , 1, 1, 1, 1, 1, 1, 1, 1&
+        , 1, 1, 1, 1, 1, 1, 1, 1&
+        , 1, 1, 1, 1, 1, 1, 1, 1&
+        , 1, 1, 1, 0, 0, 1, 1  &
 #endif
          /)
 
@@ -494,14 +509,14 @@ MODULE MOD_Const_PFT
       = (/9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0&
         , 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 4.0, 9.0&
 #ifdef CROP
+        , 9.0, 4.0, 4.0, 9.0, 9.0, 9.0, 9.0, 9.0&
         , 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0&
         , 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0&
         , 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0&
         , 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0&
         , 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0&
         , 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0&
-        , 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0&
-        , 9.0, 9.0, 9.0, 9.0, 9.0, 9.0, 9.0  &
+        , 9.0, 9.0, 9.0, 4.0, 4.0, 9.0, 9.0  &
 #endif
          /)
 
@@ -510,14 +525,14 @@ MODULE MOD_Const_PFT
       = (/0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01&
         , 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.04, 0.01&
 #ifdef CROP
+        , 0.01, 0.04, 0.04, 0.01, 0.01, 0.01, 0.01, 0.01&
         , 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01&
         , 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01&
         , 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01&
         , 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01&
         , 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01&
         , 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01&
-        , 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01&
-        , 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01  &
+        , 0.01, 0.01, 0.01, 0.04, 0.04, 0.01, 0.01  &
 #endif
          /)
 
@@ -526,14 +541,14 @@ MODULE MOD_Const_PFT
       = (/0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015&
         , 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.025, 0.015&
 #ifdef CROP
+        , 0.015, 0.025, 0.025, 0.015, 0.015, 0.015, 0.015, 0.015&
         , 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015&
         , 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015&
         , 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015&
         , 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015&
         , 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015&
         , 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015&
-        , 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015&
-        , 0.015, 0.015, 0.015, 0.015, 0.015, 0.015, 0.015  &
+        , 0.015, 0.015, 0.015, 0.025, 0.025, 0.015, 0.015  &
 #endif
          /)
 
@@ -727,7 +742,8 @@ MODULE MOD_Const_PFT
 #endif
          /)
 
-   logical , parameter, dimension(0:N_PFT+N_CFT-1) :: isbetr  & ! True => is tropical broadleaf evergreen tree
+   ! True => is tropical broadleaf evergreen tree
+   logical , parameter, dimension(0:N_PFT+N_CFT-1) :: isbetr  &
       =(/.False., .False., .False., .False., .True.,  .False., .False., .False. &
        , .False., .False., .False., .False., .False., .False., .False., .False. &
 #ifdef CROP
@@ -742,7 +758,8 @@ MODULE MOD_Const_PFT
 #endif
          /)
 
-   logical , parameter, dimension(0:N_PFT+N_CFT-1) :: isbdtr  & ! True => is a broadleaf deciduous tree
+   ! True => is a broadleaf deciduous tree
+   logical , parameter, dimension(0:N_PFT+N_CFT-1) :: isbdtr  &
       =(/.False., .False., .False., .False., .False., .False., .True.,  .False. &
        , .False., .False., .False., .False., .False., .False., .False., .False. &
 #ifdef CROP
@@ -772,7 +789,8 @@ MODULE MOD_Const_PFT
 #endif
          /)
 
-   logical , parameter, dimension(0:N_PFT+N_CFT-1) :: issed   & ! True => is a seasonal deciduous tree
+   ! True => is a seasonal deciduous tree
+   logical , parameter, dimension(0:N_PFT+N_CFT-1) :: issed   &
       =(/.False., .False., .False., .True.,  .False., .False., .False., .True.  &
        , .True.,  .False., .False., .True.,  .True.,  .False., .False., .False. &
 #ifdef CROP
@@ -1243,8 +1261,8 @@ MODULE MOD_Const_PFT
          /)
 
    real(r8), parameter, dimension(0:N_PFT+N_CFT-1) :: slatop             &
-      =(/   0.,    0.01,    0.01, 0.02018,   0.019,   0.019,  0.0308,  0.0308&
-      , 0.0308, 0.01798, 0.03072, 0.03072, 0.04024, 0.04024, 0.03846, 0.04024&
+      =(/   0., 0.01222, 0.01122, 0.02432, 0.03143, 0.02728, 0.03385, 0.03541&
+      , 0.0447, 0.01332, 0.02255, 0.01564, 0.01077, 0.02663, 0.01983, 0.04024&
 #ifdef CROP
       ,  0.035,    0.05,    0.05,   0.035,   0.035,   0.035,   0.035,   0.035&
       ,  0.035,   0.035,   0.035,   0.035,   0.035,   0.035,   0.035,   0.035&
@@ -1257,8 +1275,8 @@ MODULE MOD_Const_PFT
 #endif
          /)
 !--- crop variables ---
-
-   real(r8),parameter, dimension(0:N_PFT+N_CFT-1) :: manunitro  &   ! Max fertilizer to be applied in total (kg N/m2)
+   ! Max fertilizer to be applied in total (kg N/m2)
+   real(r8),parameter, dimension(0:N_PFT+N_CFT-1) :: manure  &
       = (/  0.,     0.,     0.,     0.,     0.,     0.,     0.,     0. &
       ,     0.,     0.,     0.,     0.,     0.,     0.,     0.,     0. &
 #ifdef CROP
@@ -1338,14 +1356,14 @@ MODULE MOD_Const_PFT
       = (/-999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9 &
 #ifdef CROP
-      ,   -999.9,    0.0,    0.0,   0.05,   0.05,   0.05,   0.05,    0.3 &
-      ,      0.3,   0.05,   0.05,   0.05,   0.05,   0.05,   0.05,   0.05 &
+      ,   -999.9,    0.0,    0.0,   0.05,   0.05,   0.05,   0.05,   0.05 &
+      ,     0.05,   0.05,   0.05,   0.05,   0.05,   0.05,   0.05,   0.05 &
       ,     0.05, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9 &
       ,   -999.9,    0.3,    0.3, -999.9, -999.9, -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9, -999.9, -999.9,   0.05,   0.05, -999.9 &
       ,   -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9 &
-      ,   -999.9, -999.9, -999.9,    0.0,    0.0,    0.3,    0.3      &
+      ,   -999.9, -999.9, -999.9,    0.0,    0.0,   0.05,   0.05      &
 #endif
          /)
 
@@ -1368,14 +1386,14 @@ MODULE MOD_Const_PFT
       = (/-999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9 &
 #ifdef CROP
-      ,   -999.9,   0.05,   0.05,    0.0,    0.0,    0.0,    0.0,    0.2 &
-      ,      0.2,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0 &
+      ,   -999.9,   0.05,   0.05,    0.0,    0.0,    0.0,    0.0,    0.1 &
+      ,      0.1,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0,    0.0 &
       ,      0.0, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9 &
       ,   -999.9,    0.2,    0.2, -999.9, -999.9, -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9, -999.9 &
       ,   -999.9, -999.9, -999.9, -999.9, -999.9,    0.0,    0.0, -999.9 &
       ,   -999.9, -999.9, -999.9,   0.05,   0.05, -999.9, -999.9, -999.9 &
-      ,   -999.9, -999.9, -999.9,   0.05,   0.05,    0.2,    0.2      &
+      ,   -999.9, -999.9, -999.9,   0.05,   0.05,    0.1,    0.1      &
 #endif
          /)
 
@@ -1697,8 +1715,8 @@ MODULE MOD_Const_PFT
 #endif
          /)
 #endif
-      ! irrigation parameter for irrigated crop
-   logical , parameter :: irrig_crop(0:N_PFT+N_CFT-1)  & ! True => is tropical broadleaf evergreen tree
+   ! irrigation parameter for irrigated crop
+   logical , parameter :: irrig_crop(0:N_PFT+N_CFT-1)  &
            =(/.False., .False., .False., .False., .False., .False., .False., .False. &
             , .False., .False., .False., .False., .False., .False., .False., .False. &
 #ifdef CROP
@@ -1714,7 +1732,7 @@ MODULE MOD_Const_PFT
             /)
 
 
-   ! scheme 1: Zeng 2001, 2: Schenk and Jackson, 2002
+   ! scheme 1: Schenk and Jackson, 2002, 2: Zeng 2001
    integer, PRIVATE :: ROOTFR_SCHEME = 1
 
    !fraction of roots in each soil layer

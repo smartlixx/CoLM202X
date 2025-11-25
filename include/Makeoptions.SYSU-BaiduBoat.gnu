@@ -13,10 +13,10 @@ MOD_CMD = -J
 FOPTS = -fdefault-real-8 -ffree-form -C -g -u -xcheck=stkovf \
         -ffpe-trap=invalid,zero,overflow -fbounds-check \
         -mcmodel=medium -fbacktrace -fdump-core -cpp \
-        -ffree-line-length-0
+        -ffree-line-length-0 -fopenmp
 
 INCLUDE_DIR = -I../include -I../share -I../mksrfdata -I../mkinidata -I../main -I$(NETCDF_INC)
-LDFLAGS = -L${NETCDF_LIB} -lnetcdff -llapack -L/share/home/dq089/soft/lib -lblas.gnu
+LDFLAGS = -fopenmp -L${NETCDF_LIB} -lnetcdff -llapack -L/share/home/dq089/soft/lib -lblas.gnu
 
 #============================================================
 # CaMa-Flood Mkinclude (for Linux, gfortran)
@@ -32,8 +32,10 @@ CP = /bin/cp
 #DMPI=-DUseMPI
 DCDF=-DUseCDF
 #DATM=-DNoAtom
-CFLAGS=$(DMPI) $(DCDF) $(DATM)
+DSINGLE=-DSinglePrec_CMF
+
+CFLAGS=$(DMPI) $(DCDF) $(DATM) $(DSINGLE)
 #----
 FCMP = gfortran -fopenmp
-FC   = gfortran 
-FFLAGS = -O3 -Wall -cpp -free -fimplicit-none -fbounds-check -fbacktrace 
+FC   = gfortran -fopenmp
+FFLAGS = -O3 -Wall -cpp -ffree-line-length-none -fimplicit-none -ftree-vectorize 

@@ -57,12 +57,10 @@ MODULE MOD_HistWriteBack
    real(r8), allocatable :: lon_c(:), lon_w(:), lon_e(:)
 
    ! Memory limits
-   integer*8, parameter :: MaxHistMemSize  = 8589934592_8 ! 8*1024^3
-   integer*8, parameter :: MaxHistMesgSize = 8388608_8    ! 8*1024^2
-
+   integer*8, parameter :: MaxHistMemSize = 1073741824_8 ! 1024^3
    integer*8 :: TotalMemSize = 0
 
-   integer :: itime_in_file
+   integer :: itime_in_file_wb
 
    ! tags
    integer, parameter :: tag_next = 1
@@ -80,7 +78,7 @@ CONTAINS
    ! Local Variables
    integer :: dataid, tag
    integer :: time(3), ndims, ndim1, ndim2, dimlens(4), compress
-   integer :: i, idata, isrc, ixseg, iyseg, xdsp, ydsp, xcnt, ycnt
+   integer :: i, idata, isrc, ixseg, iyseg, xdsp, ydsp, xcnt, ycnt, idim1, idim2
 
    integer               :: recvint4 (5)
    character(len=256)    :: recvchar (9)
@@ -91,6 +89,7 @@ CONTAINS
    logical               :: fexists
 
    real(r8), allocatable :: wdata1d(:),  wdata2d(:,:), wdata3d(:,:,:), wdata4d(:,:,:,:)
+   real(r8), allocatable :: tmp3d(:,:,:), tmp4d(:,:,:,:)
 
 
       DO WHILE (.true.)
@@ -197,7 +196,7 @@ CONTAINS
 
             ENDIF
 
-            CALL ncio_write_time (filename, dataname, time, itime_in_file, DEF_HIST_FREQ)
+            CALL ncio_write_time (filename, dataname, time, itime_in_file_wb, DEF_HIST_FREQ)
 
          ELSE
 
@@ -266,30 +265,40 @@ CONTAINS
                   dimlens = (/ndim1, nlon, nlat, 0/)
 
                   IF (.not. allocated(wdata3d)) THEN
-                     allocate (wdata3d (ndim1,nlon,nlat))
+                     allocate (wdata3d (nlon,nlat,ndim1))
+                     allocate (tmp3d   (ndim1,nlon,nlat))
                   ENDIF
 
                   allocate (datathis(ndim1*xcnt*ycnt))
                   CALL mpi_recv (datathis, ndim1*xcnt*ycnt, MPI_REAL8, &
                      isrc, tag, p_comm_glb_plus, p_stat, p_err)
 
-                  wdata3d(:,xdsp+1:xdsp+xcnt, ydsp+1:ydsp+ycnt) = &
-                     reshape(datathis,(/ndim1,xcnt,ycnt/))
+                  tmp3d = reshape(datathis,(/ndim1,xcnt,ycnt/))
+                  DO idim1 = 1, ndim1
+                     wdata3d(xdsp+1:xdsp+xcnt, ydsp+1:ydsp+ycnt, idim1) = tmp3d(idim1, :, :)
+                  ENDDO
 
                CASE (5)
 
                   dimlens = (/ndim1, ndim2, nlon, nlat/)
 
                   IF (.not. allocated(wdata4d)) THEN
-                     allocate (wdata4d (ndim1,ndim2,nlon,nlat))
+                     allocate (wdata4d (nlon,nlat,ndim1,ndim2))
+                     allocate (tmp4d   (ndim1,ndim2,nlon,nlat))
                   ENDIF
 
                   allocate (datathis(ndim1*ndim2*xcnt*ycnt))
                   CALL mpi_recv (datathis, ndim1*ndim2*xcnt*ycnt, MPI_REAL8, &
                      isrc, tag, p_comm_glb_plus, p_stat, p_err)
 
-                  wdata4d(:,:,xdsp+1:xdsp+xcnt, ydsp+1:ydsp+ycnt) = &
-                     reshape(datathis,(/ndim1,ndim2,xcnt,ycnt/))
+                  tmp4d = reshape(datathis,(/ndim1, ndim2, xcnt, ycnt/))
+
+                  DO idim1 = 1, ndim1
+                     DO idim2 = 1, ndim2
+                        wdata4d(xdsp+1:xdsp+xcnt, ydsp+1:ydsp+ycnt, idim1, idim2) = &
+                           tmp4d(idim1, idim2, :, :)
+                     ENDDO
+                  ENDDO
 
                ENDSELECT
 
@@ -298,8 +307,8 @@ CONTAINS
             ENDDO
 
 
-            IF (ndims >= 4) CALL ncio_define_dimension (filename, dim1name, dimlens(1))
-            IF (ndims >= 5) CALL ncio_define_dimension (filename, dim2name, dimlens(2))
+            IF (ndims >= 4) CALL ncio_define_dimension (filename, dim3name, dimlens(1))
+            IF (ndims >= 5) CALL ncio_define_dimension (filename, dim4name, dimlens(2))
 
             SELECTCASE (ndims)
             CASE (2) ! for variables with [lon,lat]
@@ -309,32 +318,34 @@ CONTAINS
                deallocate(wdata2d)
             CASE (3) ! for variables with [lon,lat,time]
 
-               CALL ncio_write_serial_time (filename, dataname, itime_in_file, wdata2d, &
+               CALL ncio_write_serial_time (filename, dataname, itime_in_file_wb, wdata2d, &
                   dim1name, dim2name, dim3name, compress)
 
                deallocate(wdata2d)
-            CASE (4) ! for variables with [dim1,lon,lat,time]
+            CASE (4) ! for variables with [lon,lat,dim3,time]
 
-               CALL ncio_write_serial_time (filename, dataname, itime_in_file, wdata3d, &
+               CALL ncio_write_serial_time (filename, dataname, itime_in_file_wb, wdata3d, &
                   dim1name, dim2name, dim3name, dim4name, compress)
 
+               deallocate(tmp3d  )
                deallocate(wdata3d)
-            CASE (5) ! for variables with [dim1,dim2,lon,lat,time]
+            CASE (5) ! for variables with [lon,lat,dim3,dim4,time]
 
-               CALL ncio_write_serial_time (filename, dataname, itime_in_file, wdata4d, &
+               CALL ncio_write_serial_time (filename, dataname, itime_in_file_wb, wdata4d, &
                   dim1name, dim2name, dim3name, dim4name, dim5name, compress)
 
+               deallocate(tmp4d  )
                deallocate(wdata4d)
             ENDSELECT
 
-            IF (itime_in_file <= 1) THEN
+            IF (itime_in_file_wb <= 1) THEN
                CALL ncio_put_attr (filename, dataname, 'long_name', longname)
                CALL ncio_put_attr (filename, dataname, 'units', units)
                CALL ncio_put_attr (filename, dataname, 'missing_value', spval)
             ENDIF
 
             write(*,'(3A,I0,2A)') 'HIST WriteBack: ', trim(basename(filename)), &
-               ' (time ', itime_in_file, '): ', trim(dataname)
+               ' (time ', itime_in_file_wb, '): ', trim(dataname)
 
          ENDIF
 
@@ -358,6 +369,7 @@ CONTAINS
    ! Local Variables
    integer :: i
    logical :: senddone
+   integer :: sendstat(MPI_STATUS_SIZE,4)
    type(timenodetype), pointer :: tempnode
 
       IF (.not. associated(timenodes)) THEN
@@ -411,14 +423,21 @@ CONTAINS
             yGridCnt(i) = HistConcat%ysegs(i)%cnt
          ENDDO
 
-         CALL mpi_send (nGridData, 1, MPI_INTEGER, p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
-         CALL mpi_send (nxGridSeg, 1, MPI_INTEGER, p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
-         CALL mpi_send (nyGridSeg, 1, MPI_INTEGER, p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
+         CALL mpi_send (nGridData, 1, MPI_INTEGER, p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
+         CALL mpi_send (nxGridSeg, 1, MPI_INTEGER, p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
+         CALL mpi_send (nyGridSeg, 1, MPI_INTEGER, p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
 
-         CALL mpi_send (xGridDsp, nxGridSeg, MPI_INTEGER, p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
-         CALL mpi_send (xGridCnt, nxGridSeg, MPI_INTEGER, p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
-         CALL mpi_send (yGridDsp, nyGridSeg, MPI_INTEGER, p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
-         CALL mpi_send (yGridCnt, nyGridSeg, MPI_INTEGER, p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
+         CALL mpi_send (xGridDsp, nxGridSeg, MPI_INTEGER, p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
+         CALL mpi_send (xGridCnt, nxGridSeg, MPI_INTEGER, p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
+         CALL mpi_send (yGridDsp, nyGridSeg, MPI_INTEGER, p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
+         CALL mpi_send (yGridCnt, nyGridSeg, MPI_INTEGER, p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
 
          nlat = HistConcat%ginfo%nlat
          nlon = HistConcat%ginfo%nlon
@@ -429,14 +448,22 @@ CONTAINS
          allocate(lon_w(nlon));  lon_w = HistConcat%ginfo%lon_w
          allocate(lon_e(nlon));  lon_e = HistConcat%ginfo%lon_e
 
-         CALL mpi_send (nlat,     1, MPI_INTEGER, p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
-         CALL mpi_send (lat_c, nlat, MPI_REAL8,   p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
-         CALL mpi_send (lat_s, nlat, MPI_REAL8,   p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
-         CALL mpi_send (lat_n, nlat, MPI_REAL8,   p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
-         CALL mpi_send (nlon,     1, MPI_INTEGER, p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
-         CALL mpi_send (lon_c, nlon, MPI_REAL8,   p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
-         CALL mpi_send (lon_w, nlon, MPI_REAL8,   p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
-         CALL mpi_send (lon_e, nlon, MPI_REAL8,   p_address_writeback, tag_dims, p_comm_glb_plus, p_err)
+         CALL mpi_send (nlat,     1, MPI_INTEGER, p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
+         CALL mpi_send (lat_c, nlat, MPI_REAL8,   p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
+         CALL mpi_send (lat_s, nlat, MPI_REAL8,   p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
+         CALL mpi_send (lat_n, nlat, MPI_REAL8,   p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
+         CALL mpi_send (nlon,     1, MPI_INTEGER, p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
+         CALL mpi_send (lon_c, nlon, MPI_REAL8,   p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
+         CALL mpi_send (lon_w, nlon, MPI_REAL8,   p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
+         CALL mpi_send (lon_e, nlon, MPI_REAL8,   p_address_writeback, tag_dims, &
+                        p_comm_glb_plus, p_err)
 
          SDimInited = .true.
 
@@ -444,7 +471,7 @@ CONTAINS
 
       DO WHILE (associated(timenodes%next))
 
-         CALL MPI_TestAll (4, timenodes%req, senddone, p_stat, p_err)
+         CALL MPI_TestAll (4, timenodes%req, senddone, sendstat(:,1:4), p_err)
 
          IF (senddone) THEN
             tempnode  => timenodes
@@ -490,7 +517,7 @@ CONTAINS
       ! clean sending buffer and free memory
       DO WHILE (associated(HistSendBuffer%next))
 
-         CALL MPI_Testall (3, HistSendBuffer%sendreqs, senddone, sendstat, p_err)
+         CALL MPI_Testall (3, HistSendBuffer%sendreqs, senddone, sendstat(:,1:3), p_err)
 
          IF (senddone) THEN
 
@@ -525,10 +552,12 @@ CONTAINS
          p_address_writeback, tag_next, p_comm_glb_plus, LastSendBuffer%sendreqs(1), p_err)
 
       CALL mpi_isend (LastSendBuffer%sendint4(1:2), 2, MPI_INTEGER, &
-         p_address_writeback, LastSendBuffer%datatag, p_comm_glb_plus, LastSendBuffer%sendreqs(2), p_err)
+         p_address_writeback, LastSendBuffer%datatag, &
+         p_comm_glb_plus, LastSendBuffer%sendreqs(2), p_err)
 
       CALL mpi_isend (LastSendBuffer%sendchar, 256*9, MPI_CHARACTER, &
-         p_address_writeback, LastSendBuffer%datatag, p_comm_glb_plus, LastSendBuffer%sendreqs(3), p_err)
+         p_address_writeback, LastSendBuffer%datatag, &
+         p_comm_glb_plus, LastSendBuffer%sendreqs(3), p_err)
 
    END SUBROUTINE hist_writeback_var_header
 
@@ -547,6 +576,8 @@ CONTAINS
 
    ! Local Variables
    integer :: totalsize, ndim1, ndim2
+   logical :: senddone
+   integer :: sendstat(MPI_STATUS_SIZE,2)
    type(HistSendBufferType), pointer :: TempSendBuffer
 
       ! append sending buffer
@@ -559,12 +590,17 @@ CONTAINS
          LastSendBuffer => LastSendBuffer%next
       ENDIF
 
-      LastSendBuffer%next   => null()
+      LastSendBuffer%next => null()
 
       ! clean sending buffer and free memory
-      DO WHILE ((TotalMemSize > MaxHistMemSize) .and. associated(HistSendBuffer%next))
+      DO WHILE (associated(HistSendBuffer%next))
 
-         CALL MPI_Waitall (2, HistSendBuffer%sendreqs(1:2), p_stat, p_err)
+         IF (TotalMemSize > MaxHistMemSize) THEN
+            CALL MPI_Waitall (2, HistSendBuffer%sendreqs(1:2), sendstat(:,1:2), p_err)
+         ELSE
+            CALL MPI_Testall (2, HistSendBuffer%sendreqs(1:2), senddone, sendstat(:,1:2), p_err)
+            IF (.not. senddone) EXIT
+         ENDIF
 
          TotalMemSize = TotalMemSize - size(HistSendBuffer%senddata)
 
@@ -608,10 +644,12 @@ CONTAINS
       LastSendBuffer%sendint4(1:5) = (/p_iam_glb_plus, ixseg, iyseg, ndim1, ndim2/)
 
       CALL mpi_isend (LastSendBuffer%sendint4(1:5), 5, MPI_INTEGER, &
-         p_address_writeback, LastSendBuffer%datatag, p_comm_glb_plus, LastSendBuffer%sendreqs(1), p_err)
+         p_address_writeback, LastSendBuffer%datatag, &
+         p_comm_glb_plus, LastSendBuffer%sendreqs(1), p_err)
 
       CALL mpi_isend (LastSendBuffer%senddata, totalsize, MPI_REAL8, &
-         p_address_writeback, LastSendBuffer%datatag, p_comm_glb_plus, LastSendBuffer%sendreqs(2), p_err)
+         p_address_writeback, LastSendBuffer%datatag, &
+         p_comm_glb_plus, LastSendBuffer%sendreqs(2), p_err)
 
    END SUBROUTINE hist_writeback_var
 
@@ -622,13 +660,14 @@ CONTAINS
 
    ! Local Variables
    integer :: dataid, nreq
+   integer :: sendstat(MPI_STATUS_SIZE,4)
    type(timenodetype),       pointer :: tempnode
    type(HistSendBufferType), pointer :: TempSendBuffer
 
       lasttime => null()
       DO WHILE (associated(timenodes))
 
-         CALL MPI_WaitAll (4, timenodes%req, p_stat, p_err)
+         CALL MPI_WaitAll (4, timenodes%req, sendstat(:,1:4), p_err)
 
          tempnode  => timenodes
          timenodes => timenodes%next
@@ -639,10 +678,10 @@ CONTAINS
       DO WHILE (associated(HistSendBuffer))
 
          IF (allocated(HistSendBuffer%senddata)) THEN
-            CALL MPI_Waitall (2, HistSendBuffer%sendreqs(1:2), p_stat, p_err)
+            CALL MPI_Waitall (2, HistSendBuffer%sendreqs(1:2), sendstat(:,1:2), p_err)
             deallocate(HistSendBuffer%senddata)
          ELSE
-            CALL MPI_Waitall (3, HistSendBuffer%sendreqs(1:3), p_stat, p_err)
+            CALL MPI_Waitall (3, HistSendBuffer%sendreqs(1:3), sendstat(:,1:3), p_err)
          ENDIF
 
          TempSendBuffer => HistSendBuffer
@@ -669,7 +708,8 @@ CONTAINS
 
       IF (p_is_master) THEN
          dataid = -1
-         CALL mpi_send (dataid, 1, MPI_INTEGER, p_address_writeback, tag_next, p_comm_glb_plus, p_err)
+         CALL mpi_send (dataid, 1, MPI_INTEGER, p_address_writeback, &
+                        tag_next, p_comm_glb_plus, p_err)
       ENDIF
 
       CALL mpi_barrier (p_comm_glb_plus, p_err)

@@ -8,9 +8,9 @@
 ! 2. Land subgrid type classification:
 !    Select one of the following options.
 #undef LULC_USGS
-#define LULC_IGBP
+#undef LULC_IGBP
 #undef LULC_IGBP_PFT
-#undef LULC_IGBP_PC
+#define LULC_IGBP_PC
 
 ! 2.1 3D Urban model (put it temporarily here):
 #undef URBAN_MODEL
@@ -53,6 +53,18 @@
 
 ! 6. If defined, CaMa-Flood model will be used.
 #undef CaMa_Flood
+#if (defined SinglePoint)
+#undef CaMa_Flood
+#endif
+#ifndef USEMPI
+#undef CaMa_Flood
+#endif
+
+#define GridRiverLakeFlow
+!    Conflicts :
+#if (defined CATCHMENT || defined SinglePoint)
+#undef GridRiverLakeFlow
+#endif
 
 ! 7. If defined, BGC model is used.
 #undef BGC
@@ -64,7 +76,7 @@
 #endif
 #endif
 ! 7.1 If defined, CROP model is used
-#define CROP
+#undef CROP
 !    Conflicts : only used when BGC is defined
 #ifndef BGC
 #undef CROP
@@ -75,18 +87,14 @@
 
 ! 9. If defined, data assimilation is used.
 #undef DataAssimilation
-
-! 10. Vector write model.
-!     1) "VectorInOneFileP" : write vector data in one file in parallel mode;
-!     2) "VectorInOneFileS" : write vector data in one file in serial mode;
-!     3) Neither "VectorInOneFileS" nor "VectorInOneFileP" is defined :
-!        write vector data in separate files.
-#undef VectorInOneFileP
-!     Conflict
-#ifdef VectorInOneFileP
-#undef VectorInOneFileS
+#if (defined DataAssimilation)
+#define LULC_IGBP
+#undef LULC_USGS
+#undef LULC_IGBP_PFT
+#undef LULC_IGBP_PC
 #endif
 
+! 10. Interface to AI model.
 #undef USESplitAI
 
 ! 11. External lake models.

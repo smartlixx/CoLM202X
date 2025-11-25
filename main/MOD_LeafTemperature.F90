@@ -27,7 +27,7 @@ CONTAINS
    SUBROUTINE LeafTemperature ( &
               ipatch     ,ivt        ,deltim     ,csoilc     ,dewmx      ,htvp       ,&
               lai        ,sai        ,htop       ,hbot       ,sqrtdi     ,effcon     ,&
-              vmax25     ,slti       ,hlti       ,shti       ,hhti       ,trda       ,&
+              vmax25     ,c3c4       ,slti       ,hlti       ,shti       ,hhti       ,trda       ,&
               trdm       ,trop       ,g1         ,g0         ,gradm      ,binter     ,&
               extkn      ,extkb      ,extkd      ,hu         ,ht         ,hq         ,&
               us         ,vs         ,thm        ,th         ,thv        ,qm         ,&
@@ -153,6 +153,8 @@ CONTAINS
         lambda,     &! Marginal water cost of carbon gain ((mol h2o) (mol co2)-1)
 !End WUE stomata model parameter
         extkn        ! coefficient of leaf nitrogen allocation
+   integer , intent(in) :: &
+        c3c4 ! 1 for c3, 0 for c4
    real(r8), intent(in) :: & ! for plant hydraulic scheme
         kmax_sun,   &! Plant Hydraulics Parameters
         kmax_sha,   &! Plant Hydraulics Parameters
@@ -669,7 +671,7 @@ CONTAINS
             rbsha = rb / laisha
 
             ! Sunlit leaves
-            CALL stomata  (vmax25   ,effcon   ,slti     ,hlti     ,&
+            CALL stomata  (vmax25   ,effcon   ,c3c4     ,slti     ,hlti     ,&
                  shti     ,hhti     ,trda     ,trdm     ,trop     ,&
                  g1       ,g0       ,gradm    ,binter   ,thm      ,&
                  psrf     ,po2m     ,pco2m    ,pco2a    ,eah      ,&
@@ -684,7 +686,7 @@ CONTAINS
                  assimsun ,respcsun ,rssun    )
 
             ! Shaded leaves
-            CALL stomata  (vmax25   ,effcon   ,slti     ,hlti     ,&
+            CALL stomata  (vmax25   ,effcon   ,c3c4     ,slti     ,hlti     ,&
                  shti     ,hhti     ,trda     ,trdm     ,trop     ,&
                  g1       ,g0       ,gradm    ,binter   ,thm      ,&
                  psrf     ,po2m     ,pco2m    ,pco2a    ,eah      ,&
@@ -724,12 +726,12 @@ CONTAINS
                gssha = gssha * laisha
 
                CALL update_photosyn(tl, po2m, pco2m, pco2a, parsun, psrf, rstfacsun, rb, gssun, &
-                                    effcon, vmax25, gradm, trop, slti, hlti, shti, hhti, trda, trdm, cintsun, &
-                                    assimsun, respcsun)
+                                    effcon, vmax25, c3c4, gradm, trop, slti, hlti, shti, hhti, trda, &
+                                    trdm, cintsun, assimsun, respcsun)
 
                CALL update_photosyn(tl, po2m, pco2m, pco2a, parsha, psrf, rstfacsha, rb, gssha, &
-                                    effcon, vmax25, gradm, trop, slti, hlti, shti, hhti, trda, trdm, cintsha, &
-                                    assimsha, respcsha)
+                                    effcon, vmax25, c3c4, gradm, trop, slti, hlti, shti, hhti, trda, &
+                                    trdm, cintsha, assimsha, respcsha)
 
                rssun = tprcor/tl * 1.e6 / gssun
                rssha = tprcor/tl * 1.e6 / gssha
@@ -985,9 +987,9 @@ ENDIF
 
       IF(DEF_USE_OZONESTRESS)THEN
          CALL CalcOzoneStress(o3coefv_sun,o3coefg_sun,forc_ozone,psrf,th,ram,&
-                              rssun,rb,lai,lai_old,ivt,o3uptakesun,deltim)
+                              rssun,rb,lai,lai_old,ivt,o3uptakesun,sabv,deltim)
          CALL CalcOzoneStress(o3coefv_sha,o3coefg_sha,forc_ozone,psrf,th,ram,&
-                              rssha,rb,lai,lai_old,ivt,o3uptakesha,deltim)
+                              rssha,rb,lai,lai_old,ivt,o3uptakesha,sabv,deltim)
          lai_old  = lai
          assimsun = assimsun * o3coefv_sun
          assimsha = assimsha * o3coefv_sha
@@ -1121,9 +1123,10 @@ ENDIF
           ! account for vegetation heat change
           - dheatl
 
-#if(defined CoLMDEBUG)
+#if (defined CoLMDEBUG)
       IF(abs(err) .gt. .2) &
-      write(6,*) 'energy imbalance in LeafTemperature.F90',it-1,err,sabv,irab,fsenl,hvap*fevpl,hprl,dheatl
+      write(6,*) 'energy imbalance in LeafTemperature.F90',it-1,&
+         err,sabv,irab,fsenl,hvap*fevpl,hprl,dheatl
 #endif
 
 !-----------------------------------------------------------------------
@@ -1287,9 +1290,9 @@ ENDIF
 
    !References:
    !-------------------
-      !---Dai, Y., Zeng, X., Dickinson, R.E., Baker, I., Bonan, G.B., BosiloVICh, M.G., Denning, A.S.,
-      !   Dirmeyer, P.A., Houser, P.R., Niu, G. and Oleson, K.W., 2003.
-      !   The common land model. Bulletin of the American Meteorological Society, 84(8), pp.1013-1024.
+      !---Dai, Y., Zeng, X., Dickinson, R.E., Baker, I., Bonan, G.B., BosiloVICh, M.G., Denning,
+      !   A.S., Dirmeyer, P.A., Houser, P.R., Niu, G. and Oleson, K.W., 2003.  The common land
+      !   model. Bulletin of the American Meteorological Society, 84(8), pp.1013-1024.
 
    !ANCILLARY FUNCTIONS AND SUBROUTINES
    !-------------------

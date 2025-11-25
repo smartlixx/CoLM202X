@@ -53,20 +53,31 @@ MODULE MOD_Const_LC
 !24  Snow or Ice
 
    character(len=256) :: patchclassname (0:N_land_classification) = &
-      (/'0 Ocean                                       ', '1  Urban and Built-Up Land                    ', &
-        '2 Dryland Cropland and Pasture                ', '3 Irrigated Cropland and Pasture              ', &
-        '4 Mixed Dryland/Irrigated Cropland and Pasture', '5 Cropland/Grassland Mosaic                   ', &
-        '6 Cropland/Woodland Mosaic                    ', '7 Grassland                                   ', &
-        '8 Shrubland                                   ', '9 Mixed Shrubland/Grassland                   ', &
-        '10 Savanna                                    ', '11 Deciduous Broadleaf Forest                 ', &
-        '12 Deciduous Needleleaf Forest                ', '13 Evergreen Broadleaf Forest                 ', &
-        '14 Evergreen Needleleaf Forest                ', '15 Mixed Forest                               ', &
-        '16 Inland Water                               ', '17 Herbaceous Wetland                         ', &
-        '18 Wooded Wetland                             ', '19 Barren or Sparsely Vegetated               ', &
-        '20 Herbaceous Tundra                          ', '21 Wooded Tundra                              ', &
-        '22 Mixed Tundra                               ', '23 Bare Ground Tundra                         ', &
+      (/'0 Ocean                                       ', &
+        '1 Urban and Built-Up Land                     ', &
+        '2 Dryland Cropland and Pasture                ', &
+        '3 Irrigated Cropland and Pasture              ', &
+        '4 Mixed Dryland/Irrigated Cropland and Pasture', &
+        '5 Cropland/Grassland Mosaic                   ', &
+        '6 Cropland/Woodland Mosaic                    ', &
+        '7 Grassland                                   ', &
+        '8 Shrubland                                   ', &
+        '9 Mixed Shrubland/Grassland                   ', &
+        '10 Savanna                                    ', &
+        '11 Deciduous Broadleaf Forest                 ', &
+        '12 Deciduous Needleleaf Forest                ', &
+        '13 Evergreen Broadleaf Forest                 ', &
+        '14 Evergreen Needleleaf Forest                ', &
+        '15 Mixed Forest                               ', &
+        '16 Inland Water                               ', &
+        '17 Herbaceous Wetland                         ', &
+        '18 Wooded Wetland                             ', &
+        '19 Barren or Sparsely Vegetated               ', &
+        '20 Herbaceous Tundra                          ', &
+        '21 Wooded Tundra                              ', &
+        '22 Mixed Tundra                               ', &
+        '23 Bare Ground Tundra                         ', &
         '24 Snow or Ice                                '/)
-
 
    ! land patch types
    ! 0: soil, 1: urban, 2: wetland, 3: ice, 4: lake
@@ -187,6 +198,12 @@ MODULE MOD_Const_LC
       = (/0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08,&
           0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08,&
           0.08, 0.08, 0.08, 0.05, 0.05, 0.05, 0.05, 0.05/)
+
+   !c3c4 flag
+   integer, parameter, dimension(N_land_classification) :: c3c4_usgs &
+      = (/1, 1, 1, 1, 1, 1, 1, 1,&
+          1, 1, 1, 1, 1, 1, 1, 1,&
+          1, 1, 1, 0, 0, 0, 0, 0/)
 
    ! conductance-photosynthesis slope parameter
    !TODO: no C4, 4.0 may have problem
@@ -491,6 +508,12 @@ MODULE MOD_Const_LC
       = (/0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08,&
           0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08,&
           0.08 /)
+   
+   !c3c4 flag
+   integer, parameter, dimension(N_land_classification) :: c3c4_igbp &
+      = (/1, 1, 1, 1, 1, 1, 1, 1,&
+          1, 1, 1, 1, 1, 1, 1, 1,&
+          1 /)
 
    ! conductance-photosynthesis slope parameter
    real(r8), parameter, dimension(N_land_classification) :: g1_igbp &
@@ -667,9 +690,11 @@ MODULE MOD_Const_LC
       d50,        &! depth at 50% roots
       beta         ! coefficient of root profile
 
+   integer, dimension(N_land_classification) :: c3c4 ! c3c4 flag
+
 ! Plant Hydraulic Parameters
    real(r8), dimension(N_land_classification) :: &
-      kmax_sun,   &! Plant Hydraulics Parameters (TODO@Xingjie Lu, please give more details and below)
+      kmax_sun,   &! Plant Hydraulics Parameters (TODO@Xingjie Lu, please give more details)
       kmax_sha,   &! Plant Hydraulics Parameters
       kmax_xyl,   &! Plant Hydraulics Parameters
       kmax_root,  &! Plant Hydraulics Parameters
@@ -718,6 +743,7 @@ CONTAINS
       chil       (:) = chil_usgs       (:)
       vmax25     (:) = vmax25_usgs     (:) * 1.e-6
       effcon     (:) = effcon_usgs     (:)
+      c3c4       (:) = c3c4_usgs       (:)
       g1         (:) = g1_usgs         (:)
       g0         (:) = g0_usgs         (:)
       gradm      (:) = gradm_usgs      (:)
@@ -769,6 +795,7 @@ ENDIF
       chil       (:) = chil_igbp       (:)
       vmax25     (:) = vmax25_igbp     (:) * 1.e-6
       effcon     (:) = effcon_igbp     (:)
+      c3c4       (:) = c3c4_igbp       (:)
       g1         (:) = g1_igbp         (:)
       g0         (:) = g0_igbp         (:)
       gradm      (:) = gradm_igbp      (:)

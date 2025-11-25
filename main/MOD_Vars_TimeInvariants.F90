@@ -230,6 +230,11 @@ MODULE MOD_Vars_TimeInvariants
    real(r8), allocatable :: fsatmax        (:)  !maximum saturated area fraction [-]
    real(r8), allocatable :: fsatdcf        (:)  !decay factor in calculation of saturated area fraction [1/m]
 
+   real(r8), allocatable :: topoweti       (:)  !topographic wetness index [log m]
+   real(r8), allocatable :: alp_twi        (:)  !alpha in three parameter gamma distribution of twi
+   real(r8), allocatable :: chi_twi        (:)  !chi   in three parameter gamma distribution of twi
+   real(r8), allocatable :: mu_twi         (:)  !mu    in three parameter gamma distribution of twi
+
    real(r8), allocatable :: vic_b_infilt   (:)
    real(r8), allocatable :: vic_Dsmax      (:)
    real(r8), allocatable :: vic_Ds         (:)
@@ -250,8 +255,9 @@ MODULE MOD_Vars_TimeInvariants
    real(r8), allocatable :: dbedrock       (:)  !depth to bedrock
    integer , allocatable :: ibedrock       (:)  !bedrock level
 
-   real(r8), allocatable :: topoelv        (:)  !elevation above sea level [m]
-   real(r8), allocatable :: topostd        (:)  !standard deviation of elevation [m]
+   real(r8), allocatable :: elvmean        (:)  !elevation above sea level [m]
+   real(r8), allocatable :: elvstd         (:)  !standard deviation of elevation [m]
+   real(r8), allocatable :: slpratio       (:)  !slope ratio [-]
 
    real(r8) :: zlnd                             !roughness length for soil [m]
    real(r8) :: zsno                             !roughness length for snow [m]
@@ -354,6 +360,10 @@ CONTAINS
 
             allocate (fsatmax              (numpatch))
             allocate (fsatdcf              (numpatch))
+            allocate (topoweti             (numpatch))
+            allocate (alp_twi              (numpatch))
+            allocate (chi_twi              (numpatch))
+            allocate (mu_twi               (numpatch))
 
             allocate (vic_b_infilt         (numpatch))
             allocate (vic_Dsmax            (numpatch))
@@ -373,8 +383,9 @@ CONTAINS
             allocate (hbot                 (numpatch))
             allocate (dbedrock             (numpatch))
             allocate (ibedrock             (numpatch))
-            allocate (topoelv              (numpatch))
-            allocate (topostd              (numpatch))
+            allocate (elvmean              (numpatch))
+            allocate (elvstd               (numpatch))
+            allocate (slpratio             (numpatch))
 
             IF (DEF_USE_Forcing_Downscaling) THEN
                ! Used for downscaling
@@ -389,6 +400,14 @@ CONTAINS
                allocate (sf_curve_patches (num_azimuth,num_zenith_parameter,numpatch))
 #endif
             ENDIF
+
+            IF (DEF_USE_Forcing_Downscaling_Simple) THEN
+               ! Used for downscaling
+               allocate (asp_type_patches  (num_aspect_type,numpatch))
+               allocate (slp_type_patches  (num_aspect_type,numpatch))
+               allocate (cur_patches                       (numpatch))
+            ENDIF
+
          ENDIF
       ENDIF
 
@@ -480,10 +499,16 @@ CONTAINS
       CALL ncio_read_vector (file_restart, 'fc_vgm   ' ,   nl_soil, landpatch, fc_vgm    ) ! a scaling factor by using air entry value in the Mualem model [-]
 #endif
 
-      CALL ncio_read_vector (file_restart, 'soiltext', landpatch, soiltext, defval = 0  )
+      CALL ncio_read_vector (file_restart, 'soiltext', landpatch, soiltext, defval = 0    )
 
-      CALL ncio_read_vector (file_restart, 'fsatmax', landpatch, fsatmax, defval = 0.38 )
-      CALL ncio_read_vector (file_restart, 'fsatdcf', landpatch, fsatdcf, defval = 0.125)
+      IF (DEF_Runoff_SCHEME == 0) THEN
+         CALL ncio_read_vector (file_restart, 'topoweti', landpatch, topoweti, defval = 9.27 )
+         CALL ncio_read_vector (file_restart, 'fsatmax ', landpatch, fsatmax , defval = 0.38 )
+         CALL ncio_read_vector (file_restart, 'fsatdcf ', landpatch, fsatdcf , defval = 0.55 )
+         CALL ncio_read_vector (file_restart, 'alp_twi ', landpatch, alp_twi , defval = 1.34 )
+         CALL ncio_read_vector (file_restart, 'chi_twi ', landpatch, chi_twi , defval = 1.61 )
+         CALL ncio_read_vector (file_restart, 'mu_twi  ', landpatch, mu_twi  , defval = 6.95 )
+      ENDIF
 
       CALL ncio_read_vector (file_restart, 'vic_b_infilt', landpatch, vic_b_infilt)
       CALL ncio_read_vector (file_restart, 'vic_Dsmax'   , landpatch, vic_Dsmax   )
@@ -507,8 +532,9 @@ CONTAINS
          CALL ncio_read_vector (file_restart, 'ibedrock' ,    landpatch, ibedrock)         !
       ENDIF
 
-      CALL ncio_read_vector (file_restart, 'topoelv', landpatch, topoelv)         !
-      CALL ncio_read_vector (file_restart, 'topostd', landpatch, topostd)         !
+      CALL ncio_read_vector (file_restart, 'elvmean ', landpatch, elvmean )         !
+      CALL ncio_read_vector (file_restart, 'elvstd  ', landpatch, elvstd  )         !
+      CALL ncio_read_vector (file_restart, 'slpratio', landpatch, slpratio)         !
 
       CALL ncio_read_bcast_serial (file_restart, 'zlnd  ', zlnd  ) ! roughness length for soil [m]
       CALL ncio_read_bcast_serial (file_restart, 'zsno  ', zsno  ) ! roughness length for snow [m]
@@ -539,6 +565,12 @@ CONTAINS
 #else
          CALL ncio_read_vector (file_restart, 'sf_curve_patches' , num_azimuth , num_zenith_parameter, landpatch, sf_curve_patches)
 #endif
+      ENDIF
+
+      IF (DEF_USE_Forcing_Downscaling_Simple) THEN
+         CALL ncio_read_vector (file_restart, 'slp_type_patches' , num_aspect_type, landpatch, slp_type_patches)
+         CALL ncio_read_vector (file_restart, 'asp_type_patches' , num_aspect_type, landpatch, asp_type_patches)
+         CALL ncio_read_vector (file_restart, 'cur_patches'      ,                 landpatch, cur_patches )
       ENDIF
 
 #if (defined LULC_IGBP_PFT || defined LULC_IGBP_PC)
@@ -577,7 +609,7 @@ CONTAINS
 #endif
 
       IF (p_is_master) THEN
-         write(*,'(A29)') 'Loading Time Invariants done.'
+         write(*,*) 'Loading Time Invariants done.'
       ENDIF
 
    END SUBROUTINE READ_TimeInvariants
@@ -635,6 +667,7 @@ CONTAINS
       CALL ncio_define_dimension_vector (file_restart, landpatch, 'azi',      num_azimuth)
       CALL ncio_define_dimension_vector (file_restart, landpatch, 'zen',      num_zenith)
       CALL ncio_define_dimension_vector (file_restart, landpatch, 'zen_p',    num_zenith_parameter)
+      CALL ncio_define_dimension_vector (file_restart, landpatch, 'type_a',    num_aspect_type)
 
       CALL ncio_write_vector (file_restart, 'patchclass', 'patch', landpatch, patchclass)                            !
       CALL ncio_write_vector (file_restart, 'patchtype' , 'patch', landpatch, patchtype )                            !
@@ -659,7 +692,7 @@ CONTAINS
       CALL ncio_write_vector (file_restart, 'wf_gravels', 'soil', nl_soil, 'patch', landpatch, wf_gravels, compress) ! gravimetric fraction of gravels
       CALL ncio_write_vector (file_restart, 'wf_sand   ', 'soil', nl_soil, 'patch', landpatch, wf_sand   , compress) ! gravimetric fraction of sand
       CALL ncio_write_vector (file_restart, 'wf_clay   ', 'soil', nl_soil, 'patch', landpatch, wf_clay   , compress) ! gravimetric fraction of clay
-      CALL ncio_write_vector (file_restart, 'wf_om     ', 'soil', nl_soil, 'patch', landpatch, wf_om     , compress) ! gravimetric fraction of om 
+      CALL ncio_write_vector (file_restart, 'wf_om     ', 'soil', nl_soil, 'patch', landpatch, wf_om     , compress) ! gravimetric fraction of om
       CALL ncio_write_vector (file_restart, 'OM_density', 'soil', nl_soil, 'patch', landpatch, OM_density, compress) ! OM_density
       CALL ncio_write_vector (file_restart, 'BD_all    ', 'soil', nl_soil, 'patch', landpatch, BD_all    , compress) ! bulk density of soil
       CALL ncio_write_vector (file_restart, 'wfc       ', 'soil', nl_soil, 'patch', landpatch, wfc       , compress) ! field capacity
@@ -679,8 +712,14 @@ CONTAINS
 
       CALL ncio_write_vector (file_restart, 'soiltext', 'patch', landpatch, soiltext)
 
-      CALL ncio_write_vector (file_restart, 'fsatmax', 'patch', landpatch, fsatmax)
-      CALL ncio_write_vector (file_restart, 'fsatdcf', 'patch', landpatch, fsatdcf)
+      IF (DEF_Runoff_SCHEME == 0) THEN
+         CALL ncio_write_vector (file_restart, 'topoweti', 'patch', landpatch, topoweti)
+         CALL ncio_write_vector (file_restart, 'fsatmax ', 'patch', landpatch, fsatmax )
+         CALL ncio_write_vector (file_restart, 'fsatdcf ', 'patch', landpatch, fsatdcf )
+         CALL ncio_write_vector (file_restart, 'alp_twi ', 'patch', landpatch, alp_twi )
+         CALL ncio_write_vector (file_restart, 'chi_twi ', 'patch', landpatch, chi_twi )
+         CALL ncio_write_vector (file_restart, 'mu_twi  ', 'patch', landpatch, mu_twi  )
+      ENDIF
 
       CALL ncio_write_vector (file_restart, 'vic_b_infilt', 'patch', landpatch, vic_b_infilt)
       CALL ncio_write_vector (file_restart, 'vic_Dsmax'   , 'patch', landpatch, vic_Dsmax   )
@@ -705,8 +744,9 @@ CONTAINS
          CALL ncio_write_vector (file_restart, 'ibedrock' , 'patch', landpatch, ibedrock)
       ENDIF
 
-      CALL ncio_write_vector (file_restart, 'topoelv', 'patch', landpatch, topoelv)
-      CALL ncio_write_vector (file_restart, 'topostd', 'patch', landpatch, topostd)
+      CALL ncio_write_vector (file_restart, 'elvmean ', 'patch', landpatch, elvmean )
+      CALL ncio_write_vector (file_restart, 'elvstd  ', 'patch', landpatch, elvstd  )
+      CALL ncio_write_vector (file_restart, 'slpratio', 'patch', landpatch, slpratio)
 
       IF (DEF_USE_Forcing_Downscaling) THEN
          CALL ncio_write_vector (file_restart, 'svf_patches', 'patch', landpatch, svf_patches)
@@ -720,6 +760,13 @@ CONTAINS
          CALL ncio_write_vector (file_restart, 'sf_curve_patches',  'azi' , num_azimuth,'zen_p', num_zenith_parameter, 'patch', landpatch, sf_curve_patches)
 #endif
       ENDIF
+
+      IF (DEF_USE_Forcing_Downscaling_Simple) THEN
+         CALL ncio_write_vector (file_restart, 'cur_patches', 'patch', landpatch, cur_patches)
+         CALL ncio_write_vector (file_restart, 'slp_type_patches',  'type_a', num_aspect_type, 'patch', landpatch, slp_type_patches)
+         CALL ncio_write_vector (file_restart, 'asp_type_patches',  'type_a', num_aspect_type, 'patch', landpatch, asp_type_patches)
+      ENDIF   
+
 
 #ifdef USEMPI
       CALL mpi_barrier (p_comm_glb, p_err)
@@ -779,7 +826,7 @@ CONTAINS
 
    SUBROUTINE deallocate_TimeInvariants ()
 
-   USE MOD_Namelist, only: DEF_USE_Forcing_Downscaling
+   USE MOD_Namelist, only: DEF_USE_Forcing_Downscaling, DEF_USE_Forcing_Downscaling_Simple
    USE MOD_SPMD_Task
    USE MOD_LandPatch, only: numpatch
 
@@ -834,8 +881,13 @@ CONTAINS
             deallocate (fc_vgm         )
 #endif
             deallocate (soiltext       )
+
             deallocate (fsatmax        )
             deallocate (fsatdcf        )
+            deallocate (topoweti       )
+            deallocate (alp_twi        )
+            deallocate (chi_twi        )
+            deallocate (mu_twi         )
 
             deallocate (vic_b_infilt   )
             deallocate (vic_Dsmax      )
@@ -858,8 +910,9 @@ CONTAINS
             deallocate (dbedrock       )
             deallocate (ibedrock       )
 
-            deallocate (topoelv        )
-            deallocate (topostd        )
+            deallocate (elvmean        )
+            deallocate (elvstd         )
+            deallocate (slpratio       )
 
             IF (DEF_USE_Forcing_Downscaling) THEN
                deallocate(slp_type_patches  )
@@ -871,6 +924,12 @@ CONTAINS
 #else
                deallocate(sf_curve_patches  )
 #endif
+               deallocate(cur_patches       )
+            ENDIF
+
+            IF (DEF_USE_Forcing_Downscaling_Simple) THEN
+               deallocate(slp_type_patches  )
+               deallocate(asp_type_patches  )
                deallocate(cur_patches       )
             ENDIF
 
@@ -900,7 +959,8 @@ CONTAINS
 
    USE MOD_SPMD_Task
    USE MOD_RangeCheck
-   USE MOD_Namelist, only: DEF_USE_BEDROCK, DEF_USE_Forcing_Downscaling
+   USE MOD_Namelist, only: DEF_Runoff_SCHEME, DEF_TOPMOD_method, DEF_USE_BEDROCK, &
+                           DEF_USE_Forcing_Downscaling, DEF_USE_Forcing_Downscaling_Simple
 
    IMPLICIT NONE
 
@@ -944,6 +1004,20 @@ CONTAINS
       CALL check_vector_data ('sc_vgm       [-]     ', sc_vgm      ) ! saturation at the air entry value in the classical vanGenuchten model [-]
       CALL check_vector_data ('fc_vgm       [-]     ', fc_vgm      ) ! a scaling factor by using air entry value in the Mualem model [-]
 #endif
+
+      IF ((DEF_Runoff_SCHEME == 0) .and. (DEF_TOPMOD_method == 1)) THEN
+         CALL check_vector_data ('mean twi     [log m] ', topoweti) !
+         CALL check_vector_data ('max sat frac area [-]', fsatmax ) !
+         CALL check_vector_data ('sat frac area decay  ', fsatdcf ) !
+      ENDIF
+
+      IF ((DEF_Runoff_SCHEME == 0) .and. (DEF_TOPMOD_method == 2)) THEN
+         CALL check_vector_data ('mean twi     [log m] ', topoweti) !
+         CALL check_vector_data ('twi alpha in 3-gamma ', alp_twi )
+         CALL check_vector_data ('twi chi   in 3-gamma ', chi_twi )
+         CALL check_vector_data ('twi mu    in 3-gamma ', mu_twi  )
+      ENDIF
+
       CALL check_vector_data ('hksati       [mm/s]  ', hksati      ) ! hydraulic conductivity at saturation [mm h2o/s]
       CALL check_vector_data ('csol         [J/m3/K]', csol        ) ! heat capacity of soil solids [J/(m3 K)]
       CALL check_vector_data ('k_solids     [W/m/K] ', k_solids    ) ! thermal conductivity of soil solids [W/m-K]
@@ -962,9 +1036,13 @@ CONTAINS
          CALL check_vector_data ('dbedrock     [m]     ', dbedrock ) !
       ENDIF
 
-      CALL check_vector_data ('topoelv      [m]     ', topoelv     ) !
-      CALL check_vector_data ('topostd      [m]     ', topostd     ) !
-      CALL check_vector_data ('BVIC         [-]     ', BVIC        ) !
+      CALL check_vector_data ('elvmean      [m]     ', elvmean     ) !
+      CALL check_vector_data ('elvstd       [m]     ', elvstd      ) !
+      CALL check_vector_data ('slpratio     [-]     ', slpratio    ) !
+
+      IF (DEF_Runoff_SCHEME == 3) THEN
+         CALL check_vector_data ('BVIC         [-]     ', BVIC        ) !
+      ENDIF
 
       IF (DEF_USE_Forcing_Downscaling) THEN
          CALL check_vector_data ('slp_type     [rad]   ', slp_type_patches ) ! slope
@@ -986,6 +1064,12 @@ CONTAINS
 
          IF (allocated(tmpcheck)) deallocate(tmpcheck)
 #endif
+      ENDIF
+
+      IF (DEF_USE_Forcing_Downscaling_Simple) THEN
+         CALL check_vector_data ('slp_type     [rad]   ', slp_type_patches ) ! slope
+         CALL check_vector_data ('asp_type     [-]     ', asp_type_patches ) ! aspect fraction of direction of patches
+         CALL check_vector_data ('cur          [-]     ', cur_patches      )
       ENDIF
 
 #ifdef USEMPI

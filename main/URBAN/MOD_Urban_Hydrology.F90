@@ -48,7 +48,7 @@ CONTAINS
         froof          ,fgper          ,flake          ,bsw            ,&
         porsl          ,psi0           ,hksati         ,pondmx         ,&
         ssi            ,wimp           ,smpmin         ,theta_r        ,&
-        fsatmax        ,fsatdcf        ,topostd        ,BVIC           ,&
+        fsatmax        ,fsatdcf        ,elvstd         ,BVIC           ,&
         rootr,rootflux ,etr            ,fseng          ,fgrnd          ,&
         t_gpersno      ,t_lakesno      ,t_lake         ,dz_lake        ,&
         z_gpersno      ,z_lakesno      ,zi_gpersno     ,zi_lakesno     ,&
@@ -62,7 +62,7 @@ CONTAINS
         sm_roof        ,sm_gimp        ,sm_gper        ,sm_lake        ,&
         lake_icefrac   ,scv_lake       ,snowdp_lake    ,imelt_lake     ,&
         fioldl         ,w_old                                          ,&
-#if(defined CaMa_Flood)
+#if (defined CaMa_Flood)
         flddepth       ,fldfrc         ,qinfl_fld                      ,&
 #endif
         forc_us        ,forc_vs                                        ,&
@@ -71,10 +71,11 @@ CONTAINS
         mss_bcpho      ,mss_bcphi      ,mss_ocpho      ,mss_ocphi      ,&
         mss_dst1       ,mss_dst2       ,mss_dst3       ,mss_dst4       ,&
 ! END SNICAR model variables
-
+!  irrigaiton 
+        qflx_irrig_drip,qflx_irrig_flood,qflx_irrig_paddy              ,&
         ! output
         rsur           ,rnof           ,qinfl          ,zwt            ,&
-        wa             ,qcharge        ,smp            ,hk             )
+        wdsrf          ,wa             ,qcharge        ,smp            ,hk)
 
 !=======================================================================
 ! this is the main SUBROUTINE to execute the calculation of URBAN
@@ -114,13 +115,14 @@ CONTAINS
         froof              ,&! roof fractional cover [-]
         fgper              ,&! weight of impervious ground [-]
         flake              ,&! lake fractional cover [-]
-        ! wtfact           ,&! (updated to gridded 'fsatmax' data) fraction of model area with high water table
+        ! wtfact           ,&! fraction of model area with high water table
+                             ! (updated to gridded 'fsatmax' data)
         pondmx             ,&! ponding depth (mm)
         ssi                ,&! irreducible water saturation of snow
         wimp               ,&! water impermeable IF porosity less than wimp
         smpmin             ,&! restriction for min of soil poten. (mm)
 
-        topostd            ,&! standard deviation of elevation [m]
+        elvstd             ,&! standard deviation of elevation [m]
         BVIC               ,&! b parameter in Fraction of saturated soil in a grid calculated by VIC
 
         bsw   (1:nl_soil)  ,&! Clapp-Hornberger "B"
@@ -156,7 +158,7 @@ CONTAINS
 
    real(r8), intent(inout) :: rootflux(1:nl_soil)
 
-#if(defined CaMa_Flood)
+#if (defined CaMa_Flood)
    real(r8), intent(inout) :: flddepth  ! inundation water depth [mm]
    real(r8), intent(in)    :: fldfrc    ! inundation water depth [0-1]
    real(r8), intent(out)   :: qinfl_fld ! grid averaged inundation water input from top (mm/s)
@@ -167,7 +169,8 @@ CONTAINS
 
 ! SNICAR model variables
 ! Aerosol Fluxes (Jan. 07, 2023)
-   real(r8), intent(in) :: forc_aer (14)! aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
+   ! aerosol deposition from atmosphere model (grd,aer) [kg m-1 s-1]
+   real(r8), intent(in) :: forc_aer (14)
 
    real(r8), intent(inout) :: &
         mss_bcpho (lbp:0)             ,&! mass of hydrophobic BC in snow  (col,lyr) [kg]
@@ -180,6 +183,13 @@ CONTAINS
         mss_dst4  (lbp:0)               ! mass of dust species 4 in snow  (col,lyr) [kg]
 ! Aerosol Fluxes (Jan. 07, 2023)
 ! END SNICAR model variables
+
+!  For irrigation 
+   real(r8), intent(in) :: &
+        qflx_irrig_drip               ,&! drip irrigation rate [mm/s]
+        qflx_irrig_flood              ,&! flood irrigation rate [mm/s]
+        qflx_irrig_paddy                ! paddy irrigation rate [mm/s]
+!  END irrigation
 
    integer, intent(in) :: &
         imelt_lake(maxsnl+1:nl_soil)    ! lake flag for melting or freezing snow and soil layer [-]
@@ -215,6 +225,7 @@ CONTAINS
         fseng            ,&! sensible heat from ground
         fgrnd            ,&! ground heat flux
         zwt              ,&! the depth from ground (soil) surface to water table [m]
+        wdsrf            ,&! depth of surface water [mm]
         wa                 ! water storage in aquifer [mm]
 
    real(r8), intent(out) :: &
@@ -260,7 +271,7 @@ CONTAINS
       CALL WATER_2014 (ipatch,patchtype,lbp        ,nl_soil     ,deltim      ,&
              z_gpersno   ,dz_gpersno  ,zi_gpersno  ,bsw         ,porsl       ,&
              psi0        ,hksati      ,theta_r     ,fsatmax     ,fsatdcf     ,&
-             topostd     ,BVIC        ,rootr       ,rootflux    ,t_gpersno   ,&
+             elvstd      ,BVIC        ,rootr       ,rootflux    ,t_gpersno   ,&
              wliq_gpersno,wice_gpersno,smp         ,hk          ,pgper_rain  ,&
              sm_gper     ,etr         ,qseva_gper  ,qsdew_gper  ,qsubl_gper  ,&
              qfros_gper                                                      ,&
@@ -271,14 +282,16 @@ CONTAINS
              qseva_gper  ,qsdew_gper  ,qsubl_gper  ,qfros_gper               ,&
              0.          ,& ! fsno, not active
              rsur_gper   ,rnof_gper   ,qinfl       ,pondmx      ,ssi         ,&
-             wimp        ,smpmin      ,zwt         ,wa          ,qcharge     ,&
-#if(defined CaMa_Flood)
+             wimp        ,smpmin      ,zwt         ,wdsrf       ,wa          ,qcharge     ,&
+#if (defined CaMa_Flood)
              flddepth    ,fldfrc      ,qinfl_fld                             ,&
 #endif
 ! SNICAR model variables
              forc_aer                                                        ,&
              mss_bcpho   ,mss_bcphi   ,mss_ocpho   ,mss_ocphi                ,&
-             mss_dst1    ,mss_dst2    ,mss_dst3    ,mss_dst4                  )
+             mss_dst1    ,mss_dst2    ,mss_dst3    ,mss_dst4                 ,&
+!  irrigation variables
+             qflx_irrig_drip   ,qflx_irrig_flood  ,qflx_irrig_paddy            )
 
 !=======================================================================
 ! [2] for roof and impervious road

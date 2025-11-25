@@ -81,7 +81,7 @@ CONTAINS
 
       write(cyear,'(i4.4)') lc_year
       IF (p_is_master) THEN
-         write(*,'(A)') 'Making land patches :'
+         write(*,'(A)') 'Making land patches:'
       ENDIF
 
 #ifdef USEMPI
@@ -169,7 +169,13 @@ CONTAINS
                DO ipxl = ipxstt, ipxend
                   IF (types(ipxl) > 0) THEN
                      IF (patchtypes(types(ipxl)) == 0) THEN
-                        types(ipxl) = 1
+                        ! Deal with cropland separately for fast PC
+                        IF (DEF_FAST_PC .and. &
+                           (types(ipxl)==CROPLAND .or. types(ipxl)==14)) THEN
+                           types(ipxl) = CROPLAND
+                        ELSE
+                           types(ipxl) = 1
+                        ENDIF
                      ENDIF
                   ENDIF
                ENDDO
@@ -271,12 +277,14 @@ CONTAINS
 
 ! #if (!defined(ROAD_MODEL) && !defined(CROP))
 
+IF ( .not. DEF_Output_2mWMO ) THEN
       CALL elm_patch%build (landelm, landpatch, use_frac = .true.)
 #ifdef CATCHMENT
       CALL hru_patch%build (landhru, landpatch, use_frac = .true.)
 #endif
 
       CALL write_patchfrac (DEF_dir_landdata, lc_year)
+ENDIF
 #endif
 
    END SUBROUTINE landpatch_build

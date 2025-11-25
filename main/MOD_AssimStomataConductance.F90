@@ -24,7 +24,7 @@ CONTAINS
 
 !-----------------------------------------------------------------------
 
-   SUBROUTINE stomata (vmax25,effcon,slti,hlti,shti, &
+   SUBROUTINE stomata (vmax25,effcon,c3c4,slti,hlti,shti, &
                        hhti,trda,trdm,trop,g1,g0,gradm,binter,tm, &
                        psrf,po2m,pco2m,pco2a,ea,ei,tlef,par, &
 !Ozone stress variables
@@ -95,7 +95,8 @@ CONTAINS
       g0,           &! conductance-photosynthesis intercept for medlyn model
       gradm,        &! conductance-photosynthesis slope parameter
       binter         ! conductance-photosynthesis intercept
-
+   integer, intent(in) :: &
+      c3c4           ! 1 for c3, 0 for c4
    real(r8),intent(in) :: &
       tm,           &! atmospheric air temperature (K)
       psrf,         &! surface atmospheric pressure (pa)
@@ -183,7 +184,7 @@ CONTAINS
    integer ic
 !-----------------------------------------------------------------------
 
-      CALL calc_photo_params(tlef, po2m, par , psrf, rstfac, rb, effcon, vmax25, &
+      CALL calc_photo_params(tlef, po2m, par , psrf, rstfac, rb, effcon, vmax25, c3c4, &
                              trop, slti, hlti, shti, hhti, trda, trdm, cint, &
                              vm, epar, respc, omss, gbh2o, gammas, rrkk, c3, c4)
 
@@ -245,7 +246,7 @@ CONTAINS
             sqrtin= max( 0., ( (omp+oms)**2 - 4.*btheta*omp*oms ) )
             assim = max( 0., ( ( oms+omp ) - sqrt( sqrtin ) ) / ( 2.*btheta ))
          ELSE
-            assim = min(omc, ome)
+            assim = max( 0., min(omc, ome))
          ENDIF
          !print*,'assimn',assim,omc,ome
          assimn= ( assim - respc)                         ! mol m-2 s-1
@@ -317,9 +318,9 @@ CONTAINS
          ELSE
             IF(DEF_USE_MEDLYNST)THEN
                vpd   = amax1((ei - ea),50._r8) * 1.e-3 ! in kpa
-               acp   = 1.6*assmt/co2st             ! in mol m-2 s-1
+               acp   = 1.6*assmt/co2st                 ! in mol m-2 s-1
                aquad = 1._r8
-               bquad = -2*(g0*1.e-6 + acp) - (g1*acp)**2/(gbh2o*vpd)   ! in mol m-2 s-1
+               bquad = -2*(g0*1.e-6 + acp) - (g1*acp)**2/(gbh2o*vpd)       ! in mol m-2 s-1
                cquad = (g0*1.e-6)**2 + (2*g0*1.e-6+acp*(1-g1**2)/vpd)*acp  ! in (mol m-2 s-1)**2
 
                sqrtin= max( 0., ( bquad**2 - 4.*aquad*cquad ) )
@@ -342,9 +343,9 @@ CONTAINS
                gsh2o = es/hcdma + bintc                        ! mol m-2 s-1
             ENDIF
 
-            pco2in = ( co2s - 1.6 * assimn / gsh2o )*psrf   ! pa
+            pco2in = ( co2s - 1.6 * assimn / gsh2o )*psrf      ! pa
          ENDIF
-         eyy(ic) = pco2i - pco2in                        ! pa
+         eyy(ic) = pco2i - pco2in                              ! pa
 
 !-----------------------------------------------------------------------
 
@@ -454,7 +455,7 @@ CONTAINS
 
    END SUBROUTINE sortin
 
-   SUBROUTINE calc_photo_params(tlef, po2m, par , psrf, rstfac, rb, effcon, vmax25, &
+   SUBROUTINE calc_photo_params(tlef, po2m, par , psrf, rstfac, rb, effcon, vmax25, c3c4, &
                                trop, slti, hlti, shti, hhti, trda, trdm, cint, &
                                vm, epar, respc, omss, gbh2o, gammas, rrkk, c3, c4)
 
@@ -480,6 +481,9 @@ CONTAINS
             trda,     &! temperature coefficient in gs-a model             (1.3)
             trdm,     &! temperature coefficient in gs-a model             (328.16)
             psrf       ! surface atmospheric pressure (pa)
+            
+   integer, intent(in) :: &
+            c3c4       ! 1 for c3, 0 for c4
 
    real(r8),intent(in), dimension(3) :: &
             cint       ! scaling up from leaf to canopy
@@ -511,7 +515,7 @@ CONTAINS
 !-----------------------------------------------------------------------
 
       c3 = 0.
-      IF( effcon .gt. 0.07 ) c3 = 1.
+      IF (c3c4.eq.1) c3 = 1.
       c4 = 1. - c3
 
 !-----------------------------------------------------------------------
@@ -590,8 +594,8 @@ CONTAINS
 
    END SUBROUTINE calc_photo_params
 
-   SUBROUTINE update_photosyn(tlef, po2m, pco2m, pco2a, par, psrf, rstfac, rb, gsh2o, &
-                             effcon, vmax25, gradm, trop, slti, hlti, shti, hhti, trda, trdm, cint, &
+   SUBROUTINE update_photosyn(tlef, po2m, pco2m, pco2a, par, psrf, rstfac, rb, gsh2o,&
+                             effcon, vmax25, c3c4, gradm, trop, slti, hlti, shti, hhti, trda, trdm, cint,&
                              assim, respc)
 
    USE MOD_Precision
@@ -620,6 +624,9 @@ CONTAINS
             hhti,     &! 1/2 point of high temperature inhibition function (313.16)
             trda,     &! temperature coefficient in gs-a model             (1.3)
             trdm       ! temperature coefficient in gs-a model             (328.16)
+
+   integer, intent(in) :: &
+            c3c4       ! 1 for c3, 0 for c4
 
    real(r8),intent(in), dimension(3) :: &
             cint       ! scaling up from leaf to canopy
@@ -669,7 +676,7 @@ CONTAINS
    integer ic
 !-----------------------------------------------------------------------
 
-      CALL calc_photo_params(tlef, po2m, par , psrf, rstfac, rb, effcon, vmax25, &
+      CALL calc_photo_params(tlef, po2m, par , psrf, rstfac, rb, effcon, vmax25, c3c4, &
                              trop, slti, hlti, shti, hhti, trda, trdm, cint, &
                              vm, epar, respc, omss, gbh2o, gammas, rrkk, c3, c4)
 
@@ -704,12 +711,16 @@ CONTAINS
 
          omc = vm   * ( pco2i-gammas ) / ( pco2i + rrkk ) * c3 + vm * c4
          ome = epar * ( pco2i-gammas ) / ( pco2i+2.*gammas ) * c3 + epar * c4
-         oms = omss * c3 + omss*pco2i * c4
+         IF(.not. DEF_USE_WUEST .or. abs(c4 - 1) .lt. 0.001)THEN
+            oms = omss * c3 + omss*pco2i * c4
 
-         sqrtin= max( 0., ( (ome+omc)**2 - 4.*atheta*ome*omc ) )
-         omp   = ( ( ome+omc ) - sqrt( sqrtin ) ) / ( 2.*atheta )
-         sqrtin= max( 0., ( (omp+oms)**2 - 4.*btheta*omp*oms ) )
-         assim = max( 0., ( ( oms+omp ) - sqrt( sqrtin ) ) / ( 2.*btheta ))
+            sqrtin= max( 0., ( (ome+omc)**2 - 4.*atheta*ome*omc ) )
+            omp   = ( ( ome+omc ) - sqrt( sqrtin ) ) / ( 2.*atheta )
+            sqrtin= max( 0., ( (omp+oms)**2 - 4.*btheta*omp*oms ) )
+            assim = max( 0., ( ( oms+omp ) - sqrt( sqrtin ) ) / ( 2.*btheta ))
+         ELSE
+            assim = max( 0., min(omc, ome))
+         ENDIF
 
          assimn= ( assim - respc)                         ! mol m-2 s-1
 

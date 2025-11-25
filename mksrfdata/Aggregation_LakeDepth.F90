@@ -104,7 +104,8 @@ SUBROUTINE Aggregation_LakeDepth ( &
          DO ipatch = 1, numpatch
             L = landpatch%settyp(ipatch)
             IF(L==WATERBODY)THEN  ! LAND WATER BODIES (17)
-               CALL aggregation_request_data (landpatch, ipatch, gland, zip = USE_zip_for_aggregation, &
+               CALL aggregation_request_data (landpatch, ipatch, gland, &
+                  zip = USE_zip_for_aggregation, &
                   data_r8_2d_in1 = lakedepth, data_r8_2d_out1 = lakedepth_one)
                lakedepth_patches (ipatch) = median (lakedepth_one, size(lakedepth_one))
             ELSE
@@ -128,12 +129,13 @@ SUBROUTINE Aggregation_LakeDepth ( &
       lndname = trim(landdir)//'/lakedepth_patches.nc'
       CALL ncio_create_file_vector (lndname, landpatch)
       CALL ncio_define_dimension_vector (lndname, landpatch, 'patch')
-      CALL ncio_write_vector (lndname, 'lakedepth_patches', 'patch', landpatch, lakedepth_patches, DEF_Srfdata_CompressLevel)
+      CALL ncio_write_vector (lndname, 'lakedepth_patches', 'patch', &
+         landpatch, lakedepth_patches, DEF_Srfdata_CompressLevel)
 
 #ifdef SrfdataDiag
       lndname = trim(dir_model_landdata)//'/diag/lakedepth_'//trim(cyear)//'.nc'
       CALL srfdata_map_and_write (lakedepth_patches, landpatch%settyp, typlake, m_patch2diag, &
-         -1.0e36_r8, lndname, 'lakedepth', compress = 1, write_mode = 'one')
+         -1.0e36_r8, lndname, 'lakedepth', compress = 1, write_mode = 'one', create_mode=.true.)
 #endif
 
       IF (p_is_worker) THEN

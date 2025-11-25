@@ -11,3 +11,4 @@ lib
 *.a
 *.x
 run/cases/
+*.log

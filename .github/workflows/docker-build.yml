@@ -9,7 +9,7 @@ on:
         required: true
         default: 'main'
   push:
-    branches: [ main master ]
+    branches: [ main master docker-test ]
     tags: [ 'v*' ]
   pull_request:
     branches: [ main master ]

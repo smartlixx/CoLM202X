@@ -2,17 +2,24 @@
 name: Build & Push CoLM Dev Image
 
 on:
+  push:
+    branches: 
+      - docker-test
+      - main
+      - master
+    tags: 
+      - 'v*'
+  pull_request:
+    branches: 
+      - main
+      - master
   workflow_dispatch:
     inputs:
       branch:
         description: 'Select branch to build'
         required: true
         default: 'main'
-  push:
-    branches: [ main master docker-test ]
-    tags: [ 'v*' ]
-  pull_request:
-    branches: [ main master ]
+  
 
 permissions:
   contents: read

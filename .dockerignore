@@ -1,0 +1,34 @@
+# definitely don't include
+*.nc
+*.nc4
+*.bin
+*.tar
+*.tar.gz
+*.zip
+
+# version control
+.git/
+.gitignore
+
+# intermediate outputs (will be produced when recompiling)
+*.o
+*.mod
+*.a
+*.so
+*.dSYM/
+.bld/
+build/
+__pycache__/
+
+# documents
+docs/
+*.pdf
+*.tex
+*.txt
+README.md
+ReadMeEvaluation
+LICENSE
+
+# IDE
+.vscode/
+.idea/

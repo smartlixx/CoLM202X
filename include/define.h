@@ -66,6 +66,11 @@
 #undef GridRiverLakeFlow
 #endif
 
+#undef GridRiverLakeSediment
+#if (!defined GridRiverLakeFlow)
+#undef GridRiverLakeSediment
+#endif
+
 ! 7. If defined, BGC model is used.
 #undef BGC
 
@@ -99,3 +104,6 @@
 
 ! 11. External lake models.
 #undef EXTERNAL_LAKE
+
+! 12. Hyperspectral scheme.
+#define HYPERSPECTRAL

@@ -1,6 +1,6 @@
 #include <define.h>
 
-MODULE MOD_Road_CDP_SnowClear
+MODULE MOD_Road_SnowClear
 
    USE MOD_Precision
    IMPLICIT NONE
@@ -8,6 +8,7 @@ MODULE MOD_Road_CDP_SnowClear
 
 ! PUBLIC MEMBER FUNCTIONS:
    PUBLIC :: snow_clear_CDP
+   PUBLIC :: snow_clear_RoadSurf
 
 !-----------------------------------------------------------------------
 
@@ -83,5 +84,20 @@ SUBROUTINE snow_clear_CDP(data_sc,snow_clear_flag)
     ENDIF
         END SUBROUTINE snow_clear_CDP
 
-END MODULE MOD_Road_CDP_SnowClear
+
+SUBROUTINE snow_clear_RoadSurf(data_sc,snow_clear_flag)
+
+    INTEGER,DIMENSION(4)::data_sc
+    LOGICAL::snow_clear_flag
+
+    snow_clear_flag=.FALSE.
+
+    !ludo deneigements en fin de periode hors episodes
+    IF(data_sc(4).EQ.6) THEN
+        snow_clear_flag=.TRUE.
+    ENDIF
+    
+        END SUBROUTINE snow_clear_RoadSurf
+
+END MODULE MOD_Road_SnowClear
 ! --------- EOP ----------

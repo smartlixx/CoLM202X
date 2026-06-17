@@ -10,11 +10,11 @@ MODULE MOD_Road_Const_ThermalParameters
 
    ! albeodo of asphalt pavement [-]
    real(r8), parameter, dimension(2,2)  :: albroad_apt &
-      = reshape([0.03, 0.03, 0.04, 0.04], shape(albroad_apt))
+      = reshape([0.09, 0.09, 0.11, 0.11], shape(albroad_apt))
 
    ! albeodo of concrete pavement [-]
    real(r8), parameter, dimension(2,2)  :: albroad_cct &
-      = reshape([0.3, 0.3, 0.5, 0.5], shape(albroad_cct))
+      = reshape([0.46, 0.46, 0.47, 0.47], shape(albroad_cct))
 
    ! emissivity of asphalt pavement [-]
    real(r8), parameter, dimension(2,2)  :: emroad_apt &
@@ -28,20 +28,20 @@ MODULE MOD_Road_Const_ThermalParameters
 
    ! volumetric heat capacity of asphalt pavement [J/m3*K]
    real(r8), parameter, dimension(10,5)  :: cvroad_apt &
-      = reshape([2.29E6 , 2.29E6 ,  1.96E6 , 1.45E6 , 2.06E6 ,   2.06E6 , 2.05E6 , 0. , 0. , 0. , &
-                 2.29E6 , 2.29E6 ,  1.96E6 , 1.45E6 , 2.06E6 ,   2.06E6 , 2.05E6 , 0. , 0. , 0. , &
-                 2.29E6 , 2.29E6 ,  1.96E6 , 1.96E6 , 2.06E6 ,   2.06E6 , 2.05E6 , 0. , 0. , 0. , &
-                 2.29E6 , 2.29E6 ,  1.96E6 , 2.06E6 , 2.06E6 ,   2.05E6 , 2.05E6 , 0. , 0. , 0. , &
-                 2.29E6 , 2.29E6 ,  2.29E6 , 2.06E6 , 2.06E6 ,   2.05E6 ,     0. , 0. , 0. , 0.], &
+      = reshape([2.8E6 , 2.8E6 ,  1.92E6 , 2.04E6 , 1.9E6 ,   1.9E6  , 1.85E6 , 0. , 0. , 0. , &
+                 2.8E6 , 2.8E6 ,  1.92E6 , 2.04E6 , 1.9E6 ,   1.9E6  , 1.85E6 , 0. , 0. , 0. , &
+                 2.8E6 , 2.8E6 ,  1.92E6 , 1.92E6 , 1.9E6 ,   1.9E6  , 1.85E6 , 0. , 0. , 0. , &
+                 2.8E6 , 2.8E6 ,  1.92E6 , 1.9E6  , 1.9E6 ,   1.85E6 , 1.85E6 , 0. , 0. , 0. , &
+                 2.8E6 , 2.8E6 ,  2.8E6  , 1.9E6  , 1.9E6 ,   1.85E6 ,     0. , 0. , 0. , 0.], &
                 shape(cvroad_apt))
 
    ! volumetric heat capacity of concrete pavement [J/m3*K]
    real(r8), parameter, dimension(10,5)  :: cvroad_cct &
-      = reshape([ 2.15E6 ,  2.15E6 ,  2.15E6 ,  2.15E6 ,  2.15E6 ,    2.11E6 ,  2.05E6 ,  0. ,  0. ,  0. , &
-                  2.15E6 ,  2.15E6 ,  2.15E6 ,  2.15E6 ,  2.11E6 ,    2.05E6 ,      0. ,  0. ,  0. ,  0. , &
-                  2.15E6 ,  2.15E6 ,  2.15E6 ,  2.15E6 ,  2.06E6 ,    2.05E6 ,      0. ,  0. ,  0. ,  0. , &
-                  2.15E6 ,  2.15E6 ,  2.15E6 ,  2.15E6 ,  2.05E6 ,    2.19E6 ,      0. ,  0. ,  0. ,  0. , &
-                  2.15E6 ,  2.15E6 ,  2.15E6 ,  2.05E6 ,  2.19E6 ,        0. ,      0. ,  0. ,  0. ,  0.], &
+      = reshape([ 1.99E6 ,  1.99E6 ,  1.99E6 ,  1.99E6 ,  1.99E6 ,    1.84E6 ,  1.85E6 ,  0. ,  0. ,  0. , &
+                  1.99E6 ,  1.99E6 ,  1.99E6 ,  1.99E6 ,  1.84E6 ,    1.85E6 ,      0. ,  0. ,  0. ,  0. , &
+                  1.99E6 ,  1.99E6 ,  1.99E6 ,  1.99E6 ,  1.9E6  ,    1.85E6 ,      0. ,  0. ,  0. ,  0. , &
+                  1.99E6 ,  1.99E6 ,  1.99E6 ,  1.99E6 ,  1.85E6 ,    1.4E6  ,      0. ,  0. ,  0. ,  0. , &
+                  1.99E6 ,  1.99E6 ,  1.99E6 ,  1.85E6 ,  1.4E6  ,        0. ,      0. ,  0. ,  0. ,  0.], &
                 shape(cvroad_cct))
 
 

@@ -114,7 +114,7 @@ SUBROUTINE CoLMMain_Road ( &
   USE MOD_Road_Hydrology
   Use MOD_Road_Thermal
   USE MOD_Road_Albedo
-  USE MOD_Road_CDP_SnowClear
+  USE MOD_Road_SnowClear
 
   IMPLICIT NONE
 
@@ -503,7 +503,8 @@ IF (MOD(idate(3), 3600) == 0) THEN
    data_sc(1) = idate(1)
    data_sc(4) = idate(3) / 3600
 
-   CALL snow_clear_CDP(data_sc, snow_clear_flag)
+   ! CALL snow_clear_CDP(data_sc, snow_clear_flag)
+   CALL snow_clear_RoadSurf(data_sc, snow_clear_flag)
 
    IF (snow_clear_flag) THEN
       scv_road     = 0

@@ -151,7 +151,7 @@ CONTAINS
 
 #ifdef SinglePoint
 
-#ifndef URBAN_MODEL
+#if (!defined(URBAN_MODEL) && !defined(ROAD_MODEL))
       IF (.not. DEF_USE_LAIFEEDBACK)THEN
          IF (patchtypes(SITE_landtype) == 0) THEN
             tlai_p(:) = pack(SITE_LAI_pfts_monthly(:,time,iyear), SITE_pctpfts > 0.)

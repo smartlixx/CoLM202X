@@ -85,5 +85,13 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=docker,dest=/tmp/colm-linux-amd64.tar
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: colm-image-linux-amd64
+          path: /tmp/colm-linux-amd64.tar
+          retention-days: 90
